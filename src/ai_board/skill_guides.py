@@ -8,26 +8,71 @@ description: Core ai-board usage guide. Read this before changing a project boar
 
 # ai-board core
 
-`ai-board` is a tiny local CLI for AI-assisted project planning. It keeps
+`ai-board` is a tiny local CLI for AI agents doing project planning. It keeps
 `.ai-board/board.json` as the only write source and renders Markdown views into
 `docs/`.
+
+## AI-native entry prompt
+
+When a user gives you the ai-board GitHub URL, treat it as an instruction to
+install the CLI, load this guide, and then manage the project through the board:
+
+```text
+Install ai-board from https://github.com/dev-null-sec/ai-board.git as a
+user-level CLI. Also place skills/ai-board/SKILL.md from the repository into
+the target agent's skill/skills directory, such as Codex, Claude, or another
+skill-aware tool. After installation, run ai-board skills get core and follow
+that guide. If the current project has no board, initialize one. If it already
+has a board, read the project rules and continue from the current plan.
+```
 
 ## First checks
 
 ```bash
+ai-board --help
 ai-board status
 ai-board conflicts --fail-on-conflict
 ```
 
-If `ai-board` is not installed, install it as a user-level CLI tool:
+If `ai-board` is not installed, install it as a user-level CLI tool. Do not
+silently install it into the current project virtual environment.
+
+Preferred install order:
+
+1. Check for Python 3.10+.
+2. Use `pipx` if available.
+3. If Python exists but `pipx` does not, install pipx for the current user and
+   run it through `python -m pipx`.
+4. If the Python/pipx path is not available, use `uv tool install`.
+
+Common commands:
 
 ```bash
 pipx install "git+https://github.com/dev-null-sec/ai-board.git"
-# or, if pipx is unavailable:
+python -m pip install --user pipx
+python -m pipx ensurepath
+python -m pipx install "git+https://github.com/dev-null-sec/ai-board.git"
 uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
 ```
 
-Both methods create the `ai-board` command from the package's console script.
+These install methods create the `ai-board` command from the package's console script.
+
+## Skill installation
+
+The CLI and the skill are intentionally separate:
+
+- The CLI does the actual board work.
+- The skill lets an agent discover when and how to call the CLI.
+
+After cloning or downloading the repository, copy this file into the skill or
+skills directory used by the target agent:
+
+```text
+skills/ai-board/SKILL.md
+```
+
+Use the target agent's own skill installation rules. If the skill is already in
+place, do not duplicate it.
 
 If there is no board yet:
 
@@ -43,6 +88,17 @@ overwritten by default; `.example` files are created instead. Use
 intentional.
 
 ## Normal workflow
+
+If a user asks you to "use ai-board" in a project, you can follow this compact
+prompt:
+
+```text
+Use ai-board as the planning source for this project. Read ai-board skills get
+core, then read AGENTS.md, docs/计划看板.md, docs/当前状态.md, and docs/开发规范.md.
+Put new work into the inbox first. Only edit files after a task is scheduled and
+started with an honest --scope. Complete tasks with verification and leftovers,
+then archive them.
+```
 
 New requests go to the inbox first:
 

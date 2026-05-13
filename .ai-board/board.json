@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 12,
+  "next_id": 16,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-13T10:47:00+00:00",
+  "updated_at": "2026-05-13T11:15:40+00:00",
   "tasks": [
     {
       "id": "T-0003",
@@ -262,6 +262,143 @@
       "started_at": "2026-05-13T10:46:09+00:00",
       "completed_at": "2026-05-13T10:46:48+00:00",
       "archived_at": "2026-05-13T10:47:00+00:00"
+    },
+    {
+      "id": "T-0012",
+      "title": "把安装和使用方式改成 AI 原生提示词入口",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "skills/ai-board/SKILL.md",
+        "src/ai_board/skill_guides.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README 首屏说明用户可以把 GitHub 地址交给 AI 安装",
+        "skill stub 明确让 AI 自检、优先找 python、其次 uv/pipx，并读取 CLI guide",
+        "CLI 内置 guide 提供可直接复制给 AI 的安装和使用提示词"
+      ],
+      "verification": "单元测试通过；CLI 内置 guide 可正常输出 AI 原生安装提示词和项目接手提示词；README、skill stub、CLI guide 均已包含 GitHub 地址交给 AI 后的自检、安装、读取 guide、初始化和看板工作流程；冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-13T10:59:17+00:00",
+      "updated_at": "2026-05-13T11:03:16+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-13T10:59:23+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-13T10:59:23+00:00",
+      "completed_at": "2026-05-13T11:03:16+00:00",
+      "archived_at": "2026-05-13T11:03:16+00:00"
+    },
+    {
+      "id": "T-0013",
+      "title": "重写 README 首屏痛点叙述",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README 首屏去掉冗长安装提示词，只保留自然的项目介绍",
+        "它解决什么改成真实痛点叙述，说明临时需求、上下文推测和唯一真相源",
+        "说明从 skill/Markdown 到 CLI 的演进原因，避免 guide 过期并方便多 agent 协作"
+      ],
+      "verification": "README 首屏已去掉冗长安装提示词，只保留项目介绍和真实痛点；README 和英文版均说明临时需求、聊天记录推测、结构化真相源，以及从 skill/Markdown 演进到 CLI 的原因；文案检查确认旧的重复提示词已从首屏移除；冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-13T11:09:45+00:00",
+      "updated_at": "2026-05-13T11:11:01+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-13T11:09:45+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-13T11:09:45+00:00",
+      "completed_at": "2026-05-13T11:11:01+00:00",
+      "archived_at": "2026-05-13T11:11:01+00:00"
+    },
+    {
+      "id": "T-0014",
+      "title": "标明 README 的 AI 原生安装方式为推荐入口",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "中文 README 标题改为 AI 原生安装方式（推荐）并补一句推荐说明",
+        "英文 README 同步标明推荐安装入口"
+      ],
+      "verification": "中文 README 标题已改为 AI 原生安装方式（推荐），并补充推荐说明；英文 README 同步改为 AI-Native Install (Recommended)；文案检查通过；冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-13T11:12:24+00:00",
+      "updated_at": "2026-05-13T11:12:49+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-13T11:12:25+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-13T11:12:25+00:00",
+      "completed_at": "2026-05-13T11:12:49+00:00",
+      "archived_at": "2026-05-13T11:12:49+00:00"
+    },
+    {
+      "id": "T-0015",
+      "title": "补齐 skill 安装到 agent 配置目录的说明",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "skills/ai-board/SKILL.md",
+        "src/ai_board/skill_guides.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "AI 原生安装提示词要求 AI 同时安装 CLI 和把 skills/ai-board/SKILL.md 放入目标 agent 的 skill 目录",
+        "人工安装说明提醒用户把 skill 文件复制到 Codex、Claude 等 agent 的 skills 目录",
+        "CLI 内置 guide 和 skill stub 同步 skill 安装说明"
+      ],
+      "verification": "README 中文和英文已说明 AI 原生安装需要同时安装 CLI 和把 skills/ai-board/SKILL.md 放到目标 agent 的 skill/skills 目录；人工安装说明已拆成 CLI 安装和 skill 安装两步；skill stub 和 CLI 内置 guide 已同步该要求；guide 输出检查通过；冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-13T11:14:26+00:00",
+      "updated_at": "2026-05-13T11:15:40+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-13T11:14:27+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-13T11:14:27+00:00",
+      "completed_at": "2026-05-13T11:15:40+00:00",
+      "archived_at": "2026-05-13T11:15:40+00:00"
     }
   ]
 }
