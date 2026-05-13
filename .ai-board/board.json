@@ -6,36 +6,8 @@
   },
   "next_id": 12,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-13T10:41:45+00:00",
+  "updated_at": "2026-05-13T10:47:00+00:00",
   "tasks": [
-    {
-      "id": "T-0002",
-      "title": "补齐 GitHub 开源发布材料",
-      "description": "",
-      "priority": "P1",
-      "status": "blocked",
-      "owner_agent": "codex",
-      "scope": [
-        ".ai-board",
-        ".gitignore",
-        "LICENSE",
-        "README.md",
-        "README_en.md",
-        "assets",
-        "docs",
-        "pyproject.toml"
-      ],
-      "depends_on": [],
-      "acceptance": [],
-      "verification": "",
-      "leftovers": "",
-      "created_at": "2026-05-13T16:51:52+08:00",
-      "updated_at": "2026-05-13T10:41:45+00:00",
-      "lock_owner": "codex",
-      "locked_at": "2026-05-13T10:36:12+00:00",
-      "lease_expires_at": "",
-      "started_at": "2026-05-13T10:36:12+00:00"
-    },
     {
       "id": "T-0003",
       "title": "评估 SQLite 后端或事件日志",
@@ -266,6 +238,30 @@
       "started_at": "2026-05-13T10:30:33+00:00",
       "completed_at": "2026-05-13T10:33:06+00:00",
       "archived_at": "2026-05-13T10:33:15+00:00"
+    },
+    {
+      "id": "T-0002",
+      "title": "补齐 GitHub 开源发布材料",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board",
+        "docs"
+      ],
+      "depends_on": [],
+      "acceptance": [],
+      "verification": "已创建 GitHub 仓库 https://github.com/dev-null-sec/ai-board；main 分支已推送并跟踪 origin/main；README、README_en、Logo、MIT LICENSE 和发布说明已入库；单元测试、CLI guide 和冲突检查此前已通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-13T16:51:52+08:00",
+      "updated_at": "2026-05-13T10:47:00+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-13T10:46:09+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-13T10:46:09+00:00",
+      "completed_at": "2026-05-13T10:46:48+00:00",
+      "archived_at": "2026-05-13T10:47:00+00:00"
     }
   ]
 }
