@@ -110,13 +110,89 @@ ai-board render                      # 重新生成 Markdown 看板
 
 ## 工作方式
 
-几个关键设计：
+整体流程很简单：
 
-- `.ai-board/board.json` 是唯一写入源，Markdown 看板是生成的
-- 多 agent 同时干活时，重叠的文件范围默认被拦住
-- scope lock 有 240 分钟租约，到时自动释放
-- 一个看板可以分多条泳道（平台开发、课程内容、文档……），但只有一个真相源
-- 任务生命周期：`inbox → scheduled → active → done → archived`
+```text
+你 / AI 提需求
+        ↓
+ai-board CLI 写入 .ai-board/board.json
+        ↓
+render 生成 Markdown 看板
+        ↓
+AI / 人读取状态，继续推进
+```
+
+| 设计点 | 说明 |
+| --- | --- |
+| 真相源 | `.ai-board/board.json` 是唯一写入源，Markdown 看板只是生成视图。 |
+| 多 agent | 重叠文件范围默认被拦住；这是路径级防撞，不是理解代码语义的万能锁。 |
+| scope lock | 默认 240 分钟租约；任务 `complete` 后释放 agent 身份，`archive` 把已验收任务移出当前看板。 |
+| 多泳道 | 一个看板可以分平台开发、课程内容、文档等泳道，但只有一个真相源。 |
+| 简单依赖 | 任务可以声明依赖，`start` 默认会挡住依赖未完成的任务；复杂依赖图暂时不做。 |
+| 自检 | `doctor` 检查 board、生成文档、事件日志、scope 冲突和 agent 状态。 |
+| 历史 | `history` 从 `.ai-board/events.jsonl` 查看任务变更记录。 |
+| 生命周期 | `inbox → scheduled → active → done → archived`。 |
+
+## FAQ
+
+<details>
+<summary><strong>ai-board 会保存 AI 的聊天记录或上下文吗？</strong></summary>
+
+不是。`ai-board` 不会把 AI 脑子里的上下文原样保存下来，也不会假装恢复一整段对话记忆。
+
+它保存的是项目推进需要稳定存在的东西：需求、优先级、状态、负责人、scope、验收结果、遗留问题。换句话说，聊天可以断，模型可以换，但项目计划不应该只活在聊天记录里。
+
+</details>
+
+<details>
+<summary><strong>Markdown 看板可以手动改吗？</strong></summary>
+
+不建议。真正存数据的是 `.ai-board/board.json`，它更像这个小工具的本地数据库。`docs/计划看板.md` 和 `docs/归档计划看板.md` 只是从 JSON 渲染出来的阅读视图，给人和 AI 快速扫一眼用。
+
+如果你手改 Markdown，下一次 `ai-board render` 可能会覆盖它。要改任务状态、负责人、scope、验收结果，走 CLI。
+
+</details>
+
+<details>
+<summary><strong>为什么要封装成 CLI，而不是只靠文档约束？</strong></summary>
+
+只靠文档约束，AI 很容易漏步骤：忘了排期、忘了写 scope、忘了归档，或者两个 agent 同时改同一片文件。
+
+CLI 的价值不是“更高级”，而是把这些动作变成固定入口：`add`、`schedule`、`start`、`complete`、`archive`。该拦的冲突由工具拦，该写入的状态由工具写，不全靠 AI 自觉。
+
+</details>
+
+<details>
+<summary><strong>它能替代上下文吗？</strong></summary>
+
+不能，也不该替代。
+
+上下文适合讨论细节、解释取舍、临时判断；`ai-board` 适合保存那些不能丢的项目事实。两者配合起来，AI 接手项目时先看 board 和 docs，再根据当前对话继续推进，而不是只靠“我好像记得之前说过什么”。
+
+</details>
+
+<details>
+<summary><strong>init 会覆盖我已有的项目文档吗？</strong></summary>
+
+默认不会。`ai-board init` 会创建 `AGENTS.md`、`docs/当前状态.md`、`docs/开发规范.md` 等 AI 原生开发文档；如果同名文件已经存在，默认写成 `.example`，避免直接盖掉你的内容。
+
+</details>
+
+<details>
+<summary><strong>只能给 Codex 用吗？</strong></summary>
+
+不是。仓库里带了 Codex 可读的 skill stub，因为我自己主要在这个环境里用；但 CLI 本身是普通命令行工具。Claude、其他 agent，甚至人手动敲命令都能用。关键是让 agent 先读 `ai-board skills get core`，按当前版本的规则操作。
+
+</details>
+
+<details>
+<summary><strong>多 agent 防冲突能防到什么程度？</strong></summary>
+
+它能防最常见的路径重叠：比如一个 agent 已经锁了 `src/api`，另一个 agent 默认不能再启动 `src/api/handler.py` 的任务。
+
+它不会理解“两个不同文件其实有业务耦合”，也不是跨机器协作锁。需要真正并行开发时，scope 还是要写窄，任务边界也要说清楚。
+
+</details>
 
 ## 项目结构
 
@@ -129,9 +205,17 @@ docs/                  这个项目自己的计划和状态文档
 
 ## 当前边界
 
-不是 Jira，不是 Web 项目管理系统。当前版本先把本地 CLI、JSON 真相源、多 agent scope 防撞和 Markdown 视图跑顺。
+不是 Jira，不是 Web 项目管理系统。当前版本先把本地 CLI、JSON 真相源、事件日志、doctor 自检、多 agent 路径级防撞和 Markdown 视图跑顺。
 
-暂时不做：Web 登录、云同步、自动排期、复杂依赖图、OS 级文件锁。
+| 已支持 | 暂不做 |
+| --- | --- |
+| 本地 CLI | Web 登录 |
+| JSON 真相源 | 云同步 |
+| Markdown 生成视图 | 自动排期 |
+| 简单依赖校验 | 复杂依赖图 |
+| 事件日志和 `history` | OS 级文件锁 |
+| `doctor` 项目自检 | 语义级代码冲突判断 |
+| 多 agent 路径级 scope 防撞 | 跨机器协作锁 |
 
 ## 开发
 

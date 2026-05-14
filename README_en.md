@@ -110,13 +110,89 @@ Full command reference: `ai-board --help` or `ai-board skills get core --full`.
 
 ## How it works
 
-A few deliberate design choices:
+The basic flow is intentionally small:
 
-- `.ai-board/board.json` is the only write target; Markdown boards are generated
-- Multiple agents working at the same time get their overlapping file scopes blocked by default
-- Scope locks have a 240-minute lease and auto-release
-- One board, multiple lanes (platform, content, docs…), one source of truth
-- Task lifecycle: `inbox → scheduled → active → done → archived`
+```text
+You / the AI make a request
+        ↓
+ai-board CLI writes .ai-board/board.json
+        ↓
+render generates Markdown boards
+        ↓
+Humans / agents read the state and continue
+```
+
+| Design point | What it means |
+| --- | --- |
+| Source of truth | `.ai-board/board.json` is the only write target; Markdown boards are generated views. |
+| Multi-agent work | Overlapping file scopes are blocked by default; this is path-level safety, not a semantic code lock. |
+| Scope lock | Default 240-minute lease; `complete` releases the agent identity, and `archive` moves verified work out of the current board. |
+| Lanes | One board can have platform, content, docs, and other lanes while keeping one source of truth. |
+| Simple dependencies | Tasks can declare dependencies; `start` blocks unfinished dependencies by default. Complex dependency graphs are out of scope for now. |
+| Doctor | `doctor` checks the board, generated docs, event log, scope conflicts, and agent state. |
+| History | `history` reads `.ai-board/events.jsonl` and shows task changes. |
+| Lifecycle | `inbox → scheduled → active → done → archived`. |
+
+## FAQ
+
+<details>
+<summary><strong>Does ai-board save the AI's chat history or context?</strong></summary>
+
+No. `ai-board` does not dump the model's hidden context into a file, and it does not pretend to restore an entire conversation.
+
+It saves the project facts that need to survive: requests, priority, status, owner, scope, verification, and leftovers. The chat can end and the model can change, but the project plan should not live only in chat history.
+
+</details>
+
+<details>
+<summary><strong>Can I edit the Markdown board by hand?</strong></summary>
+
+I would not. The real data lives in `.ai-board/board.json`, which acts like a tiny local database for the tool. `docs/计划看板.md` and `docs/归档计划看板.md` are generated reading views for humans and agents.
+
+If you edit the Markdown directly, the next `ai-board render` can overwrite it. Change task status, owner, scope, verification, and leftovers through the CLI.
+
+</details>
+
+<details>
+<summary><strong>Why make it a CLI instead of just writing rules in docs?</strong></summary>
+
+Docs are useful, but an agent can still miss steps: forget to schedule work, forget to declare scope, forget to archive, or have two sessions touch the same files.
+
+The CLI is there to turn the workflow into fixed actions: `add`, `schedule`, `start`, `complete`, `archive`. Conflicts are blocked by the tool, and state changes are written by the tool, so the process does not depend only on the agent remembering every rule.
+
+</details>
+
+<details>
+<summary><strong>Does it replace context?</strong></summary>
+
+No, and it should not.
+
+Context is still where you discuss details, trade-offs, and the next judgment call. `ai-board` keeps the project facts that should not disappear. When an agent takes over, it reads the board and docs first, then continues from the current conversation instead of guessing from memory.
+
+</details>
+
+<details>
+<summary><strong>Will init overwrite my existing project docs?</strong></summary>
+
+Not by default. `ai-board init` creates AI-native project docs such as `AGENTS.md`, `docs/当前状态.md`, and `docs/开发规范.md`. If a file already exists, it writes a `.example` file instead of replacing your content.
+
+</details>
+
+<details>
+<summary><strong>Is this only for Codex?</strong></summary>
+
+No. The repository includes a Codex-friendly skill stub because that is the environment I use most, but the CLI itself is just a command-line tool. Claude, other agents, and humans can use it too. The important bit is that the agent reads `ai-board skills get core` and follows the rules for the installed version.
+
+</details>
+
+<details>
+<summary><strong>How much conflict prevention does multi-agent mode provide?</strong></summary>
+
+It catches the common path-overlap case: if one agent has locked `src/api`, another agent cannot start work on `src/api/handler.py` by default.
+
+It does not understand that two different files may still be coupled at the business-logic level, and it is not a cross-machine coordination lock. For real parallel work, keep scopes narrow and task boundaries explicit.
+
+</details>
 
 ## Project layout
 
@@ -129,9 +205,17 @@ docs/                  This project's own planning and status docs
 
 ## Current boundaries
 
-Not Jira, not a web project manager. This version focuses on a local CLI, JSON as the single source of truth, multi-agent scope safety, and generated Markdown views.
+Not Jira, not a web project manager. This version focuses on a local CLI, JSON as the single source of truth, event logs, doctor checks, multi-agent path-level safety, and generated Markdown views.
 
-Not included: web login, cloud sync, auto-scheduling, complex dependency graphs, OS-level file locks.
+| Supported | Not included |
+| --- | --- |
+| Local CLI | Web login |
+| JSON source of truth | Cloud sync |
+| Generated Markdown views | Auto-scheduling |
+| Simple dependency checks | Complex dependency graphs |
+| Event log and `history` | OS-level file locks |
+| `doctor` project checks | Semantic code-conflict detection |
+| Multi-agent path-level scope safety | Cross-machine coordination locks |
 
 ## Development
 

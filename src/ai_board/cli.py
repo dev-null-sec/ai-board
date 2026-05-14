@@ -11,6 +11,7 @@ from .onboarding import format_onboard_result, onboard_project
 from .operations import (
     DEFAULT_LEASE_MINUTES,
     add_task,
+    agent_state,
     archive_task,
     claim_agent,
     complete_task,
@@ -25,9 +26,10 @@ from .operations import (
     start_task,
     unlock_task,
 )
-from .render import render_docs
+from .render import render_archive, render_current_board, render_docs
 from .skill_guides import SKILLS, get_skill, skill_names
-from .store import PRIORITIES, STATUSES, find_task, init_board, load_board
+from .store import PRIORITIES, STATUSES, find_task, init_board, load_board, read_events
+from .store import Paths, lock_is_stale, read_lock_metadata
 
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -166,6 +168,85 @@ def cmd_conflicts(args: argparse.Namespace) -> int:
     return 1 if args.fail_on_conflict else 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    root = root_path(args)
+    paths = Paths(root)
+    issues: list[str] = []
+    if paths.lock_file.exists():
+        stale, reason = lock_is_stale(paths.lock_file)
+        metadata = read_lock_metadata(paths.lock_file)
+        if stale:
+            issues.append(f"stale board lock: {reason}; run a write command to auto-clear it or remove {paths.lock_file}")
+        else:
+            print(f"board lock: active {metadata}")
+    else:
+        print("board lock: ok")
+
+    board: dict[str, Any] | None = None
+    try:
+        board = load_board(root)
+    except SystemExit as error:
+        issues.append(f"board: {error}; fix .ai-board/board.json or restore it from version control")
+
+    if board is not None:
+        print("board schema: ok")
+        agents = {agent["id"]: agent for agent in board.get("agents", [])}
+        for task in board["tasks"]:
+            if task["status"] != "active":
+                continue
+            if not task.get("owner_agent"):
+                issues.append(f"active task {task['id']} has no owner_agent; start it with --agent or fix the board")
+            if not task.get("scope"):
+                issues.append(f"active task {task['id']} has no scope; set an honest scope or unlock it")
+            owner = task.get("owner_agent") or ""
+            agent = agents.get(owner)
+            if owner and agent is None:
+                issues.append(f"active task {task['id']} owner {owner} is not registered; run ai-board agents claim or fix agents")
+            elif agent is not None and agent.get("task_id") not in ("", task["id"]):
+                issues.append(f"agent {owner} points to {agent.get('task_id')} but active task is {task['id']}; release or reclaim the identity")
+            elif agent is not None and agent_state(agent) == "expired":
+                issues.append(f"agent {owner} lease is expired; run ai-board agents claim or ai-board renew {task['id']} --agent {owner}")
+
+        conflicts = find_conflicts(board)
+        if conflicts:
+            for left, right, scope in conflicts:
+                issues.append(f"scope conflict: {left['id']} and {right['id']} overlap on {scope}; coordinate, unlock, or narrow scope")
+        else:
+            print("scope conflicts: ok")
+
+        expected_docs = {
+            paths.current_board_doc: render_current_board(board),
+            paths.archive_doc: render_archive(board),
+        }
+        for doc_path, expected in expected_docs.items():
+            if not doc_path.exists():
+                issues.append(f"generated doc missing: {doc_path}; run ai-board render")
+                continue
+            try:
+                actual = doc_path.read_text(encoding="utf-8")
+            except OSError as error:
+                issues.append(f"generated doc unreadable: {doc_path} ({error}); check file permissions")
+                continue
+            if actual != expected:
+                issues.append(f"generated doc stale: {doc_path}; run ai-board render")
+        if not any("generated doc" in issue for issue in issues):
+            print("generated docs: ok")
+
+    try:
+        events = read_events(root)
+    except SystemExit as error:
+        issues.append(f"event log: {error}; fix or move .ai-board/events.jsonl")
+    else:
+        print(f"event log: ok ({len(events)} events)")
+
+    if issues:
+        for issue in issues:
+            print(f"issue: {issue}")
+        return 1 if args.fail_on_issue else 0
+    print("doctor: ok")
+    return 0
+
+
 def cmd_locks(args: argparse.Namespace) -> int:
     board = load_board(root_path(args))
     active = [task for task in board["tasks"] if task["status"] == "active" and task.get("scope")]
@@ -193,6 +274,36 @@ def cmd_show(args: argparse.Namespace) -> int:
     board = load_board(root_path(args))
     task = find_task(board, args.task_id)
     print(json.dumps(task, ensure_ascii=False, indent=2))
+    return 0
+
+
+def format_history_event(event: dict[str, Any]) -> str:
+    created_at = event.get("created_at") or "unknown-time"
+    action = event.get("action") or "unknown-action"
+    task_id = event.get("task_id") or "-"
+    agent = event.get("agent") or "-"
+    data = event.get("data") if isinstance(event.get("data"), dict) else {}
+    parts = [f"{created_at} {action}", f"task={task_id}", f"agent={agent}"]
+    status = data.get("status")
+    if status:
+        parts.append(f"status={status}")
+    scope = data.get("scope")
+    if isinstance(scope, list) and scope:
+        parts.append("scope=" + ",".join(str(item) for item in scope))
+    title = data.get("title")
+    if title:
+        parts.append(f"title={title}")
+    return " | ".join(parts)
+
+
+def cmd_history(args: argparse.Namespace) -> int:
+    events = read_events(root_path(args), args.task_id or "")
+    if not events:
+        target = f" for {args.task_id}" if args.task_id else ""
+        print(f"no history{target}")
+        return 0
+    for event in events:
+        print(format_history_event(event))
     return 0
 
 
@@ -298,6 +409,10 @@ def build_parser() -> argparse.ArgumentParser:
     conflicts.add_argument("--fail-on-conflict", action="store_true")
     conflicts.set_defaults(func=cmd_conflicts)
 
+    doctor = sub.add_parser("doctor", help="Check project health.")
+    doctor.add_argument("--fail-on-issue", action="store_true", help="Return non-zero when an issue is found.")
+    doctor.set_defaults(func=cmd_doctor)
+
     locks = sub.add_parser("locks", help="List active task scope locks.")
     locks.set_defaults(func=cmd_locks)
 
@@ -307,6 +422,10 @@ def build_parser() -> argparse.ArgumentParser:
     show = sub.add_parser("show", help="Print one task as JSON.")
     show.add_argument("task_id")
     show.set_defaults(func=cmd_show)
+
+    history = sub.add_parser("history", help="Print event history.")
+    history.add_argument("task_id", nargs="?", default="", help="Optional task ID to filter by.")
+    history.set_defaults(func=cmd_history)
 
     skills = sub.add_parser("skills", help="Read AI usage guides bundled with this CLI.")
     skills_sub = skills.add_subparsers(dest="skills_command", required=True)

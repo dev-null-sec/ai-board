@@ -11,7 +11,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from ai_board.cli import main
-from ai_board.store import load_board, save_board
+from ai_board import store
+from ai_board.store import load_board, now_iso, save_board
 
 
 class CliTests(unittest.TestCase):
@@ -96,6 +97,173 @@ class CliTests(unittest.TestCase):
             self.assertTrue((root / "docs" / "计划看板.md").exists())
             archive_text = (root / "docs" / "归档计划看板.md").read_text(encoding="utf-8")
             self.assertIn("unit test passed", archive_text)
+            events = self.read_events(root)
+            self.assertEqual(
+                [event["action"] for event in events],
+                ["goal.set", "task.add", "task.schedule", "task.start", "task.complete", "task.archive"],
+            )
+            self.assertEqual(events[3]["task_id"], "T-0001")
+            self.assertEqual(events[3]["agent"], "agent-a")
+            self.assertEqual(events[3]["data"]["scope"], ["src/login.py"])
+
+    def test_e2e_real_project_onboarding_lifecycle_doctor_and_history(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "pyproject.toml").write_text("[project]\nname = 'sample-app'\n", encoding="utf-8")
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("def main():\n    return 'ok'\n", encoding="utf-8")
+            (root / "README.md").write_text("# Sample App\n", encoding="utf-8")
+
+            onboard_output = io.StringIO()
+            with redirect_stdout(onboard_output):
+                self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing", "--project-name", "Sample App"]), 0)
+            self.assertIn("project_kind: existing", onboard_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "goal", "Ship sample app"]), 0)
+            self.assertEqual(
+                main(
+                    [
+                        "--root",
+                        str(root),
+                        "add",
+                        "Document startup flow",
+                        "--priority",
+                        "P1",
+                        "--lane",
+                        "文档治理",
+                        "--source",
+                        "e2e",
+                        "--acceptance",
+                        "README explains startup flow",
+                    ]
+                ),
+                0,
+            )
+            self.assertEqual(main(["--root", str(root), "schedule", "T-0001"]), 0)
+            self.assertEqual(main(["--root", str(root), "agents", "claim", "--kind", "codex"]), 0)
+            self.assertEqual(main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "README.md", "src/app.py"]), 0)
+            self.assertEqual(main(["--root", str(root), "complete", "T-0001", "--verification", "README and startup code checked", "--leftovers", "无"]), 0)
+            self.assertEqual(main(["--root", str(root), "archive", "T-0001"]), 0)
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("doctor: ok", doctor_output.getvalue())
+
+            history_output = io.StringIO()
+            with redirect_stdout(history_output):
+                self.assertEqual(main(["--root", str(root), "history", "T-0001"]), 0)
+            history_text = history_output.getvalue()
+            self.assertIn("task.start", history_text)
+            self.assertIn("task.complete", history_text)
+            self.assertIn("task.archive", history_text)
+
+            board = load_board(root)
+            self.assertEqual(board["project"]["current_goal"], "Ship sample app")
+            self.assertEqual(board["tasks"], [])
+            self.assertEqual(board["archive"][0]["status"], "archived")
+            self.assertEqual(board["agents"][0]["status"], "idle")
+            self.assertIn("Document startup flow", (root / "docs" / "归档计划看板.md").read_text(encoding="utf-8"))
+
+    def test_e2e_multi_agent_collaboration_conflict_release_and_reuse(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Build API", "--priority", "P0", "--lane", "平台开发"])
+            main(["--root", str(root), "add", "Write docs", "--priority", "P1", "--lane", "文档治理"])
+            main(["--root", str(root), "add", "Touch API docs", "--priority", "P1", "--lane", "文档治理"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "schedule", "T-0003"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api"])
+
+            with self.assertRaises(SystemExit) as busy_error:
+                main(["--root", str(root), "start", "T-0002", "--agent", "codex-00", "--scope", "docs"])
+            self.assertIn("busy on T-0001", str(busy_error.exception))
+
+            with self.assertRaises(SystemExit) as scope_error:
+                main(["--root", str(root), "start", "T-0003", "--agent", "codex-01", "--scope", "src/api/README.md"])
+            self.assertIn("Scope is locked", str(scope_error.exception))
+
+            main(["--root", str(root), "start", "T-0002", "--agent", "codex-01", "--scope", "docs"])
+            self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
+            main(["--root", str(root), "complete", "T-0001", "--verification", "API checked", "--leftovers", "无"])
+
+            board = load_board(root)
+            agents = {agent["id"]: agent for agent in board["agents"]}
+            self.assertEqual(agents["codex-00"]["status"], "idle")
+            self.assertEqual(agents["codex-01"]["status"], "busy")
+
+            main(["--root", str(root), "archive", "T-0001"])
+            claim_output = io.StringIO()
+            with redirect_stdout(claim_output):
+                self.assertEqual(main(["--root", str(root), "agents", "claim", "--kind", "codex"]), 0)
+            self.assertIn("codex-00 [busy]", claim_output.getvalue())
+            main(["--root", str(root), "start", "T-0003", "--agent", "codex-00", "--scope", "src/api/README.md"])
+            main(["--root", str(root), "complete", "T-0002", "--verification", "Docs checked", "--leftovers", "无"])
+            main(["--root", str(root), "complete", "T-0003", "--verification", "API docs checked", "--leftovers", "无"])
+            main(["--root", str(root), "archive", "T-0002"])
+            main(["--root", str(root), "archive", "T-0003"])
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("doctor: ok", doctor_output.getvalue())
+            board = load_board(root)
+            self.assertEqual(board["tasks"], [])
+            self.assertEqual(len(board["archive"]), 3)
+            self.assertTrue(all(agent["status"] == "idle" for agent in board["agents"]))
+
+    def test_status_transitions_reject_invalid_lifecycle_moves(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+
+            with self.assertRaises(SystemExit) as start_error:
+                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "src/a.py"])
+            self.assertIn("from inbox to active", str(start_error.exception))
+
+            with self.assertRaises(SystemExit) as complete_error:
+                main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
+            self.assertIn("from inbox to done", str(complete_error.exception))
+
+            with self.assertRaises(SystemExit) as archive_error:
+                main(["--root", str(root), "archive", "T-0001"])
+            self.assertIn("from inbox to archived", str(archive_error.exception))
+
+            main(["--root", str(root), "schedule", "T-0001"])
+            with self.assertRaises(SystemExit) as scheduled_complete_error:
+                main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
+            self.assertIn("from scheduled to done", str(scheduled_complete_error.exception))
+
+    def test_block_follows_state_machine_and_releases_active_agent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/a.py"])
+            main(["--root", str(root), "block", "T-0001"])
+
+            board = load_board(root)
+            task = board["tasks"][0]
+            agent = board["agents"][0]
+            self.assertEqual(task["status"], "blocked")
+            self.assertEqual(task["lock_owner"], "")
+            self.assertEqual(task["lease_expires_at"], "")
+            self.assertEqual(agent["status"], "idle")
+            self.assertEqual(agent["task_id"], "")
+
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/a.py"])
+            main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
+            with self.assertRaises(SystemExit) as error:
+                main(["--root", str(root), "block", "T-0001"])
+            self.assertIn("from done to blocked", str(error.exception))
 
     def test_conflict_detection(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -113,6 +281,43 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "conflicts"]), 0)
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
             self.assertEqual(main(["--root", str(root), "locks"]), 0)
+
+    def test_scope_paths_are_normalized(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "schedule", "T-0001"])
+
+            self.assertEqual(main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", r"src\..\docs", "./docs//"]), 0)
+
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["scope"], ["docs"])
+
+    def test_normalized_scope_conflicts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "docs"])
+
+            with self.assertRaises(SystemExit):
+                main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/../docs/guide.md"])
+
+    def test_invalid_scope_paths_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "schedule", "T-0001"])
+
+            with self.assertRaises(SystemExit):
+                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "../outside"])
+            with self.assertRaises(SystemExit):
+                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "C:/outside"])
 
     def test_expired_lock_renew_and_unlock(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -146,8 +351,11 @@ class CliTests(unittest.TestCase):
             board = load_board(root)
             self.assertEqual(board["tasks"][0]["scope"], [])
             self.assertEqual(board["tasks"][0]["lease_expires_at"], "")
+            events = self.read_events(root)
+            self.assertIn("task.renew", [event["action"] for event in events])
+            self.assertIn("task.unlock", [event["action"] for event in events])
 
-    def test_agent_identity_claim_start_and_archive_release(self) -> None:
+    def test_agent_identity_claim_start_and_complete_release(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init"])
@@ -177,12 +385,17 @@ class CliTests(unittest.TestCase):
             self.assertEqual(agents["codex-01"]["task_id"], "T-0002")
 
             self.assertEqual(main(["--root", str(root), "complete", "T-0001", "--verification", "checked"]), 0)
-            self.assertEqual(main(["--root", str(root), "archive", "T-0001"]), 0)
             board = load_board(root)
             agents = {agent["id"]: agent for agent in board["agents"]}
             self.assertEqual(agents["codex-00"]["status"], "idle")
             self.assertEqual(agents["codex-00"]["task_id"], "")
             self.assertEqual(agents["codex-01"]["status"], "busy")
+            self.assertEqual(board["tasks"][0]["owner_agent"], "codex-00")
+
+            self.assertEqual(main(["--root", str(root), "archive", "T-0001"]), 0)
+            board = load_board(root)
+            agents = {agent["id"]: agent for agent in board["agents"]}
+            self.assertEqual(agents["codex-00"]["status"], "idle")
 
     def test_expired_agent_identity_can_be_reused(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -203,6 +416,21 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(main(["--root", str(root), "agents", "claim", "--kind", "codex"]), 0)
             self.assertIn("codex-00 [busy]", claim_output.getvalue())
 
+    def test_block_and_agent_release_events_are_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "agents", "release", "codex-00", "--force"])
+            main(["--root", str(root), "add", "Blocked task"])
+            main(["--root", str(root), "block", "T-0001"])
+
+            events = self.read_events(root)
+            actions = [event["action"] for event in events]
+            self.assertIn("agents.claim", actions)
+            self.assertIn("agents.release", actions)
+            self.assertIn("task.block", actions)
+
     def test_show_outputs_task_json(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -212,10 +440,67 @@ class CliTests(unittest.TestCase):
             data = json.loads(board_file.read_text(encoding="utf-8"))
             self.assertEqual(data["tasks"][0]["id"], "T-0001")
 
+    def test_history_outputs_all_events_and_filters_by_task(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "goal", "Ship demo"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+
+            all_output = io.StringIO()
+            with redirect_stdout(all_output):
+                self.assertEqual(main(["--root", str(root), "history"]), 0)
+            all_text = all_output.getvalue()
+            self.assertIn("goal.set", all_text)
+            self.assertIn("task.add", all_text)
+            self.assertIn("task=T-0001", all_text)
+            self.assertIn("task=T-0002", all_text)
+
+            task_output = io.StringIO()
+            with redirect_stdout(task_output):
+                self.assertEqual(main(["--root", str(root), "history", "T-0001"]), 0)
+            task_text = task_output.getvalue()
+            self.assertIn("task=T-0001", task_text)
+            self.assertNotIn("task=T-0002", task_text)
+
+    def test_history_handles_missing_or_invalid_event_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "history", "T-9999"]), 0)
+            self.assertIn("no history for T-9999", output.getvalue())
+
+            events_file = root / ".ai-board" / "events.jsonl"
+            events_file.write_text("{ broken\n", encoding="utf-8")
+            with self.assertRaises(SystemExit) as error:
+                main(["--root", str(root), "history"])
+            self.assertIn("Event log is not valid JSONL", str(error.exception))
+
+    def test_event_write_failure_does_not_block_board_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            (root / ".ai-board" / "events.jsonl").mkdir()
+
+            self.assertEqual(main(["--root", str(root), "add", "Still recorded in board"]), 0)
+
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["title"], "Still recorded in board")
+
+    def read_events(self, root: Path) -> list[dict[str, object]]:
+        events_file = root / ".ai-board" / "events.jsonl"
+        return [json.loads(line) for line in events_file.read_text(encoding="utf-8").splitlines()]
+
     def test_add_stores_richer_task_fields_and_renders_lanes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Setup base"])
             main(
                 [
                     "--root",
@@ -239,7 +524,7 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "add", "Write content task", "--priority", "P0", "--lane", "课程内容"])
 
             board = load_board(root)
-            task = board["tasks"][0]
+            task = board["tasks"][1]
             self.assertEqual(task["lane"], "平台开发")
             self.assertEqual(task["source"], "roadmap")
             self.assertEqual(task["acceptance"], ["测试通过", "页面可用"])
@@ -249,11 +534,47 @@ class CliTests(unittest.TestCase):
             self.assertIn("### 平台开发", board_text)
             self.assertIn("### 课程内容", board_text)
             self.assertIn("| ID | 优先级 | 任务 | 负责人 | Scope | 来源 |", board_text)
-            self.assertIn("| `T-0001` | P1 | Build platform task | 未指定 | 未声明 | roadmap |", board_text)
+            self.assertIn("| `T-0002` | P1 | Build platform task | 未指定 | 未声明 | roadmap |", board_text)
             self.assertIn("**验收 / 依赖**", board_text)
             self.assertIn("  - 测试通过", board_text)
-            self.assertIn("- `T-0001` 依赖：T-0001", board_text)
+            self.assertIn("- `T-0002` 依赖：T-0001", board_text)
             self.assertLess(board_text.index("### 平台开发"), board_text.index("Build platform task"))
+
+    def test_dependency_validation_blocks_unknown_self_cycle_and_unfinished_start(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+
+            with self.assertRaises(SystemExit) as unknown_error:
+                main(["--root", str(root), "add", "Task B", "--depends-on", "T-9999"])
+            self.assertIn("Unknown dependency", str(unknown_error.exception))
+
+            with self.assertRaises(SystemExit) as self_error:
+                main(["--root", str(root), "add", "Task B", "--depends-on", "T-0002"])
+            self.assertIn("cannot depend on itself", str(self_error.exception))
+
+            main(["--root", str(root), "add", "Task B", "--depends-on", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            with self.assertRaises(SystemExit) as start_error:
+                main(["--root", str(root), "start", "T-0002", "--agent", "a", "--scope", "src/b.py"])
+            self.assertIn("dependencies are not complete", str(start_error.exception))
+
+            self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "a", "--scope", "src/b.py", "--force"]), 0)
+
+    def test_dependency_cycle_is_rejected_at_schedule(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B", "--depends-on", "T-0001"])
+            board = load_board(root)
+            board["tasks"][0]["depends_on"] = ["T-0002"]
+            save_board(root, board)
+
+            with self.assertRaises(SystemExit) as error:
+                main(["--root", str(root), "schedule", "T-0001"])
+            self.assertIn("Dependency cycle", str(error.exception))
 
     def test_init_keeps_existing_guardrail_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -298,15 +619,224 @@ class CliTests(unittest.TestCase):
                 [sys.executable, "-m", "ai_board", "--root", str(root), "add", f"Task {index}"]
                 for index in range(6)
             ]
-            processes = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for command in commands]
+            processes = [
+                subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
+                for command in commands
+            ]
             for process in processes:
                 stdout, stderr = process.communicate(timeout=15)
-                self.assertEqual(process.returncode, 0, stdout + stderr)
+                self.assertEqual(process.returncode, 0, (stdout or "") + (stderr or ""))
 
             board = load_board(root)
             ids = [task["id"] for task in board["tasks"]]
             self.assertEqual(len(ids), 6)
             self.assertEqual(len(set(ids)), 6)
+
+    def test_stale_board_lock_with_dead_pid_is_cleared(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            lock_file = root / ".ai-board" / "board.lock"
+            lock_file.write_text(
+                json.dumps({"pid": 999999, "created_at": now_iso(), "command": "old run"}),
+                encoding="utf-8",
+            )
+
+            self.assertEqual(main(["--root", str(root), "add", "Recovered task"]), 0)
+
+            self.assertFalse(lock_file.exists())
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["title"], "Recovered task")
+
+    def test_load_board_backfills_missing_v1_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            board_dir = root / ".ai-board"
+            board_dir.mkdir()
+            (board_dir / "board.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "project": {"name": "old"},
+                        "next_id": 2,
+                        "created_at": now_iso(),
+                        "updated_at": now_iso(),
+                        "tasks": [
+                            {
+                                "id": "T-0001",
+                                "title": "Old task",
+                                "priority": "P2",
+                                "status": "inbox",
+                                "created_at": now_iso(),
+                                "updated_at": now_iso(),
+                            }
+                        ],
+                        "archive": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            board = load_board(root)
+
+            self.assertEqual(board["agents"], [])
+            self.assertEqual(board["project"]["current_goal"], "")
+            task = board["tasks"][0]
+            self.assertEqual(task["lane"], "默认")
+            self.assertEqual(task["acceptance"], [])
+            self.assertEqual(task["depends_on"], [])
+            self.assertEqual(task["scope"], [])
+
+    def test_load_board_reports_invalid_json_as_human_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            board_dir = root / ".ai-board"
+            board_dir.mkdir()
+            (board_dir / "board.json").write_text("{ broken", encoding="utf-8")
+
+            with self.assertRaises(SystemExit) as error:
+                load_board(root)
+
+            self.assertIn("Board file is not valid JSON", str(error.exception))
+
+    def test_load_board_rejects_invalid_structure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            board_dir = root / ".ai-board"
+            board_dir.mkdir()
+            (board_dir / "board.json").write_text(
+                json.dumps({"schema_version": 999, "project": {}, "tasks": [], "archive": []}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(SystemExit) as error:
+                load_board(root)
+
+            self.assertIn("Unsupported board schema_version", str(error.exception))
+
+    def test_stale_board_lock_with_old_timestamp_is_cleared(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            lock_file = root / ".ai-board" / "board.lock"
+            old_time = (datetime.now(timezone.utc) - timedelta(hours=2)).replace(microsecond=0).isoformat()
+            lock_file.write_text(
+                json.dumps({"pid": 0, "created_at": old_time, "command": "crashed run"}),
+                encoding="utf-8",
+            )
+
+            self.assertEqual(main(["--root", str(root), "add", "Recovered by timestamp"]), 0)
+
+            self.assertFalse(lock_file.exists())
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["title"], "Recovered by timestamp")
+
+    def test_busy_stale_board_lock_cleanup_does_not_crash(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            lock_file = root / ".ai-board" / "board.lock"
+            old_time = (datetime.now(timezone.utc) - timedelta(hours=2)).replace(microsecond=0).isoformat()
+            lock_file.write_text(
+                json.dumps({"pid": 0, "created_at": old_time, "command": "busy stale lock"}),
+                encoding="utf-8",
+            )
+            original_unlink = Path.unlink
+
+            def locked_unlink(path: Path, *args: object, **kwargs: object) -> None:
+                if path == lock_file:
+                    raise PermissionError("locked")
+                original_unlink(path, *args, **kwargs)
+
+            try:
+                Path.unlink = locked_unlink  # type: ignore[method-assign]
+                self.assertFalse(store.clear_stale_lock(lock_file))
+            finally:
+                Path.unlink = original_unlink  # type: ignore[method-assign]
+
+            self.assertTrue(lock_file.exists())
+
+    def test_doctor_reports_stale_board_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            lock_file = root / ".ai-board" / "board.lock"
+            old_time = (datetime.now(timezone.utc) - timedelta(hours=2)).replace(microsecond=0).isoformat()
+            lock_file.write_text(
+                json.dumps({"pid": 0, "created_at": old_time, "command": "crashed run"}),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor"]), 0)
+            self.assertIn("stale board lock", output.getvalue())
+
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+
+    def test_doctor_reports_stale_generated_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            (root / "docs" / "计划看板.md").write_text("stale", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("generated doc stale", output.getvalue())
+            self.assertIn("ai-board render", output.getvalue())
+
+    def test_doctor_reports_active_task_and_agent_issues(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            board = load_board(root)
+            board["tasks"].append(
+                {
+                    "id": "T-0001",
+                    "title": "Broken active",
+                    "priority": "P2",
+                    "status": "active",
+                    "lane": "默认",
+                    "owner_agent": "codex-00",
+                    "scope": [],
+                    "depends_on": [],
+                    "acceptance": [],
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            board["agents"].append(
+                {
+                    "id": "codex-00",
+                    "kind": "codex",
+                    "status": "busy",
+                    "task_id": "T-9999",
+                    "lease_expires_at": "",
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            text = output.getvalue()
+            self.assertIn("active task T-0001 has no scope", text)
+            self.assertIn("agent codex-00 points to T-9999", text)
+
+    def test_doctor_reports_bad_event_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            (root / ".ai-board" / "events.jsonl").write_text("{ broken\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("event log", output.getvalue())
 
 
 if __name__ == "__main__":

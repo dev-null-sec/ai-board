@@ -110,6 +110,8 @@ ai-board add "Short task title" --priority P1 --lane "平台开发" --source "ro
 
 Use lanes to separate different work streams while keeping one source of truth.
 For example: `平台开发`, `课程内容`, `文档治理`, `默认`.
+Dependencies can be declared with `--depends-on`. They must point to existing
+tasks, cannot point back to the same task, and simple cycles are rejected.
 
 Schedule work before coding:
 
@@ -132,8 +134,9 @@ ai-board renew T-0001 --agent codex-00
 `agents claim` reserves a reusable identity with a 240-minute lease by default.
 `start` binds that identity to the task, gives the scope lock the same default
 lease, and blocks overlapping non-expired active task scopes. Use
-`--lease-minutes 0` for no expiry. Use `--force` only when the overlap is
-intentional and you have coordinated with the other owner.
+`--lease-minutes 0` for no expiry. `start` also blocks unfinished dependencies
+unless `--force` is used. Use `--force` only when the overlap or dependency
+bypass is intentional and you have coordinated with the other owner.
 
 If an agent crashes or a scope is no longer needed, release it without
 completing the active task:
@@ -143,13 +146,15 @@ ai-board unlock T-0001 --agent codex-00
 ai-board agents release codex-00 --force
 ```
 
-Normally, `archive` releases the task owner's agent identity automatically.
-
 After implementation, complete it with real verification:
 
 ```bash
 ai-board complete T-0001 --verification "单元测试通过，核心流程手动验收通过" --leftovers "无"
 ```
+
+`complete` releases the task owner's agent identity so the same AI session can
+claim new work. The task keeps `owner_agent` as history. `archive` still has a
+compatibility release fallback for older boards.
 
 Then archive it:
 
@@ -189,6 +194,8 @@ before continuing work if you still own the task.
 ai-board goal "Current delivery goal"
 ai-board show T-0001
 ai-board status
+ai-board history
+ai-board history T-0001
 ```
 
 ## Agent rules of thumb
@@ -226,6 +233,7 @@ ai-board block TASK_ID
 ai-board status
 ai-board conflicts [--fail-on-conflict]
 ai-board locks
+ai-board history [TASK_ID]
 ai-board render
 ai-board show TASK_ID
 ai-board skills list

@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 20,
+  "next_id": 34,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-14T04:22:53+00:00",
+  "updated_at": "2026-05-14T09:03:21+00:00",
   "tasks": [],
   "archive": [
     {
@@ -32,7 +32,11 @@
       "updated_at": "2026-05-13T16:55:22+08:00",
       "started_at": "2026-05-13T16:51:53+08:00",
       "completed_at": "2026-05-13T16:55:22+08:00",
-      "archived_at": "2026-05-13T16:55:22+08:00"
+      "archived_at": "2026-05-13T16:55:22+08:00",
+      "lane": "默认",
+      "source": "",
+      "lock_owner": "",
+      "lease_expires_at": ""
     },
     {
       "id": "T-0004",
@@ -56,7 +60,11 @@
       "updated_at": "2026-05-13T09:29:31+00:00",
       "started_at": "2026-05-13T09:23:36+00:00",
       "completed_at": "2026-05-13T09:29:20+00:00",
-      "archived_at": "2026-05-13T09:29:31+00:00"
+      "archived_at": "2026-05-13T09:29:31+00:00",
+      "lane": "默认",
+      "source": "",
+      "lock_owner": "",
+      "lease_expires_at": ""
     },
     {
       "id": "T-0005",
@@ -80,7 +88,11 @@
       "updated_at": "2026-05-13T09:39:07+00:00",
       "started_at": "2026-05-13T09:36:50+00:00",
       "completed_at": "2026-05-13T09:38:59+00:00",
-      "archived_at": "2026-05-13T09:39:07+00:00"
+      "archived_at": "2026-05-13T09:39:07+00:00",
+      "lane": "默认",
+      "source": "",
+      "lock_owner": "",
+      "lease_expires_at": ""
     },
     {
       "id": "T-0007",
@@ -103,7 +115,11 @@
       "updated_at": "2026-05-13T09:52:34+00:00",
       "started_at": "2026-05-13T09:50:54+00:00",
       "completed_at": "2026-05-13T09:52:25+00:00",
-      "archived_at": "2026-05-13T09:52:34+00:00"
+      "archived_at": "2026-05-13T09:52:34+00:00",
+      "lane": "默认",
+      "source": "",
+      "lock_owner": "",
+      "lease_expires_at": ""
     },
     {
       "id": "T-0006",
@@ -127,7 +143,11 @@
       "updated_at": "2026-05-13T10:01:09+00:00",
       "started_at": "2026-05-13T09:57:45+00:00",
       "completed_at": "2026-05-13T10:00:57+00:00",
-      "archived_at": "2026-05-13T10:01:09+00:00"
+      "archived_at": "2026-05-13T10:01:09+00:00",
+      "lane": "默认",
+      "source": "",
+      "lock_owner": "",
+      "lease_expires_at": ""
     },
     {
       "id": "T-0008",
@@ -153,7 +173,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "completed_at": "2026-05-13T10:17:14+00:00",
-      "archived_at": "2026-05-13T10:17:26+00:00"
+      "archived_at": "2026-05-13T10:17:26+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0010",
@@ -179,7 +201,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T10:20:38+00:00",
       "completed_at": "2026-05-13T10:23:21+00:00",
-      "archived_at": "2026-05-13T10:23:34+00:00"
+      "archived_at": "2026-05-13T10:23:34+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0009",
@@ -206,7 +230,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T10:30:33+00:00",
       "completed_at": "2026-05-13T10:33:06+00:00",
-      "archived_at": "2026-05-13T10:33:15+00:00"
+      "archived_at": "2026-05-13T10:33:15+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0002",
@@ -230,7 +256,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T10:46:09+00:00",
       "completed_at": "2026-05-13T10:46:48+00:00",
-      "archived_at": "2026-05-13T10:47:00+00:00"
+      "archived_at": "2026-05-13T10:47:00+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0012",
@@ -394,7 +422,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T02:44:51+00:00",
       "completed_at": "2026-05-14T02:48:33+00:00",
-      "archived_at": "2026-05-14T02:48:33+00:00"
+      "archived_at": "2026-05-14T02:48:33+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0016",
@@ -495,7 +525,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T03:57:32+00:00",
       "completed_at": "2026-05-14T04:01:02+00:00",
-      "archived_at": "2026-05-14T04:01:07+00:00"
+      "archived_at": "2026-05-14T04:01:07+00:00",
+      "lane": "默认",
+      "source": ""
     },
     {
       "id": "T-0018",
@@ -566,6 +598,485 @@
       "started_at": "2026-05-14T04:21:31+00:00",
       "completed_at": "2026-05-14T04:22:44+00:00",
       "archived_at": "2026-05-14T04:22:53+00:00"
+    },
+    {
+      "id": "T-0023",
+      "title": "修复 stale board lock 和锁恢复机制",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "board.lock 记录 pid、创建时间和必要上下文",
+        "写操作遇到过期或无效 lock 时给出清晰提示，并可安全清理 stale lock",
+        "doctor 能识别 stale board lock 并给出修复建议"
+      ],
+      "verification": "单元测试通过；board.lock 现在写入 JSON 元数据，包含 pid、created_at 和 command；写操作会自动清理过期 lock 或 pid 已不存在的 lock；Windows 下使用 OpenProcess 判断 pid 存活，避免误清理正在写入的进程；最小 doctor 可识别 stale board lock 并支持 --fail-on-issue；render 和冲突检查通过。",
+      "leftovers": "doctor 目前只覆盖 board lock 健康检查，完整 board 结构、任务状态和生成看板检查仍按 T-0022 推进。",
+      "created_at": "2026-05-14T07:24:27+00:00",
+      "updated_at": "2026-05-14T07:32:03+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-14T07:27:50+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-14T07:27:50+00:00",
+      "completed_at": "2026-05-14T07:31:55+00:00",
+      "archived_at": "2026-05-14T07:32:03+00:00"
+    },
+    {
+      "id": "T-0024",
+      "title": "增加 board schema 校验和字段补全",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "load_board 后能校验 schema_version、project、tasks、archive、agents 等基础结构",
+        "旧 board 缺少 agents、lane、acceptance、depends_on 等字段时能补默认值",
+        "损坏或不支持的 board 给出人话错误，不直接抛底层异常"
+      ],
+      "verification": "单元测试通过；load_board 现在会校验 schema_version、project、tasks、archive、agents 基础结构；旧 board 缺少 agents、lane、acceptance、depends_on、scope 等字段时会补默认值；坏 JSON、错误顶层结构、不支持 schema、无效任务或 agent 字段会给出可读错误；doctor、render 和冲突检查通过。",
+      "leftovers": "后续完整 doctor 可继续把这些 schema 检查纳入项目自检输出。",
+      "created_at": "2026-05-14T07:24:27+00:00",
+      "updated_at": "2026-05-14T07:37:36+00:00",
+      "lock_owner": "",
+      "locked_at": "2026-05-14T07:34:51+00:00",
+      "lease_expires_at": "",
+      "started_at": "2026-05-14T07:34:51+00:00",
+      "completed_at": "2026-05-14T07:37:29+00:00",
+      "archived_at": "2026-05-14T07:37:36+00:00"
+    },
+    {
+      "id": "T-0025",
+      "title": "规范化并校验 task scope 路径",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "scope 禁止绝对路径和 .. 跳出项目",
+        "scope 统一处理反斜杠、重复分隔符、点号路径和等价相对路径",
+        "冲突检测能识别 src/../docs 与 docs 这类等价 scope"
+      ],
+      "verification": "单元测试通过；scope 现在会统一反斜杠、重复分隔符、点号路径和等价相对路径；绝对路径和从项目根向外跳的 .. 会被拒绝；src/../docs 与 docs 这类等价 scope 会归一化后参与冲突检测；doctor、render 和冲突检查通过。",
+      "leftovers": "scope 仍只做路径级冲突，不做语义依赖或符号链接解析；这符合当前轻量本地 CLI 定位。",
+      "created_at": "2026-05-14T07:24:27+00:00",
+      "updated_at": "2026-05-14T07:39:43+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T07:38:11+00:00",
+      "started_at": "2026-05-14T07:38:11+00:00",
+      "completed_at": "2026-05-14T07:39:38+00:00",
+      "archived_at": "2026-05-14T07:39:43+00:00"
+    },
+    {
+      "id": "T-0020",
+      "title": "实现 events.jsonl 事件日志",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "roadmap",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "对 add、schedule、start、complete、archive、block、renew、unlock、goal 追加结构化事件",
+        "事件日志写入失败时不破坏 board.json 的原有写入流程",
+        "事件包含时间、动作、任务 ID、agent、关键状态变化和 scope"
+      ],
+      "verification": "单元测试通过；add、schedule、start、complete、archive、block、renew、unlock、goal 和 agent claim/release 会追加 .ai-board/events.jsonl 结构化事件；事件包含 created_at、action、task_id、agent 和 data；事件写入失败会被忽略，不影响 board.json 保存和 Markdown 渲染；doctor、render 和冲突检查通过。",
+      "leftovers": "history 命令仍按 T-0021 单独实现；当前事件日志只负责记录，不负责查询展示。",
+      "created_at": "2026-05-14T07:21:24+00:00",
+      "updated_at": "2026-05-14T07:44:05+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T07:41:13+00:00",
+      "started_at": "2026-05-14T07:41:13+00:00",
+      "completed_at": "2026-05-14T07:43:59+00:00",
+      "archived_at": "2026-05-14T07:44:05+00:00"
+    },
+    {
+      "id": "T-0021",
+      "title": "实现 history 命令查看任务变更历史",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "roadmap",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board history 可查看全部事件",
+        "ai-board history T-0001 可只查看指定任务事件",
+        "输出对人和 AI 都可读，并能说明事件日志缺失或为空"
+      ],
+      "verification": "单元测试通过；ai-board history 可读取 .ai-board/events.jsonl 并输出全部事件；ai-board history T-0001 可按任务过滤；事件文件缺失或没有匹配事件时会输出 no history；损坏 JSONL 会给出可读错误；skills get core --full 已包含 history 命令；doctor、render 和冲突检查通过。",
+      "leftovers": "history 当前是紧凑文本输出，暂不支持 JSON 输出、时间范围过滤或分页；后续有真实使用需求时再排期。",
+      "created_at": "2026-05-14T07:21:24+00:00",
+      "updated_at": "2026-05-14T07:58:47+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T07:56:23+00:00",
+      "started_at": "2026-05-14T07:56:23+00:00",
+      "completed_at": "2026-05-14T07:58:41+00:00",
+      "archived_at": "2026-05-14T07:58:47+00:00"
+    },
+    {
+      "id": "T-0022",
+      "title": "实现 doctor 项目状态自检",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "roadmap",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board doctor 可检查 board.json 基本结构、任务状态、active task 的 owner/scope、agent 身份状态和生成看板是否需要刷新",
+        "健康时返回清晰的通过摘要",
+        "发现问题时输出可执行的修复建议，并支持失败退出码"
+      ],
+      "verification": "单元测试通过；doctor 现在检查 stale board lock、board schema、active task 的 owner/scope、agent 身份状态、scope 冲突、生成看板是否过期以及事件日志是否可读；健康时输出 board schema、scope conflicts、generated docs、event log 等通过摘要；发现问题时输出带修复建议的 issue，并支持 --fail-on-issue；render 和冲突检查通过。",
+      "leftovers": "doctor 仍只做诊断，不自动修复；后续如果需要一键修复，可另排 fix/repair 命令。",
+      "created_at": "2026-05-14T07:21:25+00:00",
+      "updated_at": "2026-05-14T08:01:52+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:00:08+00:00",
+      "started_at": "2026-05-14T08:00:08+00:00",
+      "completed_at": "2026-05-14T08:01:46+00:00",
+      "archived_at": "2026-05-14T08:01:52+00:00"
+    },
+    {
+      "id": "T-0026",
+      "title": "调整 agent 完成任务后的释放策略",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "complete 后释放 agent 身份为 idle，但保留任务 owner_agent 历史字段",
+        "archive 不再是释放 agent 的唯一时机，重复归档或旧任务仍保持兼容",
+        "README 和 CLI guide 说明 done 与 archived 对 agent 占用的区别"
+      ],
+      "verification": "单元测试通过；complete_task 现在会释放任务 owner_agent 对应身份为 idle，并保留任务 owner_agent 作为历史字段；archive_task 仍保留释放兜底，兼容旧 board 或旧流程；README、README_en、CLI guide、当前状态和决策记录已同步 done 与 archived 对 agent 占用的区别；doctor、render 和冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-14T07:24:41+00:00",
+      "updated_at": "2026-05-14T08:06:46+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:05:04+00:00",
+      "started_at": "2026-05-14T08:05:04+00:00",
+      "completed_at": "2026-05-14T08:06:41+00:00",
+      "archived_at": "2026-05-14T08:06:46+00:00"
+    },
+    {
+      "id": "T-0028",
+      "title": "补齐 depends_on 依赖校验",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "调度规则",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "add 或 schedule 阶段校验依赖任务存在且不能自依赖",
+        "start 时依赖未完成或未归档默认阻止，并可通过 --force 显式放行",
+        "检测简单循环依赖并给出清晰错误"
+      ],
+      "verification": "单元测试通过；doctor 自检通过；冲突检查通过；add 会校验依赖存在并拒绝自依赖；schedule/start 会检测简单循环；start 默认阻止依赖未完成的任务，--force 可显式放行；失败检查发生在 agent 认领前，避免污染身份状态；CLI guide 和当前状态已同步。",
+      "leftovers": "复杂依赖图、跨项目依赖和更丰富的依赖报告暂不做，后续有真实需求再排期。",
+      "created_at": "2026-05-14T07:24:41+00:00",
+      "updated_at": "2026-05-14T08:13:14+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:12:43+00:00",
+      "started_at": "2026-05-14T08:12:43+00:00",
+      "completed_at": "2026-05-14T08:13:10+00:00",
+      "archived_at": "2026-05-14T08:13:14+00:00"
+    },
+    {
+      "id": "T-0027",
+      "title": "收紧任务状态机转换规则",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "调度规则",
+      "source": "review",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "内部状态转换集中到明确的 transition 规则",
+        "block、schedule、start、complete、archive 的允许来源状态有测试覆盖",
+        "避免未来命令绕过验收或生命周期规则直接乱改状态"
+      ],
+      "verification": "单元测试通过；doctor 自检通过；冲突检查通过；状态转换已集中到 ALLOWED_STATUS_TRANSITIONS/transition_task；schedule、start、complete、archive、block 的非法来源状态都有测试覆盖；active 任务 block 会释放 scope lock 和 agent 身份。",
+      "leftovers": "状态机目前仍保持轻量规则，没有增加暂停、取消、重开等状态；后续真有流程需求再单独排期。",
+      "created_at": "2026-05-14T07:24:41+00:00",
+      "updated_at": "2026-05-14T08:18:41+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:16:34+00:00",
+      "started_at": "2026-05-14T08:16:34+00:00",
+      "completed_at": "2026-05-14T08:18:36+00:00",
+      "archived_at": "2026-05-14T08:18:41+00:00"
+    },
+    {
+      "id": "T-0029",
+      "title": "补一轮真实项目端到端测试",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "user",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/当前状态.md",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "临时测试项目能跑通 onboard/init/goal/add/schedule/start/complete/archive/doctor/history 全流程",
+        "模拟两个 codex agent 并行协作，覆盖身份申领、scope 冲突阻止、完成释放和归档后复用",
+        "端到端测试纳入 unittest，并通过全量验证"
+      ],
+      "verification": "单元测试通过，现有测试从 34 个增加到 36 个；新增真实测试项目 E2E，覆盖 onboard/init、goal、add、schedule、agents claim、start、complete、archive、doctor、history；新增多 agent 协作 E2E，覆盖 codex-00/codex-01 身份申领、忙碌身份阻止复用、scope 冲突阻止、完成释放、归档后身份复用；doctor 和冲突检查通过。",
+      "leftovers": "端到端测试仍在本进程内调用 CLI main，没有额外增加真实安装后的 console-script 冒烟测试；发布前可再单独跑一次 pipx/uv tool 安装验证。",
+      "created_at": "2026-05-14T08:21:12+00:00",
+      "updated_at": "2026-05-14T08:23:34+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:21:30+00:00",
+      "started_at": "2026-05-14T08:21:30+00:00",
+      "completed_at": "2026-05-14T08:23:26+00:00",
+      "archived_at": "2026-05-14T08:23:34+00:00"
+    },
+    {
+      "id": "T-0030",
+      "title": "给 README 补常见误解答疑",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README.md 增加简短 FAQ，澄清不是保存聊天上下文、JSON/Markdown 的关系、为什么要 CLI 而不是纯文档",
+        "README_en.md 同步英文 FAQ，信息一致但不机翻",
+        "文案保持作者视角，简洁自然，不写成辩论或审计报告"
+      ],
+      "verification": "README.md 已新增常见误解板块，澄清 ai-board 不保存聊天上下文、board.json 才是真相源、Markdown 是生成视图、CLI 比纯文档约束更可靠，以及它不能替代上下文；README_en.md 已同步英文答疑且不是逐字机翻；当前状态已同步；单元测试、doctor、冲突检查和 render 通过。",
+      "leftovers": "FAQ 目前保持简短，没有加入截图或更长的原理图；后续如果用户反馈新的误解，再继续补充。",
+      "created_at": "2026-05-14T08:26:06+00:00",
+      "updated_at": "2026-05-14T08:27:47+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:26:26+00:00",
+      "started_at": "2026-05-14T08:26:26+00:00",
+      "completed_at": "2026-05-14T08:27:40+00:00",
+      "archived_at": "2026-05-14T08:27:47+00:00"
+    },
+    {
+      "id": "T-0031",
+      "title": "把 README 答疑改成 FAQ 口吻",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README.md 将常见误解改为 FAQ，保留聊天上下文解释，并补充 Markdown 手改、init 覆盖、多 agent 边界、适用 agent 等自然问答",
+        "README_en.md 同步英文 FAQ，信息一致但表达自然",
+        "当前状态同步，不写成辩论或反驳口吻"
+      ],
+      "verification": "README.md 已将常见误解改成 FAQ，并新增/调整 Markdown 手改、init 默认不覆盖、是否只支持 Codex、多 agent 路径级防撞等问答；README_en.md 已同步自然英文 FAQ；近期能力口径已微调，补充 doctor、history、events、简单依赖校验和路径级冲突边界；当前状态已同步；单元测试、doctor、冲突检查和 render 通过。",
+      "leftovers": "README 总体结构未大改；发布前仍可做一次安装级冒烟测试。",
+      "created_at": "2026-05-14T08:30:16+00:00",
+      "updated_at": "2026-05-14T08:37:01+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:33:09+00:00",
+      "started_at": "2026-05-14T08:33:09+00:00",
+      "completed_at": "2026-05-14T08:36:52+00:00",
+      "archived_at": "2026-05-14T08:37:01+00:00"
+    },
+    {
+      "id": "T-0032",
+      "title": "美化 README FAQ 和说明排版",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布体验",
+      "source": "user",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README.md 工作方式改为更易扫读的表格，并加入小流程图",
+        "README.md FAQ 改为 details 折叠块，避免大纲被问答刷屏",
+        "README_en.md 同步结构和信息",
+        "当前边界改为更清晰的支持/暂不做对照，不改变总体 README 主线"
+      ],
+      "verification": "README.md 已完成保守排版优化：工作方式增加流程图并改为表格，FAQ 改为 details 折叠块，当前边界改为已支持/暂不做对照表；README_en.md 已同步同样结构；当前状态已同步；单元测试、doctor、冲突检查和 render 通过。",
+      "leftovers": "README 未做整体重排或视觉大改；后续如需要更强展示效果，可再补终端截图或示意图。",
+      "created_at": "2026-05-14T08:39:49+00:00",
+      "updated_at": "2026-05-14T08:43:40+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T08:40:36+00:00",
+      "started_at": "2026-05-14T08:40:36+00:00",
+      "completed_at": "2026-05-14T08:43:23+00:00",
+      "archived_at": "2026-05-14T08:43:40+00:00"
+    },
+    {
+      "id": "T-0033",
+      "title": "修复 Windows 并发 stale lock 清理竞争",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "可靠性",
+      "source": "pre-push",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "docs/当前状态.md",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "clear_stale_lock 遇到 PermissionError 时不崩溃，继续等待锁释放",
+        "补测试覆盖 Windows 锁文件被占用时的清理路径",
+        "全量测试、doctor 和冲突检查通过"
+      ],
+      "verification": "推送前全量测试暴露 Windows 并发 stale lock 清理 PermissionError；clear_stale_lock 已在锁文件被其他进程占用时返回 False 并继续等待，不再直接崩溃；新增 test_busy_stale_board_lock_cleanup_does_not_crash；37 个单元测试、doctor 和冲突检查通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-14T09:01:19+00:00",
+      "updated_at": "2026-05-14T09:03:21+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T09:02:35+00:00",
+      "started_at": "2026-05-14T09:02:35+00:00",
+      "completed_at": "2026-05-14T09:03:06+00:00",
+      "archived_at": "2026-05-14T09:03:21+00:00"
     }
   ],
   "agents": [
@@ -576,9 +1087,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-14T04:22:53+00:00",
+      "updated_at": "2026-05-14T09:03:06+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-14T04:22:53+00:00"
+      "released_at": "2026-05-14T09:03:06+00:00"
     }
   ]
 }

@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 
 BOARD_DIR = ".ai-board"
 BOARD_FILE = "board.json"
+EVENTS_FILE = "events.jsonl"
 DOCS_DIR = "docs"
 
 STATUSES = ("inbox", "scheduled", "active", "done", "archived", "blocked")
 PRIORITIES = ("P0", "P1", "P2", "P3")
+BOARD_LOCK_STALE_SECONDS = 30 * 60
+SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
@@ -35,6 +39,10 @@ class Paths:
         return self.board_dir / "board.lock"
 
     @property
+    def events_file(self) -> Path:
+        return self.board_dir / EVENTS_FILE
+
+    @property
     def docs_dir(self) -> Path:
         return self.root / DOCS_DIR
 
@@ -51,10 +59,22 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def parse_iso_datetime(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def default_board() -> dict[str, Any]:
     created_at = now_iso()
     return {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "project": {"name": "", "current_goal": ""},
         "next_id": 1,
         "created_at": created_at,
@@ -69,11 +89,192 @@ def load_board(root: Path) -> dict[str, Any]:
     paths = Paths(root.resolve())
     if not paths.board_file.exists():
         raise SystemExit("Board not found. Run `ai-board init` first.")
-    return json.loads(paths.board_file.read_text(encoding="utf-8"))
+    try:
+        board = json.loads(paths.board_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"Board file is not valid JSON: {paths.board_file} ({error.msg} at line {error.lineno}, column {error.colno})") from error
+    except OSError as error:
+        raise SystemExit(f"Could not read board file: {paths.board_file} ({error})") from error
+    return normalize_board(board)
+
+
+def normalize_board(board: Any) -> dict[str, Any]:
+    if not isinstance(board, dict):
+        raise SystemExit("Board file is invalid: top-level value must be an object.")
+    version = board.get("schema_version", SCHEMA_VERSION)
+    if version != SCHEMA_VERSION:
+        raise SystemExit(f"Unsupported board schema_version: {version}. Supported version: {SCHEMA_VERSION}.")
+
+    changed_at = now_iso()
+    board["schema_version"] = SCHEMA_VERSION
+    project = board.setdefault("project", {})
+    if not isinstance(project, dict):
+        raise SystemExit("Board file is invalid: project must be an object.")
+    project.setdefault("name", "")
+    project.setdefault("current_goal", "")
+
+    try:
+        board["next_id"] = int(board.get("next_id", 1))
+    except (TypeError, ValueError) as error:
+        raise SystemExit("Board file is invalid: next_id must be a number.") from error
+    board.setdefault("created_at", changed_at)
+    board.setdefault("updated_at", changed_at)
+    tasks = require_list(board, "tasks")
+    archive = require_list(board, "archive")
+    agents = require_list(board, "agents")
+    for task in tasks:
+        normalize_task(task, archived=False)
+    for task in archive:
+        normalize_task(task, archived=True)
+    for agent in agents:
+        normalize_agent(agent)
+    return board
+
+
+def require_list(board: dict[str, Any], key: str) -> list[Any]:
+    value = board.setdefault(key, [])
+    if not isinstance(value, list):
+        raise SystemExit(f"Board file is invalid: {key} must be a list.")
+    return value
+
+
+def normalize_task(task: Any, archived: bool) -> dict[str, Any]:
+    if not isinstance(task, dict):
+        raise SystemExit("Board file is invalid: every task must be an object.")
+    task_id = task.get("id")
+    title = task.get("title")
+    if not isinstance(task_id, str) or not task_id:
+        raise SystemExit("Board file is invalid: every task needs a non-empty string id.")
+    if not isinstance(title, str) or not title:
+        raise SystemExit(f"Board file is invalid: task {task_id} needs a non-empty string title.")
+    status = task.get("status", "archived" if archived else "inbox")
+    if status not in STATUSES:
+        raise SystemExit(f"Board file is invalid: task {task_id} has invalid status {status}.")
+    task["status"] = status
+    task.setdefault("description", "")
+    task.setdefault("priority", "P2")
+    if task["priority"] not in PRIORITIES:
+        raise SystemExit(f"Board file is invalid: task {task_id} has invalid priority {task['priority']}.")
+    task.setdefault("lane", "默认")
+    task.setdefault("source", "")
+    task.setdefault("owner_agent", "")
+    ensure_task_list(task, "scope", task_id)
+    task["scope"] = normalize_scope(task["scope"])
+    ensure_task_list(task, "depends_on", task_id)
+    ensure_task_list(task, "acceptance", task_id)
+    task.setdefault("verification", "")
+    task.setdefault("leftovers", "")
+    task.setdefault("created_at", now_iso())
+    task.setdefault("updated_at", task.get("created_at") or now_iso())
+    task.setdefault("lock_owner", "")
+    task.setdefault("lease_expires_at", "")
+    return task
+
+
+def ensure_task_list(task: dict[str, Any], key: str, task_id: str) -> None:
+    value = task.setdefault(key, [])
+    if not isinstance(value, list):
+        raise SystemExit(f"Board file is invalid: task {task_id} field {key} must be a list.")
+    if any(not isinstance(item, str) for item in value):
+        raise SystemExit(f"Board file is invalid: task {task_id} field {key} must contain only strings.")
+
+
+def normalize_agent(agent: Any) -> dict[str, Any]:
+    if not isinstance(agent, dict):
+        raise SystemExit("Board file is invalid: every agent must be an object.")
+    agent_id = agent.get("id")
+    if not isinstance(agent_id, str) or not agent_id:
+        raise SystemExit("Board file is invalid: every agent needs a non-empty string id.")
+    agent.setdefault("kind", agent_id.rsplit("-", 1)[0] if "-" in agent_id else agent_id)
+    status = agent.get("status", "idle")
+    if status not in ("idle", "busy"):
+        raise SystemExit(f"Board file is invalid: agent {agent_id} has invalid status {status}.")
+    agent["status"] = status
+    agent.setdefault("task_id", "")
+    agent.setdefault("lease_expires_at", "")
+    agent.setdefault("created_at", now_iso())
+    agent.setdefault("updated_at", agent.get("created_at") or now_iso())
+    return agent
+
+
+def process_is_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+
+        process_query_limited_information = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(process_query_limited_information, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def lock_metadata(command: str = "") -> dict[str, Any]:
+    return {
+        "pid": os.getpid(),
+        "created_at": now_iso(),
+        "command": command,
+    }
+
+
+def read_lock_metadata(lock_file: Path) -> dict[str, Any]:
+    try:
+        text = lock_file.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        data: dict[str, Any] = {}
+        for line in text.splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                data[key.strip()] = value.strip()
+        return data
+    return data if isinstance(data, dict) else {}
+
+
+def lock_is_stale(lock_file: Path, stale_seconds: int = BOARD_LOCK_STALE_SECONDS) -> tuple[bool, str]:
+    metadata = read_lock_metadata(lock_file)
+    pid_value = metadata.get("pid")
+    pid = int(pid_value) if str(pid_value or "").isdigit() else 0
+    created_at = parse_iso_datetime(str(metadata.get("created_at") or ""))
+    age_limit = datetime.now(timezone.utc) - timedelta(seconds=stale_seconds)
+    if created_at is not None and created_at <= age_limit:
+        return True, f"older than {stale_seconds} seconds"
+    if pid and not process_is_running(pid):
+        return True, f"pid {pid} is not running"
+    return False, ""
+
+
+def clear_stale_lock(lock_file: Path, stale_seconds: int = BOARD_LOCK_STALE_SECONDS) -> bool:
+    if not lock_file.exists():
+        return False
+    stale, _reason = lock_is_stale(lock_file, stale_seconds)
+    if not stale:
+        return False
+    try:
+        lock_file.unlink()
+    except FileNotFoundError:
+        return False
+    except PermissionError:
+        return False
+    return True
 
 
 @contextmanager
-def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05):
+def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05, stale_seconds: int = BOARD_LOCK_STALE_SECONDS, command: str = ""):
     paths = Paths(root.resolve())
     paths.board_dir.mkdir(parents=True, exist_ok=True)
     deadline = time.monotonic() + timeout
@@ -81,11 +282,19 @@ def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05):
     while True:
         try:
             handle = os.open(paths.lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.write(handle, f"pid={os.getpid()}\n".encode("utf-8"))
+            content = json.dumps(lock_metadata(command), ensure_ascii=False, indent=2) + "\n"
+            os.write(handle, content.encode("utf-8"))
             break
         except FileExistsError:
+            clear_stale_lock(paths.lock_file, stale_seconds)
+            if not paths.lock_file.exists():
+                continue
             if time.monotonic() >= deadline:
-                raise SystemExit(f"Board is locked: {paths.lock_file}")
+                metadata = read_lock_metadata(paths.lock_file)
+                stale, reason = lock_is_stale(paths.lock_file, stale_seconds)
+                detail = f" metadata={metadata}" if metadata else ""
+                stale_text = f" stale={reason}" if stale else ""
+                raise SystemExit(f"Board is locked: {paths.lock_file}.{stale_text}{detail}")
             time.sleep(poll_interval)
 
     try:
@@ -107,6 +316,48 @@ def save_board(root: Path, board: dict[str, Any]) -> None:
     temp_file = paths.board_file.with_suffix(".json.tmp")
     temp_file.write_text(content, encoding="utf-8")
     temp_file.replace(paths.board_file)
+
+
+def append_event(root: Path, action: str, task_id: str = "", agent: str = "", data: dict[str, Any] | None = None) -> None:
+    paths = Paths(root.resolve())
+    event = {
+        "created_at": now_iso(),
+        "action": action,
+        "task_id": task_id,
+        "agent": agent,
+        "data": data or {},
+    }
+    try:
+        paths.board_dir.mkdir(parents=True, exist_ok=True)
+        with paths.events_file.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
+    except OSError:
+        return
+
+
+def read_events(root: Path, task_id: str = "") -> list[dict[str, Any]]:
+    paths = Paths(root.resolve())
+    if not paths.events_file.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    normalized_task_id = task_id.upper()
+    try:
+        lines = paths.events_file.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        raise SystemExit(f"Could not read event log: {paths.events_file} ({error})") from error
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise SystemExit(f"Event log is not valid JSONL: {paths.events_file} line {line_number} ({error.msg})") from error
+        if not isinstance(event, dict):
+            raise SystemExit(f"Event log is invalid: {paths.events_file} line {line_number} must be an object.")
+        if normalized_task_id and str(event.get("task_id", "")).upper() != normalized_task_id:
+            continue
+        events.append(event)
+    return events
 
 
 def init_board(root: Path, project_name: str = "", force: bool = False) -> dict[str, Any]:
@@ -142,4 +393,32 @@ def active_tasks(board: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def normalize_scope(paths: list[str]) -> list[str]:
-    return sorted({path.strip().replace("\\", "/").strip("/") for path in paths if path.strip()})
+    normalized: set[str] = set()
+    for path in paths:
+        item = normalize_scope_path(path)
+        if item:
+            normalized.add(item)
+    if "." in normalized:
+        return ["."]
+    return sorted(normalized)
+
+
+def normalize_scope_path(path: str) -> str:
+    raw = path.strip()
+    if not raw:
+        return ""
+    value = raw.replace("\\", "/")
+    if value.startswith("/") or re.match(r"^[A-Za-z]:($|/)", value):
+        raise SystemExit(f"Invalid scope path: {raw}. Scope must be relative to the project.")
+
+    parts: list[str] = []
+    for part in value.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if not parts:
+                raise SystemExit(f"Invalid scope path: {raw}. Scope cannot leave the project.")
+            parts.pop()
+            continue
+        parts.append(part)
+    return "/".join(parts) or "."

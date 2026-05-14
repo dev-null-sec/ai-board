@@ -5,16 +5,28 @@ from pathlib import Path
 from typing import Any
 
 from .render import render_docs
-from .store import PRIORITIES, STATUSES, active_tasks, board_lock, find_task, load_board, next_task_id, normalize_scope, now_iso, save_board
+from .store import PRIORITIES, STATUSES, active_tasks, append_event, board_lock, find_task, load_board, next_task_id, normalize_scope, now_iso, save_board
 
 DEFAULT_LEASE_MINUTES = 240
 DEFAULT_AGENT_KIND = "agent"
+ALLOWED_STATUS_TRANSITIONS = {
+    "inbox": {"scheduled", "blocked"},
+    "blocked": {"scheduled"},
+    "scheduled": {"active", "blocked"},
+    "active": {"done", "blocked"},
+    "done": {"archived"},
+    "archived": set(),
+}
 
 
 def persist(root: Path, board: dict[str, Any]) -> dict[str, Any]:
     save_board(root, board)
     render_docs(root, board)
     return board
+
+
+def record_event(root: Path, action: str, task: dict[str, Any] | None = None, agent: str = "", data: dict[str, Any] | None = None) -> None:
+    append_event(root, action, task.get("id", "") if task else "", agent or (task or {}).get("owner_agent", ""), data)
 
 
 def ensure_agents(board: dict[str, Any]) -> list[dict[str, Any]]:
@@ -110,6 +122,7 @@ def claim_agent(root: Path, kind: str, lease_minutes: int = DEFAULT_LEASE_MINUTE
             agents.append(agent)
         reserve_agent(agent, lease_minutes)
         persist(root, board)
+        record_event(root, "agents.claim", agent=agent["id"], data={"kind": normalized_kind, "lease_expires_at": agent.get("lease_expires_at", "")})
         return agent
 
 
@@ -136,6 +149,7 @@ def release_agent(root: Path, agent_id: str, force: bool = False) -> dict[str, A
                 raise SystemExit(f"Agent is busy on active task {task_id}. Complete/archive the task or use --force.")
         release_agent_record(agent)
         persist(root, board)
+        record_event(root, "agents.release", agent=agent_id, data={"previous_task_id": task_id, "force": force})
         return agent
 
 
@@ -169,6 +183,94 @@ def release_task_agent(board: dict[str, Any], task: dict[str, Any]) -> None:
         release_agent_record(agent)
 
 
+def ensure_status_transition(task: dict[str, Any], target_status: str) -> None:
+    if target_status not in STATUSES:
+        raise SystemExit(f"Invalid status: {target_status}. Use one of {', '.join(STATUSES)}.")
+    current_status = task.get("status", "")
+    if target_status not in ALLOWED_STATUS_TRANSITIONS.get(current_status, set()):
+        raise SystemExit(f"Cannot move task {task.get('id', '')} from {current_status} to {target_status}.")
+
+
+def transition_task(task: dict[str, Any], target_status: str) -> None:
+    ensure_status_transition(task, target_status)
+    task["status"] = target_status
+    task["updated_at"] = now_iso()
+
+
+def normalize_task_id(task_id: str) -> str:
+    normalized = task_id.strip().upper()
+    if not normalized:
+        raise SystemExit("Dependency task ID cannot be empty.")
+    return normalized
+
+
+def normalize_dependency_ids(depends_on: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for task_id in depends_on:
+        item = normalize_task_id(task_id)
+        if item not in seen:
+            normalized.append(item)
+            seen.add(item)
+    return normalized
+
+
+def all_task_ids(board: dict[str, Any]) -> set[str]:
+    return {task["id"].upper() for task in board["tasks"] + board["archive"]}
+
+
+def preview_next_task_id(board: dict[str, Any]) -> str:
+    return f"T-{int(board.get('next_id', 1)):04d}"
+
+
+def validate_task_dependencies(board: dict[str, Any], task_id: str, depends_on: list[str]) -> None:
+    normalized_task_id = task_id.upper()
+    if normalized_task_id in depends_on:
+        raise SystemExit(f"Task {task_id} cannot depend on itself.")
+    missing = [dependency for dependency in depends_on if dependency not in all_task_ids(board)]
+    if missing:
+        raise SystemExit(f"Unknown dependency task(s): {', '.join(missing)}")
+    if has_dependency_cycle(board, normalized_task_id, depends_on):
+        raise SystemExit(f"Dependency cycle detected for {task_id}.")
+
+
+def has_dependency_cycle(board: dict[str, Any], task_id: str, depends_on: list[str]) -> bool:
+    graph = {task["id"].upper(): normalize_dependency_ids(task.get("depends_on", [])) for task in board["tasks"] + board["archive"]}
+    graph[task_id] = depends_on
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(current: str) -> bool:
+        if current in visiting:
+            return True
+        if current in visited:
+            return False
+        visiting.add(current)
+        for dependency in graph.get(current, []):
+            if visit(dependency):
+                return True
+        visiting.remove(current)
+        visited.add(current)
+        return False
+
+    return visit(task_id)
+
+
+def ensure_dependencies_complete(board: dict[str, Any], task: dict[str, Any], force: bool = False) -> None:
+    depends_on = normalize_dependency_ids(task.get("depends_on", []))
+    validate_task_dependencies(board, task["id"], depends_on)
+    task["depends_on"] = depends_on
+    if force:
+        return
+    unfinished: list[str] = []
+    for dependency_id in depends_on:
+        dependency = find_task(board, dependency_id)
+        if dependency.get("status") not in ("done", "archived"):
+            unfinished.append(f"{dependency_id} [{dependency.get('status')}]")
+    if unfinished:
+        raise SystemExit("Task dependencies are not complete: " + ", ".join(unfinished) + ". Use --force only after confirming this is intentional.")
+
+
 def add_task(
     root: Path,
     title: str,
@@ -183,6 +285,8 @@ def add_task(
         raise SystemExit(f"Invalid priority: {priority}. Use one of {', '.join(PRIORITIES)}.")
     with board_lock(root):
         board = load_board(root)
+        dependency_ids = normalize_dependency_ids(depends_on or [])
+        validate_task_dependencies(board, preview_next_task_id(board), dependency_ids)
         task = {
             "id": next_task_id(board),
             "title": title,
@@ -193,7 +297,7 @@ def add_task(
             "source": source,
             "owner_agent": "",
             "scope": [],
-            "depends_on": depends_on or [],
+            "depends_on": dependency_ids,
             "acceptance": acceptance or [],
             "verification": "",
             "leftovers": "",
@@ -202,6 +306,7 @@ def add_task(
         }
         board["tasks"].append(task)
         persist(root, board)
+        record_event(root, "task.add", task, data={"title": title, "priority": priority, "lane": task["lane"], "source": source})
         return task
 
 
@@ -210,20 +315,25 @@ def set_goal(root: Path, goal: str) -> dict[str, Any]:
         board = load_board(root)
         board.setdefault("project", {})["current_goal"] = goal
         persist(root, board)
+        record_event(root, "goal.set", data={"goal": goal})
         return board
 
 
 def set_status(root: Path, task_id: str, status: str) -> dict[str, Any]:
-    if status not in STATUSES:
-        raise SystemExit(f"Invalid status: {status}. Use one of {', '.join(STATUSES)}.")
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
         if task in board["archive"]:
             raise SystemExit("Archived tasks cannot be changed.")
-        task["status"] = status
-        task["updated_at"] = now_iso()
+        previous_status = task["status"]
+        transition_task(task, status)
+        if previous_status == "active" and status == "blocked":
+            task["lock_owner"] = ""
+            task["lease_expires_at"] = ""
+            release_task_agent(board, task)
         persist(root, board)
+        action = "task.block" if status == "blocked" else f"task.{status}"
+        record_event(root, action, task, data={"status": status})
         return task
 
 
@@ -231,11 +341,12 @@ def schedule_task(root: Path, task_id: str) -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
-        if task["status"] not in ("inbox", "blocked"):
-            raise SystemExit("Only inbox or blocked tasks can be scheduled.")
-        task["status"] = "scheduled"
-        task["updated_at"] = now_iso()
+        dependency_ids = normalize_dependency_ids(task.get("depends_on", []))
+        validate_task_dependencies(board, task["id"], dependency_ids)
+        task["depends_on"] = dependency_ids
+        transition_task(task, "scheduled")
         persist(root, board)
+        record_event(root, "task.schedule", task, data={"status": "scheduled"})
         return task
 
 
@@ -243,15 +354,15 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
-        if task["status"] != "scheduled":
-            raise SystemExit("Only scheduled tasks can be started.")
+        ensure_status_transition(task, "active")
         task_scope = normalize_scope(scope)
-        assign_agent_to_task(board, agent, task_id, lease_minutes)
+        ensure_dependencies_complete(board, task, force)
         conflicts = find_scope_conflicts(board, task, task_scope)
         if conflicts and not force:
             lines = [f"{left['id']} ({left.get('owner_agent')}) conflicts on {scope_text}" for left, scope_text in conflicts]
             raise SystemExit("Scope is locked by active task(s):\n" + "\n".join(lines))
-        task["status"] = "active"
+        assign_agent_to_task(board, agent, task_id, lease_minutes)
+        transition_task(task, "active")
         task["owner_agent"] = agent
         task["scope"] = task_scope
         task["lock_owner"] = agent
@@ -260,6 +371,7 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
         task["started_at"] = now_iso()
         task["updated_at"] = now_iso()
         persist(root, board)
+        record_event(root, "task.start", task, agent, {"status": "active", "scope": task_scope, "lease_expires_at": task["lease_expires_at"], "force": force})
         return task
 
 
@@ -279,6 +391,7 @@ def renew_task_lock(root: Path, task_id: str, agent: str, lease_minutes: int = D
         if assigned_agent is not None and assigned_agent.get("task_id") in ("", task_id):
             reserve_agent(assigned_agent, lease_minutes, task_id)
         persist(root, board)
+        record_event(root, "task.renew", task, agent, {"lease_expires_at": task["lease_expires_at"]})
         return task
 
 
@@ -297,6 +410,7 @@ def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> di
         task["unlocked_at"] = now_iso()
         task["updated_at"] = now_iso()
         persist(root, board)
+        record_event(root, "task.unlock", task, agent, {"force": force})
         return task
 
 
@@ -304,18 +418,18 @@ def complete_task(root: Path, task_id: str, verification: str, leftovers: str = 
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
-        if task["status"] != "active":
-            raise SystemExit("Only active tasks can be completed.")
         if not verification.strip():
             raise SystemExit("Verification is required.")
-        task["status"] = "done"
+        transition_task(task, "done")
         task["verification"] = verification
         task["leftovers"] = leftovers
         task["lock_owner"] = ""
         task["lease_expires_at"] = ""
         task["completed_at"] = now_iso()
         task["updated_at"] = now_iso()
+        release_task_agent(board, task)
         persist(root, board)
+        record_event(root, "task.complete", task, data={"status": "done", "verification": verification, "leftovers": leftovers})
         return task
 
 
@@ -323,15 +437,14 @@ def archive_task(root: Path, task_id: str) -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
-        if task["status"] != "done":
-            raise SystemExit("Only done tasks can be archived.")
+        transition_task(task, "archived")
         board["tasks"] = [item for item in board["tasks"] if item["id"] != task["id"]]
-        task["status"] = "archived"
         task["archived_at"] = now_iso()
         task["updated_at"] = now_iso()
         board["archive"].append(task)
         release_task_agent(board, task)
         persist(root, board)
+        record_event(root, "task.archive", task, data={"status": "archived"})
         return task
 
 
