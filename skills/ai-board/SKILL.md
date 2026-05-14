@@ -24,13 +24,24 @@ virtual environment unless the user explicitly asks for a development install.
 
 ## Start here
 
+If the user only invokes this skill, says `/ai-board`, or says "use ai-board"
+without any further instructions, do not merely explain the tool. First make
+sure the `ai-board` command exists. If it is missing, install it with the steps
+below. Then start the onboarding flow:
+
+```bash
+ai-board onboard --init-if-missing
+```
+
+Then follow the question or next action printed by that command.
+
 Check whether the CLI is already available:
 
 ```bash
 ai-board --help
 ```
 
-If it exists, immediately load the current guide:
+If the user asks for command details, load the current guide:
 
 ```bash
 ai-board skills get core
@@ -117,6 +128,7 @@ ai-board skills get core
 
 Then follow the project's own rules before editing files.
 
-If the target project has no board yet, initialize it with `ai-board init`.
+If the target project has no board yet, initialize and inspect it with
+`ai-board onboard --init-if-missing`.
 If it already has `.ai-board/board.json`, treat that JSON as the source of
 truth and do not hand-edit generated Markdown board files.

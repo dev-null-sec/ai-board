@@ -14,22 +14,24 @@ description: Core ai-board usage guide. Read this before changing a project boar
 
 ## AI-native entry prompt
 
-When a user gives you the ai-board GitHub URL, treat it as an instruction to
-install the CLI, load this guide, and then manage the project through the board:
+When a user gives you the ai-board GitHub URL, invokes `/ai-board`, or says
+"use ai-board" without extra instructions, treat it as an instruction to install
+or find the CLI and enter onboarding. Do not stop after `init`.
 
 ```text
 Install ai-board from https://github.com/dev-null-sec/ai-board.git as a
 user-level CLI. Also place skills/ai-board/SKILL.md from the repository into
 the target agent's skill/skills directory, such as Codex, Claude, or another
-skill-aware tool. After installation, run ai-board skills get core and follow
-that guide. If the current project has no board, initialize one. If it already
-has a board, read the project rules and continue from the current plan.
+skill-aware tool. After installation, run ai-board onboard --init-if-missing.
+Follow the onboarding output. Use ai-board skills get core only when command
+details are needed.
 ```
 
 ## First checks
 
 ```bash
 ai-board --help
+ai-board onboard --init-if-missing
 ai-board status
 ai-board conflicts --fail-on-conflict
 ```
@@ -74,18 +76,17 @@ skills/ai-board/SKILL.md
 Use the target agent's own skill installation rules. If the skill is already in
 place, do not duplicate it.
 
-If there is no board yet:
+If there is no board yet, or you are unsure whether this is a new or existing
+project, use onboarding:
 
 ```bash
-ai-board init --project-name "Project name"
+ai-board onboard --init-if-missing --project-name "Project name"
 ```
 
-`init` creates `.ai-board/board.json`, generated board Markdown, and AI-native
-guardrail docs such as `AGENTS.md`, `docs/开发规范.md`, `docs/当前状态.md`,
-`docs/决策记录.md`, and `docs/项目方向.md`. Existing guardrail docs are not
-overwritten by default; `.example` files are created instead. Use
-`ai-board init --overwrite-docs` only when replacing existing guardrail docs is
-intentional.
+`onboard --init-if-missing` creates the board and guardrail docs when needed,
+then classifies the project as empty, lightweight, or existing. It prints the
+next question the agent should ask instead of leaving the user at an empty
+board.
 
 ## Normal workflow
 
@@ -93,11 +94,12 @@ If a user asks you to "use ai-board" in a project, you can follow this compact
 prompt:
 
 ```text
-Use ai-board as the planning source for this project. Read ai-board skills get
-core, then read AGENTS.md, docs/计划看板.md, docs/当前状态.md, and docs/开发规范.md.
-Put new work into the inbox first. Only edit files after a task is scheduled and
-started with an honest --scope. Complete tasks with verification and leftovers,
-then archive them.
+Use ai-board as the planning source for this project. Run ai-board onboard
+--init-if-missing first. If onboarding says the project is empty or lightweight,
+ask whether to plan first or write handoff docs from the current files. If it is
+an existing project, ask whether to do a handoff summary before scheduling work.
+Only edit files after a task is scheduled and started with an honest --scope.
+Complete tasks with verification and leftovers, then archive them.
 ```
 
 New requests go to the inbox first:
@@ -115,16 +117,33 @@ Schedule work before coding:
 ai-board schedule T-0001
 ```
 
-Claim a scheduled task before editing files. Use `--scope` to name the files or
-directories you expect to touch:
+Claim an agent identity before editing files, then start a scheduled task with
+that identity. If another Codex session is already using `codex-00`, the next
+claim will return `codex-01`.
 
 ```bash
-ai-board start T-0001 --agent codex --scope src/ai_board README.md tests
+ai-board agents claim --kind codex
+ai-board agents list
+ai-board start T-0001 --agent codex-00 --scope src/ai_board README.md tests
 ai-board locks
+ai-board renew T-0001 --agent codex-00
 ```
 
-`start` blocks overlapping active task scopes by default. Use `--force` only
-when the overlap is intentional and you have coordinated with the other owner.
+`agents claim` reserves a reusable identity with a 240-minute lease by default.
+`start` binds that identity to the task, gives the scope lock the same default
+lease, and blocks overlapping non-expired active task scopes. Use
+`--lease-minutes 0` for no expiry. Use `--force` only when the overlap is
+intentional and you have coordinated with the other owner.
+
+If an agent crashes or a scope is no longer needed, release it without
+completing the active task:
+
+```bash
+ai-board unlock T-0001 --agent codex-00
+ai-board agents release codex-00 --force
+```
+
+Normally, `archive` releases the task owner's agent identity automatically.
 
 After implementation, complete it with real verification:
 
@@ -161,6 +180,9 @@ ai-board conflicts
 ai-board conflicts --fail-on-conflict
 ```
 
+Expired locks are shown by `locks` and ignored by conflict checks. Renew a lock
+before continuing work if you still own the task.
+
 ## Useful commands
 
 ```bash
@@ -174,6 +196,7 @@ ai-board status
 - Read the project rules before coding.
 - Add new work to the inbox unless it is already part of the active task.
 - Start only scheduled tasks.
+- Claim an agent identity such as `codex-00` before starting work; do not reuse a busy non-expired identity.
 - Keep scope narrow and honest.
 - Complete tasks only after verification.
 - Write verification and leftovers as human-readable summaries. Do not leave archive records as raw command strings only.
@@ -187,10 +210,16 @@ FULL_GUIDE = CORE_GUIDE + """
 
 ```bash
 ai-board init [--project-name NAME] [--force] [--overwrite-docs]
+ai-board onboard [--init-if-missing] [--project-name NAME]
 ai-board goal GOAL
 ai-board add TITLE [--priority P0|P1|P2|P3] [--description TEXT] [--lane LANE] [--source TEXT] [--acceptance TEXT] [--depends-on TASK_ID ...]
 ai-board schedule TASK_ID
-ai-board start TASK_ID --agent NAME [--scope PATH ...] [--force]
+ai-board agents claim [--kind KIND] [--lease-minutes MINUTES]
+ai-board agents list
+ai-board agents release AGENT_ID [--force]
+ai-board start TASK_ID --agent NAME [--scope PATH ...] [--force] [--lease-minutes MINUTES]
+ai-board renew TASK_ID --agent NAME [--lease-minutes MINUTES]
+ai-board unlock TASK_ID --agent NAME [--force]
 ai-board complete TASK_ID --verification TEXT [--leftovers TEXT]
 ai-board archive TASK_ID
 ai-board block TASK_ID

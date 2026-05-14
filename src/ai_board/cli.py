@@ -7,7 +7,24 @@ from pathlib import Path
 from typing import Any
 
 from .guardrails import init_guardrail_docs
-from .operations import add_task, archive_task, complete_task, find_conflicts, schedule_task, set_goal, set_status, start_task
+from .onboarding import format_onboard_result, onboard_project
+from .operations import (
+    DEFAULT_LEASE_MINUTES,
+    add_task,
+    archive_task,
+    claim_agent,
+    complete_task,
+    find_conflicts,
+    list_agents,
+    lock_is_expired,
+    renew_task_lock,
+    release_agent,
+    schedule_task,
+    set_goal,
+    set_status,
+    start_task,
+    unlock_task,
+)
 from .render import render_docs
 from .skill_guides import SKILLS, get_skill, skill_names
 from .store import PRIORITIES, STATUSES, find_task, init_board, load_board
@@ -27,12 +44,26 @@ def print_task(task: dict[str, Any]) -> None:
     print(f"{task['id']} [{task['status']}] {task.get('priority', 'P2')} {task['title']}")
 
 
+def print_agent(agent: dict[str, Any]) -> None:
+    state = agent.get("state") or agent.get("status") or "idle"
+    lease = agent.get("lease_expires_at") or "none"
+    task_id = agent.get("task_id") or "none"
+    print(f"{agent['id']} [{state}] kind={agent.get('kind', '')} task={task_id} lease_expires_at={lease}")
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     board = init_board(root_path(args), args.project_name, args.force)
     written_docs = init_guardrail_docs(root_path(args), args.overwrite_docs)
     render_docs(root_path(args), board)
     print(f"initialized: {root_path(args)}")
     print(f"guardrail docs: {len(written_docs)}")
+    print("next: ai-board onboard")
+    return 0
+
+
+def cmd_onboard(args: argparse.Namespace) -> int:
+    result = onboard_project(root_path(args), args.project_name, args.init_if_missing)
+    print(format_onboard_result(result))
     return 0
 
 
@@ -49,8 +80,42 @@ def cmd_schedule(args: argparse.Namespace) -> int:
 
 
 def cmd_start(args: argparse.Namespace) -> int:
-    task = start_task(root_path(args), args.task_id, args.agent, args.scope, args.force)
+    task = start_task(root_path(args), args.task_id, args.agent, args.scope, args.force, args.lease_minutes)
     print_task(task)
+    return 0
+
+
+def cmd_renew(args: argparse.Namespace) -> int:
+    task = renew_task_lock(root_path(args), args.task_id, args.agent, args.lease_minutes)
+    print_task(task)
+    return 0
+
+
+def cmd_unlock(args: argparse.Namespace) -> int:
+    task = unlock_task(root_path(args), args.task_id, args.agent, args.force)
+    print_task(task)
+    return 0
+
+
+def cmd_agents_claim(args: argparse.Namespace) -> int:
+    agent = claim_agent(root_path(args), args.kind, args.lease_minutes)
+    print_agent(agent)
+    return 0
+
+
+def cmd_agents_list(args: argparse.Namespace) -> int:
+    agents = list_agents(root_path(args))
+    if not agents:
+        print("no agents")
+        return 0
+    for agent in agents:
+        print_agent(agent)
+    return 0
+
+
+def cmd_agents_release(args: argparse.Namespace) -> int:
+    agent = release_agent(root_path(args), args.agent_id, args.force)
+    print_agent(agent)
     return 0
 
 
@@ -111,8 +176,9 @@ def cmd_locks(args: argparse.Namespace) -> int:
         owner = task.get("lock_owner") or task.get("owner_agent") or "unknown"
         locked_at = task.get("locked_at") or task.get("started_at") or ""
         lease = task.get("lease_expires_at") or "none"
+        state = "expired" if lock_is_expired(task) else "active"
         scope = ", ".join(task.get("scope", []))
-        print(f"{task['id']} {owner} locked_at={locked_at} lease_expires_at={lease} scope={scope}")
+        print(f"{task['id']} {owner} lock={state} locked_at={locked_at} lease_expires_at={lease} scope={scope}")
     return 0
 
 
@@ -152,6 +218,11 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--overwrite-docs", action="store_true", help="Overwrite existing guardrail docs instead of writing .example files.")
     init.set_defaults(func=cmd_init)
 
+    onboard = sub.add_parser("onboard", help="Inspect the project and print the AI-native handoff flow.")
+    onboard.add_argument("--init-if-missing", action="store_true", help="Create the board and guardrail docs if they are missing.")
+    onboard.add_argument("--project-name", default="", help="Project display name when --init-if-missing creates a board.")
+    onboard.set_defaults(func=cmd_onboard)
+
     add = sub.add_parser("add", help="Add a task to inbox.")
     add.add_argument("title")
     add.add_argument("--priority", choices=PRIORITIES, default="P2")
@@ -171,7 +242,36 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--agent", required=True)
     start.add_argument("--scope", nargs="*", default=[])
     start.add_argument("--force", action="store_true", help="Start even when scope overlaps an active task.")
+    start.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="Lock lease in minutes. Use 0 for no expiry.")
     start.set_defaults(func=cmd_start)
+
+    renew = sub.add_parser("renew", help="Renew an active task scope lock.")
+    renew.add_argument("task_id")
+    renew.add_argument("--agent", required=True)
+    renew.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="New lock lease in minutes. Use 0 for no expiry.")
+    renew.set_defaults(func=cmd_renew)
+
+    unlock = sub.add_parser("unlock", help="Release an active task scope lock without completing the task.")
+    unlock.add_argument("task_id")
+    unlock.add_argument("--agent", required=True)
+    unlock.add_argument("--force", action="store_true", help="Unlock even when another agent owns the lock.")
+    unlock.set_defaults(func=cmd_unlock)
+
+    agents = sub.add_parser("agents", help="Manage reusable agent identities.")
+    agents_sub = agents.add_subparsers(dest="agents_command", required=True)
+
+    agents_claim = agents_sub.add_parser("claim", help="Claim an idle agent identity, creating one if needed.")
+    agents_claim.add_argument("--kind", default="agent", help="Agent family, for example codex or claude.")
+    agents_claim.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="Identity lease in minutes. Use 0 for no expiry.")
+    agents_claim.set_defaults(func=cmd_agents_claim)
+
+    agents_list = agents_sub.add_parser("list", help="List registered agent identities.")
+    agents_list.set_defaults(func=cmd_agents_list)
+
+    agents_release = agents_sub.add_parser("release", help="Release an idle or expired agent identity.")
+    agents_release.add_argument("agent_id")
+    agents_release.add_argument("--force", action="store_true", help="Release even when the identity is attached to an active task.")
+    agents_release.set_defaults(func=cmd_agents_release)
 
     complete = sub.add_parser("complete", help="Complete an active task with verification.")
     complete.add_argument("task_id")

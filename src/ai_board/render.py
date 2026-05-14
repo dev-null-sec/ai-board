@@ -22,18 +22,54 @@ def task_lane(task: dict[str, Any]) -> str:
     return task.get("lane") or DEFAULT_LANE
 
 
-def task_line(task: dict[str, Any]) -> str:
-    owner = f" @{task['owner_agent']}" if task.get("owner_agent") else ""
-    priority = task.get("priority", "P2")
-    scope = ", ".join(task.get("scope", []))
-    scope_text = f" scope: {scope}" if scope else ""
-    source = task.get("source") or ""
-    source_text = f" 来源: {source}" if source else ""
-    acceptance = task.get("acceptance", [])
-    acceptance_text = f" 验收: {'; '.join(acceptance)}" if acceptance else ""
-    depends_on = task.get("depends_on", [])
-    depends_text = f" 依赖: {', '.join(depends_on)}" if depends_on else ""
-    return f"- [ ] `{task['id']}` {priority} {task['title']}{owner}{scope_text}{source_text}{acceptance_text}{depends_text}"
+def table_cell(value: str) -> str:
+    text = value.replace("|", "\\|").replace("\n", "<br>")
+    return text or "未填写"
+
+
+def code_items(items: list[str]) -> str:
+    if not items:
+        return "未声明"
+    return "<br>".join(f"`{table_cell(item)}`" for item in items)
+
+
+def render_task_table(tasks: list[dict[str, Any]]) -> list[str]:
+    lines = [
+        "| ID | 优先级 | 任务 | 负责人 | Scope | 来源 |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for task in tasks:
+        lines.append(
+            " | ".join(
+                [
+                    f"| `{task['id']}`",
+                    table_cell(task.get("priority", "P2")),
+                    table_cell(task["title"]),
+                    table_cell(task.get("owner_agent") or "未指定"),
+                    code_items(task.get("scope", [])),
+                    table_cell(task.get("source") or "未填写"),
+                ]
+            )
+            + " |"
+        )
+    return lines
+
+
+def render_task_details(tasks: list[dict[str, Any]]) -> list[str]:
+    detail_lines: list[str] = []
+    for task in tasks:
+        acceptance = task.get("acceptance", [])
+        depends_on = task.get("depends_on", [])
+        if not acceptance and not depends_on:
+            continue
+        if not detail_lines:
+            detail_lines.extend(["", "**验收 / 依赖**", ""])
+        if acceptance:
+            detail_lines.append(f"- `{task['id']}` 验收：")
+            detail_lines.extend(f"  - {item}" for item in acceptance)
+        if depends_on:
+            detail_lines.append(f"- `{task['id']}` 依赖：{', '.join(depends_on)}")
+    return detail_lines
 
 
 def sort_tasks_for_board(tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -69,7 +105,8 @@ def render_current_board(board: dict[str, Any]) -> str:
             for lane in sorted(lanes):
                 if len(lanes) > 1 or lane != DEFAULT_LANE:
                     lines.extend([f"### {lane}", ""])
-                lines.extend(task_line(task) for task in lanes[lane])
+                lines.extend(render_task_table(lanes[lane]))
+                lines.extend(render_task_details(lanes[lane]))
                 lines.append("")
         else:
             lines.append("- [ ] 暂无")

@@ -59,6 +59,7 @@ def default_board() -> dict[str, Any]:
         "next_id": 1,
         "created_at": created_at,
         "updated_at": created_at,
+        "agents": [],
         "tasks": [],
         "archive": [],
     }
