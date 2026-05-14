@@ -1,44 +1,44 @@
-# Changelog
+# 更新日志
 
-All notable changes to `ai-board` are documented here.
+`ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
 ## v0.1.0-alpha.1 - 2026-05-14
 
-First usable alpha release.
+首个可试用 alpha 版本。
 
-### Added
+### 新增
 
-- AI-native onboarding flow with `ai-board onboard --init-if-missing`.
-- Local board source of truth at `.ai-board/board.json`.
-- Generated Markdown board views under `docs/`.
-- Guardrail document generation through `ai-board init`.
-- Task workflow commands: `add`, `schedule`, `start`, `complete`, `archive`, `block`, `status`, `show`.
-- Agent identity pool with `agents claim`, `agents list`, and `agents release`.
-- Path-level scope locks, lock leases, `renew`, `unlock`, `locks`, and conflict checks.
-- Task lanes, sources, acceptance criteria, and simple dependency validation.
-- Event log at `.ai-board/events.jsonl` and `history` command.
-- `doctor` project health check.
-- Project config at `.ai-board/config.json` for language, default lane, default agent kind, and default lease.
-- Chinese and English generated board labels.
-- Bundled AI usage guide through `ai-board skills get core`.
-- GitHub Actions CI for ruff, Python 3.10/3.11/3.12 tests, and wheel/sdist build artifacts.
+- 新增 AI 原生接手流程：`ai-board onboard --init-if-missing`。
+- 使用 `.ai-board/board.json` 作为本地唯一真相源。
+- 自动生成 Markdown 看板视图到 `docs/`。
+- `ai-board init` 可生成 AI 原生开发规范文档。
+- 任务工作流命令：`add`、`schedule`、`start`、`complete`、`archive`、`block`、`status`、`show`。
+- Agent 身份池：`agents claim`、`agents list`、`agents release`。
+- 路径级 scope lock、锁租约、`renew`、`unlock`、`locks` 和冲突检查。
+- 任务泳道、来源、验收标准和简单依赖校验。
+- `.ai-board/events.jsonl` 事件日志和 `history` 命令。
+- `doctor` 项目健康检查。
+- `.ai-board/config.json` 项目配置，支持默认语言、默认泳道、默认 agent 类型和默认租约。
+- 生成看板支持中文 / 英文基础文案。
+- `ai-board skills get core` 内置 AI 使用说明。
+- GitHub Actions CI：ruff、Python 3.10/3.11/3.12 单元测试、wheel/sdist 构建。
 
-### Changed
+### 调整
 
-- Business-layer expected errors now use `BoardError` instead of relying on `SystemExit`.
-- `complete` releases the task owner's agent identity while keeping ownership history on the task.
-- Scope paths are normalized and checked to reject absolute paths and paths that leave the project.
-- `board.lock` includes metadata and can recover from stale locks.
-- Package metadata now uses SPDX-style `license = "MIT"`.
+- 业务层预期错误改为使用 `BoardError`，不再主要依赖 `SystemExit`。
+- `complete` 会释放任务拥有者的 agent 身份，同时保留任务历史 owner。
+- scope 路径会做规范化，并拒绝绝对路径和跳出项目根的路径。
+- `board.lock` 写入元数据，并支持 stale lock 恢复。
+- Python 包元数据使用 `license = "MIT"`。
 
-### Current Boundaries
+### 当前边界
 
-- This is an alpha release, not a stable workflow engine.
-- Scope locking is path-level safety, not semantic code ownership.
-- Dependency support is intentionally simple and does not provide a full planning graph.
-- SQLite storage, `reopen`, richer agent recovery, PyPI publishing, and static type checking are not included yet.
+- 这是 alpha 版本，不是稳定工作流引擎。
+- scope lock 是路径级防撞，不理解代码语义。
+- 依赖校验保持简单，不提供完整 planning graph。
+- 暂未包含 SQLite 存储、`reopen`、更完整的 agent 恢复、PyPI 发布和静态类型检查。
 
-### Verified
+### 发布前验证
 
 - `ruff check .`
 - `python -m unittest discover -s tests`

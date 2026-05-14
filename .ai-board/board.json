@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 41,
+  "next_id": 42,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-14T10:37:42+00:00",
+  "updated_at": "2026-05-14T10:58:30+00:00",
   "tasks": [
     {
       "id": "T-0037",
@@ -1289,6 +1289,40 @@
       "started_at": "2026-05-14T10:34:48+00:00",
       "completed_at": "2026-05-14T10:37:42+00:00",
       "archived_at": "2026-05-14T10:37:42+00:00"
+    },
+    {
+      "id": "T-0041",
+      "title": "修正 v0.1.0-alpha.1 中文发布口径",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户反馈",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "CHANGELOG 和 GitHub Release notes 改为中文",
+        "GitHub 仓库 About 简介改为中文",
+        "确认 Release 在侧栏按 release 展示"
+      ],
+      "verification": "GitHub Release v0.1.0-alpha.1 已改为中文说明；isPrerelease=false，可作为 Latest Release 展示；仓库 About 简介已确认是中文；CHANGELOG 已改为中文。验证通过：unittest、ruff、doctor、conflicts。",
+      "leftovers": "无",
+      "created_at": "2026-05-14T10:50:02+00:00",
+      "updated_at": "2026-05-14T10:58:30+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T10:50:02+00:00",
+      "started_at": "2026-05-14T10:50:02+00:00",
+      "completed_at": "2026-05-14T10:58:20+00:00",
+      "archived_at": "2026-05-14T10:58:30+00:00"
     }
   ],
   "agents": [
@@ -1299,9 +1333,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-14T10:37:42+00:00",
+      "updated_at": "2026-05-14T10:58:20+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-14T10:37:42+00:00"
+      "released_at": "2026-05-14T10:58:20+00:00"
     }
   ]
 }
