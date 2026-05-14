@@ -10,10 +10,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .errors import BoardError, BoardLockError, BoardSchemaError, TaskNotFoundError
 
 BOARD_DIR = ".ai-board"
 BOARD_FILE = "board.json"
 EVENTS_FILE = "events.jsonl"
+CONFIG_FILE = "config.json"
 DOCS_DIR = "docs"
 
 STATUSES = ("inbox", "scheduled", "active", "done", "archived", "blocked")
@@ -41,6 +43,10 @@ class Paths:
     @property
     def events_file(self) -> Path:
         return self.board_dir / EVENTS_FILE
+
+    @property
+    def config_file(self) -> Path:
+        return self.board_dir / CONFIG_FILE
 
     @property
     def docs_dir(self) -> Path:
@@ -85,38 +91,84 @@ def default_board() -> dict[str, Any]:
     }
 
 
+def default_config() -> dict[str, Any]:
+    return {
+        "language": "zh-CN",
+        "default_lane": "默认",
+        "default_agent_kind": "agent",
+        "default_lease_minutes": 240,
+    }
+
+
+def load_config(root: Path) -> dict[str, Any]:
+    paths = Paths(root.resolve())
+    config = default_config()
+    if not paths.config_file.exists():
+        return config
+    try:
+        loaded = json.loads(paths.config_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise BoardSchemaError(f"Config file is not valid JSON: {paths.config_file} ({error.msg} at line {error.lineno}, column {error.colno})") from error
+    except OSError as error:
+        raise BoardError(f"Could not read config file: {paths.config_file} ({error})") from error
+    if not isinstance(loaded, dict):
+        raise BoardSchemaError("Config file is invalid: top-level value must be an object.")
+    config.update({key: value for key, value in loaded.items() if key in config})
+    if config["language"] not in ("zh-CN", "en-US"):
+        raise BoardSchemaError("Config file is invalid: language must be zh-CN or en-US.")
+    if not isinstance(config["default_lane"], str) or not config["default_lane"].strip():
+        raise BoardSchemaError("Config file is invalid: default_lane must be a non-empty string.")
+    if not isinstance(config["default_agent_kind"], str) or not config["default_agent_kind"].strip():
+        raise BoardSchemaError("Config file is invalid: default_agent_kind must be a non-empty string.")
+    try:
+        config["default_lease_minutes"] = int(config["default_lease_minutes"])
+    except (TypeError, ValueError) as error:
+        raise BoardSchemaError("Config file is invalid: default_lease_minutes must be a number.") from error
+    return config
+
+
+def init_config(root: Path, force: bool = False) -> dict[str, Any]:
+    paths = Paths(root.resolve())
+    if paths.config_file.exists() and not force:
+        return load_config(root)
+    config = default_config()
+    paths.board_dir.mkdir(parents=True, exist_ok=True)
+    paths.config_file.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return config
+
+
 def load_board(root: Path) -> dict[str, Any]:
     paths = Paths(root.resolve())
     if not paths.board_file.exists():
-        raise SystemExit("Board not found. Run `ai-board init` first.")
+        raise BoardError("Board not found. Run `ai-board init` first.")
     try:
         board = json.loads(paths.board_file.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
-        raise SystemExit(f"Board file is not valid JSON: {paths.board_file} ({error.msg} at line {error.lineno}, column {error.colno})") from error
+        raise BoardSchemaError(f"Board file is not valid JSON: {paths.board_file} ({error.msg} at line {error.lineno}, column {error.colno})") from error
     except OSError as error:
-        raise SystemExit(f"Could not read board file: {paths.board_file} ({error})") from error
+        raise BoardError(f"Could not read board file: {paths.board_file} ({error})") from error
     return normalize_board(board)
 
 
 def normalize_board(board: Any) -> dict[str, Any]:
     if not isinstance(board, dict):
-        raise SystemExit("Board file is invalid: top-level value must be an object.")
+        raise BoardSchemaError("Board file is invalid: top-level value must be an object.")
     version = board.get("schema_version", SCHEMA_VERSION)
     if version != SCHEMA_VERSION:
-        raise SystemExit(f"Unsupported board schema_version: {version}. Supported version: {SCHEMA_VERSION}.")
+        raise BoardSchemaError(f"Unsupported board schema_version: {version}. Supported version: {SCHEMA_VERSION}.")
 
     changed_at = now_iso()
     board["schema_version"] = SCHEMA_VERSION
     project = board.setdefault("project", {})
     if not isinstance(project, dict):
-        raise SystemExit("Board file is invalid: project must be an object.")
+        raise BoardSchemaError("Board file is invalid: project must be an object.")
     project.setdefault("name", "")
     project.setdefault("current_goal", "")
 
     try:
         board["next_id"] = int(board.get("next_id", 1))
     except (TypeError, ValueError) as error:
-        raise SystemExit("Board file is invalid: next_id must be a number.") from error
+        raise BoardSchemaError("Board file is invalid: next_id must be a number.") from error
     board.setdefault("created_at", changed_at)
     board.setdefault("updated_at", changed_at)
     tasks = require_list(board, "tasks")
@@ -134,27 +186,27 @@ def normalize_board(board: Any) -> dict[str, Any]:
 def require_list(board: dict[str, Any], key: str) -> list[Any]:
     value = board.setdefault(key, [])
     if not isinstance(value, list):
-        raise SystemExit(f"Board file is invalid: {key} must be a list.")
+        raise BoardSchemaError(f"Board file is invalid: {key} must be a list.")
     return value
 
 
 def normalize_task(task: Any, archived: bool) -> dict[str, Any]:
     if not isinstance(task, dict):
-        raise SystemExit("Board file is invalid: every task must be an object.")
+        raise BoardSchemaError("Board file is invalid: every task must be an object.")
     task_id = task.get("id")
     title = task.get("title")
     if not isinstance(task_id, str) or not task_id:
-        raise SystemExit("Board file is invalid: every task needs a non-empty string id.")
+        raise BoardSchemaError("Board file is invalid: every task needs a non-empty string id.")
     if not isinstance(title, str) or not title:
-        raise SystemExit(f"Board file is invalid: task {task_id} needs a non-empty string title.")
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} needs a non-empty string title.")
     status = task.get("status", "archived" if archived else "inbox")
     if status not in STATUSES:
-        raise SystemExit(f"Board file is invalid: task {task_id} has invalid status {status}.")
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} has invalid status {status}.")
     task["status"] = status
     task.setdefault("description", "")
     task.setdefault("priority", "P2")
     if task["priority"] not in PRIORITIES:
-        raise SystemExit(f"Board file is invalid: task {task_id} has invalid priority {task['priority']}.")
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} has invalid priority {task['priority']}.")
     task.setdefault("lane", "默认")
     task.setdefault("source", "")
     task.setdefault("owner_agent", "")
@@ -174,21 +226,21 @@ def normalize_task(task: Any, archived: bool) -> dict[str, Any]:
 def ensure_task_list(task: dict[str, Any], key: str, task_id: str) -> None:
     value = task.setdefault(key, [])
     if not isinstance(value, list):
-        raise SystemExit(f"Board file is invalid: task {task_id} field {key} must be a list.")
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} field {key} must be a list.")
     if any(not isinstance(item, str) for item in value):
-        raise SystemExit(f"Board file is invalid: task {task_id} field {key} must contain only strings.")
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} field {key} must contain only strings.")
 
 
 def normalize_agent(agent: Any) -> dict[str, Any]:
     if not isinstance(agent, dict):
-        raise SystemExit("Board file is invalid: every agent must be an object.")
+        raise BoardSchemaError("Board file is invalid: every agent must be an object.")
     agent_id = agent.get("id")
     if not isinstance(agent_id, str) or not agent_id:
-        raise SystemExit("Board file is invalid: every agent needs a non-empty string id.")
+        raise BoardSchemaError("Board file is invalid: every agent needs a non-empty string id.")
     agent.setdefault("kind", agent_id.rsplit("-", 1)[0] if "-" in agent_id else agent_id)
     status = agent.get("status", "idle")
     if status not in ("idle", "busy"):
-        raise SystemExit(f"Board file is invalid: agent {agent_id} has invalid status {status}.")
+        raise BoardSchemaError(f"Board file is invalid: agent {agent_id} has invalid status {status}.")
     agent["status"] = status
     agent.setdefault("task_id", "")
     agent.setdefault("lease_expires_at", "")
@@ -285,7 +337,7 @@ def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05, s
             content = json.dumps(lock_metadata(command), ensure_ascii=False, indent=2) + "\n"
             os.write(handle, content.encode("utf-8"))
             break
-        except FileExistsError:
+        except FileExistsError as error:
             clear_stale_lock(paths.lock_file, stale_seconds)
             if not paths.lock_file.exists():
                 continue
@@ -294,7 +346,7 @@ def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05, s
                 stale, reason = lock_is_stale(paths.lock_file, stale_seconds)
                 detail = f" metadata={metadata}" if metadata else ""
                 stale_text = f" stale={reason}" if stale else ""
-                raise SystemExit(f"Board is locked: {paths.lock_file}.{stale_text}{detail}")
+                raise BoardLockError(f"Board is locked: {paths.lock_file}.{stale_text}{detail}") from error
             time.sleep(poll_interval)
 
     try:
@@ -302,10 +354,17 @@ def board_lock(root: Path, timeout: float = 10.0, poll_interval: float = 0.05, s
     finally:
         if handle is not None:
             os.close(handle)
-        try:
-            paths.lock_file.unlink()
-        except FileNotFoundError:
-            pass
+        deadline = time.monotonic() + 1.0
+        while True:
+            try:
+                paths.lock_file.unlink()
+                break
+            except FileNotFoundError:
+                break
+            except PermissionError:
+                if time.monotonic() >= deadline:
+                    break
+                time.sleep(poll_interval)
 
 
 def save_board(root: Path, board: dict[str, Any]) -> None:
@@ -344,16 +403,16 @@ def read_events(root: Path, task_id: str = "") -> list[dict[str, Any]]:
     try:
         lines = paths.events_file.read_text(encoding="utf-8").splitlines()
     except OSError as error:
-        raise SystemExit(f"Could not read event log: {paths.events_file} ({error})") from error
+        raise BoardError(f"Could not read event log: {paths.events_file} ({error})") from error
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
             continue
         try:
             event = json.loads(line)
         except json.JSONDecodeError as error:
-            raise SystemExit(f"Event log is not valid JSONL: {paths.events_file} line {line_number} ({error.msg})") from error
+            raise BoardSchemaError(f"Event log is not valid JSONL: {paths.events_file} line {line_number} ({error.msg})") from error
         if not isinstance(event, dict):
-            raise SystemExit(f"Event log is invalid: {paths.events_file} line {line_number} must be an object.")
+            raise BoardSchemaError(f"Event log is invalid: {paths.events_file} line {line_number} must be an object.")
         if normalized_task_id and str(event.get("task_id", "")).upper() != normalized_task_id:
             continue
         events.append(event)
@@ -368,6 +427,7 @@ def init_board(root: Path, project_name: str = "", force: bool = False) -> dict[
     board = default_board()
     board["project"]["name"] = project_name or paths.root.name
     save_board(root, board)
+    init_config(root)
     return board
 
 
@@ -385,7 +445,7 @@ def find_task(board: dict[str, Any], task_id: str) -> dict[str, Any]:
     for task in board["archive"]:
         if task["id"].upper() == normalized:
             return task
-    raise SystemExit(f"Task not found: {task_id}")
+    raise TaskNotFoundError(f"Task not found: {task_id}")
 
 
 def active_tasks(board: dict[str, Any]) -> list[dict[str, Any]]:
@@ -409,7 +469,7 @@ def normalize_scope_path(path: str) -> str:
         return ""
     value = raw.replace("\\", "/")
     if value.startswith("/") or re.match(r"^[A-Za-z]:($|/)", value):
-        raise SystemExit(f"Invalid scope path: {raw}. Scope must be relative to the project.")
+        raise BoardError(f"Invalid scope path: {raw}. Scope must be relative to the project.")
 
     parts: list[str] = []
     for part in value.split("/"):
@@ -417,7 +477,7 @@ def normalize_scope_path(path: str) -> str:
             continue
         if part == "..":
             if not parts:
-                raise SystemExit(f"Invalid scope path: {raw}. Scope cannot leave the project.")
+                raise BoardError(f"Invalid scope path: {raw}. Scope cannot leave the project.")
             parts.pop()
             continue
         parts.append(part)

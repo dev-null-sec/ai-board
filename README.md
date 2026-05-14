@@ -12,6 +12,8 @@
 
 给 AI agent 用的本地计划看板。你跟 AI 对话提需求，它帮你排期、跟踪、防冲突，而不是直接开改。
 
+当前版本：`v0.1.0-alpha.1`，第一个可试用 alpha。
+
 ## 为什么做这个
 
 用 AI 写代码最大的坑不是代码质量，是上下文管理。
@@ -126,12 +128,15 @@ AI / 人读取状态，继续推进
 | --- | --- |
 | 真相源 | `.ai-board/board.json` 是唯一写入源，Markdown 看板只是生成视图。 |
 | 多 agent | 重叠文件范围默认被拦住；这是路径级防撞，不是理解代码语义的万能锁。 |
-| scope lock | 默认 240 分钟租约；任务 `complete` 后释放 agent 身份，`archive` 把已验收任务移出当前看板。 |
+| 项目配置 | `.ai-board/config.json` 可设置默认语言、默认泳道、默认 agent 类型和默认租约。 |
+| scope lock | 默认 240 分钟租约；可通过项目配置调整；任务 `complete` 后释放 agent 身份，`archive` 把已验收任务移出当前看板。 |
 | 多泳道 | 一个看板可以分平台开发、课程内容、文档等泳道，但只有一个真相源。 |
 | 简单依赖 | 任务可以声明依赖，`start` 默认会挡住依赖未完成的任务；复杂依赖图暂时不做。 |
 | 自检 | `doctor` 检查 board、生成文档、事件日志、scope 冲突和 agent 状态。 |
 | 历史 | `history` 从 `.ai-board/events.jsonl` 查看任务变更记录。 |
 | 生命周期 | `inbox → scheduled → active → done → archived`。 |
+
+默认生成中文看板。如果项目主要使用英文，可以把 `.ai-board/config.json` 里的 `language` 改成 `en-US`，再运行 `ai-board render`。
 
 ## FAQ
 

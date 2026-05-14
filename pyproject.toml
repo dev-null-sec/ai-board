@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-board"
-version = "0.1.0"
+version = "0.1.0a1"
 description = "A lightweight local planning board CLI for AI-assisted projects."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "ai-board contributors" }]
 keywords = ["ai", "agents", "planning", "cli", "kanban"]
 classifiers = [
@@ -22,5 +22,16 @@ classifiers = [
 [project.scripts]
 ai-board = "ai_board.cli:main"
 
+[project.optional-dependencies]
+dev = ["build", "ruff"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

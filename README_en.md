@@ -12,6 +12,8 @@ English | [中文](./README.md)
 
 A local planning board for AI agents. You talk to the AI about what you need, it schedules, tracks, and prevents conflicts — instead of jumping straight into code.
 
+Current version: `v0.1.0-alpha.1`, the first usable alpha.
+
 ## Why I built this
 
 The biggest pitfall in AI-assisted coding isn't code quality — it's context management.
@@ -126,12 +128,15 @@ Humans / agents read the state and continue
 | --- | --- |
 | Source of truth | `.ai-board/board.json` is the only write target; Markdown boards are generated views. |
 | Multi-agent work | Overlapping file scopes are blocked by default; this is path-level safety, not a semantic code lock. |
-| Scope lock | Default 240-minute lease; `complete` releases the agent identity, and `archive` moves verified work out of the current board. |
+| Project config | `.ai-board/config.json` can set the default language, lane, agent kind, and lease. |
+| Scope lock | Default 240-minute lease; this can be changed in project config. `complete` releases the agent identity, and `archive` moves verified work out of the current board. |
 | Lanes | One board can have platform, content, docs, and other lanes while keeping one source of truth. |
 | Simple dependencies | Tasks can declare dependencies; `start` blocks unfinished dependencies by default. Complex dependency graphs are out of scope for now. |
 | Doctor | `doctor` checks the board, generated docs, event log, scope conflicts, and agent state. |
 | History | `history` reads `.ai-board/events.jsonl` and shows task changes. |
 | Lifecycle | `inbox → scheduled → active → done → archived`. |
+
+Generated boards are Chinese by default. For English projects, set `language` to `en-US` in `.ai-board/config.json`, then run `ai-board render`.
 
 ## FAQ
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .errors import BoardError
 from .guardrails import init_guardrail_docs
 from .render import render_docs
 from .store import Paths, init_board, load_board
-
 
 IGNORED_DIRS = {
     ".ai-board",
@@ -135,7 +135,7 @@ def onboard_project(root: Path, project_name: str = "", init_if_missing: bool = 
     board_state = "existing"
     if not board_exists(root):
         if not init_if_missing:
-            raise SystemExit("Board not found. Run `ai-board onboard --init-if-missing` or `ai-board init` first.")
+            raise BoardError("Board not found. Run `ai-board onboard --init-if-missing` or `ai-board init` first.")
         board = init_board(root, project_name)
         init_guardrail_docs(root)
         render_docs(root, board)

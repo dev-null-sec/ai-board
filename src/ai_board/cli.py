@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .errors import BoardError
 from .guardrails import init_guardrail_docs
 from .onboarding import format_onboard_result, onboard_project
 from .operations import (
-    DEFAULT_LEASE_MINUTES,
     add_task,
     agent_state,
     archive_task,
@@ -18,8 +18,8 @@ from .operations import (
     find_conflicts,
     list_agents,
     lock_is_expired,
-    renew_task_lock,
     release_agent,
+    renew_task_lock,
     schedule_task,
     set_goal,
     set_status,
@@ -28,9 +28,7 @@ from .operations import (
 )
 from .render import render_archive, render_current_board, render_docs
 from .skill_guides import SKILLS, get_skill, skill_names
-from .store import PRIORITIES, STATUSES, find_task, init_board, load_board, read_events
-from .store import Paths, lock_is_stale, read_lock_metadata
-
+from .store import PRIORITIES, STATUSES, Paths, find_task, init_board, init_config, load_board, load_config, lock_is_stale, read_events, read_lock_metadata
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -40,6 +38,10 @@ if hasattr(sys.stderr, "reconfigure"):
 
 def root_path(args: argparse.Namespace) -> Path:
     return Path(args.root).expanduser().resolve()
+
+
+def config_value(args: argparse.Namespace, key: str) -> Any:
+    return load_config(root_path(args))[key]
 
 
 def print_task(task: dict[str, Any]) -> None:
@@ -55,6 +57,7 @@ def print_agent(agent: dict[str, Any]) -> None:
 
 def cmd_init(args: argparse.Namespace) -> int:
     board = init_board(root_path(args), args.project_name, args.force)
+    init_config(root_path(args), args.force)
     written_docs = init_guardrail_docs(root_path(args), args.overwrite_docs)
     render_docs(root_path(args), board)
     print(f"initialized: {root_path(args)}")
@@ -70,7 +73,8 @@ def cmd_onboard(args: argparse.Namespace) -> int:
 
 
 def cmd_add(args: argparse.Namespace) -> int:
-    task = add_task(root_path(args), args.title, args.priority, args.description, args.lane, args.source, args.acceptance, args.depends_on)
+    lane = args.lane if args.lane is not None else config_value(args, "default_lane")
+    task = add_task(root_path(args), args.title, args.priority, args.description, lane, args.source, args.acceptance, args.depends_on)
     print_task(task)
     return 0
 
@@ -82,13 +86,15 @@ def cmd_schedule(args: argparse.Namespace) -> int:
 
 
 def cmd_start(args: argparse.Namespace) -> int:
-    task = start_task(root_path(args), args.task_id, args.agent, args.scope, args.force, args.lease_minutes)
+    lease_minutes = args.lease_minutes if args.lease_minutes is not None else int(config_value(args, "default_lease_minutes"))
+    task = start_task(root_path(args), args.task_id, args.agent, args.scope, args.force, lease_minutes)
     print_task(task)
     return 0
 
 
 def cmd_renew(args: argparse.Namespace) -> int:
-    task = renew_task_lock(root_path(args), args.task_id, args.agent, args.lease_minutes)
+    lease_minutes = args.lease_minutes if args.lease_minutes is not None else int(config_value(args, "default_lease_minutes"))
+    task = renew_task_lock(root_path(args), args.task_id, args.agent, lease_minutes)
     print_task(task)
     return 0
 
@@ -100,7 +106,9 @@ def cmd_unlock(args: argparse.Namespace) -> int:
 
 
 def cmd_agents_claim(args: argparse.Namespace) -> int:
-    agent = claim_agent(root_path(args), args.kind, args.lease_minutes)
+    kind = args.kind if args.kind is not None else str(config_value(args, "default_agent_kind"))
+    lease_minutes = args.lease_minutes if args.lease_minutes is not None else int(config_value(args, "default_lease_minutes"))
+    agent = claim_agent(root_path(args), kind, lease_minutes)
     print_agent(agent)
     return 0
 
@@ -185,7 +193,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     board: dict[str, Any] | None = None
     try:
         board = load_board(root)
-    except SystemExit as error:
+    except BoardError as error:
         issues.append(f"board: {error}; fix .ai-board/board.json or restore it from version control")
 
     if board is not None:
@@ -214,9 +222,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         else:
             print("scope conflicts: ok")
 
+        language = str(load_config(root)["language"])
         expected_docs = {
-            paths.current_board_doc: render_current_board(board),
-            paths.archive_doc: render_archive(board),
+            paths.current_board_doc: render_current_board(board, language),
+            paths.archive_doc: render_archive(board, language),
         }
         for doc_path, expected in expected_docs.items():
             if not doc_path.exists():
@@ -234,7 +243,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     try:
         events = read_events(root)
-    except SystemExit as error:
+    except BoardError as error:
         issues.append(f"event log: {error}; fix or move .ai-board/events.jsonl")
     else:
         print(f"event log: ok ({len(events)} events)")
@@ -338,7 +347,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("title")
     add.add_argument("--priority", choices=PRIORITIES, default="P2")
     add.add_argument("--description", default="")
-    add.add_argument("--lane", default="默认", help="Planning lane, for example platform, content, docs, or default.")
+    add.add_argument("--lane", default=None, help="Planning lane, for example platform, content, docs, or default.")
     add.add_argument("--source", default="", help="Where this task came from.")
     add.add_argument("--acceptance", action="append", default=[], help="Acceptance criterion. Can be passed multiple times.")
     add.add_argument("--depends-on", nargs="*", default=[], help="Task IDs this task depends on.")
@@ -353,13 +362,13 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--agent", required=True)
     start.add_argument("--scope", nargs="*", default=[])
     start.add_argument("--force", action="store_true", help="Start even when scope overlaps an active task.")
-    start.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="Lock lease in minutes. Use 0 for no expiry.")
+    start.add_argument("--lease-minutes", type=int, default=None, help="Lock lease in minutes. Use 0 for no expiry.")
     start.set_defaults(func=cmd_start)
 
     renew = sub.add_parser("renew", help="Renew an active task scope lock.")
     renew.add_argument("task_id")
     renew.add_argument("--agent", required=True)
-    renew.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="New lock lease in minutes. Use 0 for no expiry.")
+    renew.add_argument("--lease-minutes", type=int, default=None, help="New lock lease in minutes. Use 0 for no expiry.")
     renew.set_defaults(func=cmd_renew)
 
     unlock = sub.add_parser("unlock", help="Release an active task scope lock without completing the task.")
@@ -372,8 +381,8 @@ def build_parser() -> argparse.ArgumentParser:
     agents_sub = agents.add_subparsers(dest="agents_command", required=True)
 
     agents_claim = agents_sub.add_parser("claim", help="Claim an idle agent identity, creating one if needed.")
-    agents_claim.add_argument("--kind", default="agent", help="Agent family, for example codex or claude.")
-    agents_claim.add_argument("--lease-minutes", type=int, default=DEFAULT_LEASE_MINUTES, help="Identity lease in minutes. Use 0 for no expiry.")
+    agents_claim.add_argument("--kind", default=None, help="Agent family, for example codex or claude.")
+    agents_claim.add_argument("--lease-minutes", type=int, default=None, help="Identity lease in minutes. Use 0 for no expiry.")
     agents_claim.set_defaults(func=cmd_agents_claim)
 
     agents_list = agents_sub.add_parser("list", help="List registered agent identities.")
@@ -444,4 +453,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except BoardError as error:
+        print(str(error), file=sys.stderr)
+        return 1

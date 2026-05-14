@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .errors import BoardError
 
 CORE_GUIDE = """---
 name: core
@@ -112,6 +113,11 @@ Use lanes to separate different work streams while keeping one source of truth.
 For example: `平台开发`, `课程内容`, `文档治理`, `默认`.
 Dependencies can be declared with `--depends-on`. They must point to existing
 tasks, cannot point back to the same task, and simple cycles are rejected.
+
+Project defaults live in `.ai-board/config.json`. If the project usually uses
+English, set `language` to `en-US` and run `ai-board render`. The same file can
+also set `default_lane`, `default_agent_kind`, and `default_lease_minutes` so
+agents do not have to repeat them on every command.
 
 Schedule work before coding:
 
@@ -274,7 +280,7 @@ def skill_names() -> list[str]:
 def get_skill(name: str, full: bool = False) -> str:
     try:
         skill = SKILLS[name]
-    except KeyError:
+    except KeyError as error:
         available = ", ".join(skill_names())
-        raise SystemExit(f"Unknown skill: {name}. Available skills: {available}.")
+        raise BoardError(f"Unknown skill: {name}. Available skills: {available}.") from error
     return skill["full_content" if full else "content"]

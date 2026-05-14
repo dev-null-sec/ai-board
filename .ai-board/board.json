@@ -4,10 +4,54 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 34,
+  "next_id": 41,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-14T09:03:21+00:00",
-  "tasks": [],
+  "updated_at": "2026-05-14T10:37:42+00:00",
+  "tasks": [
+    {
+      "id": "T-0037",
+      "title": "补充 agent 过期身份的 doctor 提醒",
+      "description": "",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "多 agent 协作",
+      "source": "外部 review 采纳",
+      "owner_agent": "",
+      "scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "active task 的 owner agent lease 过期时 doctor 给出明确提醒"
+      ],
+      "verification": "",
+      "leftovers": "",
+      "created_at": "2026-05-14T09:37:17+00:00",
+      "updated_at": "2026-05-14T09:37:17+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0038",
+      "title": "评估并实现任务 reopen 命令",
+      "description": "",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "工作流",
+      "source": "外部 review 采纳",
+      "owner_agent": "",
+      "scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "done 或 archived 任务可带 reason 回到 scheduled",
+        "reopen 写入事件日志并重新渲染看板"
+      ],
+      "verification": "",
+      "leftovers": "",
+      "created_at": "2026-05-14T09:37:17+00:00",
+      "updated_at": "2026-05-14T09:37:17+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    }
+  ],
   "archive": [
     {
       "id": "T-0001",
@@ -1077,6 +1121,174 @@
       "started_at": "2026-05-14T09:02:35+00:00",
       "completed_at": "2026-05-14T09:03:06+00:00",
       "archived_at": "2026-05-14T09:03:21+00:00"
+    },
+    {
+      "id": "T-0034",
+      "title": "引入自定义异常层并统一 CLI 错误出口",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "工程韧性",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "业务层不再主要依赖 SystemExit 表达预期错误",
+        "CLI 入口能把 BoardError 转成可读错误和非零退出码",
+        "现有错误路径测试通过"
+      ],
+      "verification": "已新增 BoardError 异常层，业务预期错误改为抛 BoardError/子类，CLI main 统一捕获并返回 1；doctor 同步捕获 BoardError；单元测试 37 项通过。",
+      "leftovers": "后续仍可继续细分更多异常类型，但当前已先解决 CLI 与库调用的基础边界。",
+      "created_at": "2026-05-14T09:37:16+00:00",
+      "updated_at": "2026-05-14T09:52:33+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T09:37:18+00:00",
+      "started_at": "2026-05-14T09:37:18+00:00",
+      "completed_at": "2026-05-14T09:52:33+00:00",
+      "archived_at": "2026-05-14T09:52:33+00:00"
+    },
+    {
+      "id": "T-0035",
+      "title": "新增项目级配置文件",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "工程韧性",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        ".ai-board/config.json 可持久化默认语言、lane、agent kind 和 lease",
+        "旧项目无配置时保持当前默认行为"
+      ],
+      "verification": "已新增 .ai-board/config.json，init 会在缺失时创建配置；load_config 支持默认值合并和基础校验；add、agents claim、start、renew 已接入 default_lane、default_agent_kind、default_lease_minutes；旧项目缺失 config 时保持原默认行为；单元测试 39 项通过。",
+      "leftovers": "language 字段已写入配置，但渲染语言切换在 T-0036 继续完成。",
+      "created_at": "2026-05-14T09:37:16+00:00",
+      "updated_at": "2026-05-14T09:55:35+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T09:52:34+00:00",
+      "started_at": "2026-05-14T09:52:34+00:00",
+      "completed_at": "2026-05-14T09:55:35+00:00",
+      "archived_at": "2026-05-14T09:55:35+00:00"
+    },
+    {
+      "id": "T-0036",
+      "title": "支持看板渲染语言配置",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "文档体验",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "中文默认不变",
+        "配置为英文时生成英文看板标题和表头"
+      ],
+      "verification": "已支持 .ai-board/config.json 的 language 配置；中文默认不变，en-US 会生成英文看板标题、状态栏目、表头、空状态和归档字段；doctor 已按配置检查生成文档；README、README_en、skill guide 和当前状态已同步；单元测试 40 项、doctor、冲突检查通过。",
+      "leftovers": "reopen 命令和 agent 过期身份增强已排在后续任务 T-0037/T-0038。",
+      "created_at": "2026-05-14T09:37:17+00:00",
+      "updated_at": "2026-05-14T10:01:14+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T09:55:35+00:00",
+      "started_at": "2026-05-14T09:55:35+00:00",
+      "completed_at": "2026-05-14T10:01:13+00:00",
+      "archived_at": "2026-05-14T10:01:14+00:00"
+    },
+    {
+      "id": "T-0039",
+      "title": "补 GitHub Actions CI 与构建校验",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "工程韧性",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        ".github",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "GitHub Actions 在 Python 3.10/3.11/3.12 跑 unittest",
+        "CI 运行 ruff check",
+        "CI 构建 wheel 和 sdist"
+      ],
+      "verification": "已新增 GitHub Actions CI：push/main 和 PR 会运行 ruff、Python 3.10/3.11/3.12 unittest，并构建 wheel/sdist 上传 artifact；本地已通过 ruff check、unittest 40 项、python -m build、doctor 和冲突检查。",
+      "leftovers": "暂未加入 mypy/pyright 和 PyPI 自动发布，等类型模型和发布策略稳定后再排期。",
+      "created_at": "2026-05-14T10:03:41+00:00",
+      "updated_at": "2026-05-14T10:30:07+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T10:03:41+00:00",
+      "started_at": "2026-05-14T10:03:41+00:00",
+      "completed_at": "2026-05-14T10:30:06+00:00",
+      "archived_at": "2026-05-14T10:30:07+00:00"
+    },
+    {
+      "id": "T-0040",
+      "title": "发布 v0.1.0-alpha.1 GitHub Release",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "补 CHANGELOG.md，记录首个 alpha 版本能力和边界",
+        "提交并推送 main",
+        "创建 v0.1.0-alpha.1 tag 和 GitHub Release"
+      ],
+      "verification": "已补 CHANGELOG.md 和 README 版本口径；发布前验证通过：ruff check、unittest 40 项、python -m build、doctor、冲突检查。",
+      "leftovers": "正式稳定版、PyPI 发布、mypy/pyright、reopen 和 agent 过期恢复仍留待后续版本。",
+      "created_at": "2026-05-14T10:34:47+00:00",
+      "updated_at": "2026-05-14T10:37:42+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-14T10:34:48+00:00",
+      "started_at": "2026-05-14T10:34:48+00:00",
+      "completed_at": "2026-05-14T10:37:42+00:00",
+      "archived_at": "2026-05-14T10:37:42+00:00"
     }
   ],
   "agents": [
@@ -1087,9 +1299,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-14T09:03:06+00:00",
+      "updated_at": "2026-05-14T10:37:42+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-14T09:03:06+00:00"
+      "released_at": "2026-05-14T10:37:42+00:00"
     }
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "language": "zh-CN",
+  "default_lane": "默认",
+  "default_agent_kind": "agent",
+  "default_lease_minutes": 240
+}

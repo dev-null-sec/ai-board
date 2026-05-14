@@ -6,16 +6,26 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from ai_board.cli import main
 from ai_board import store
+from ai_board.cli import main
+from ai_board.errors import BoardError
 from ai_board.store import load_board, now_iso, save_board
 
 
 class CliTests(unittest.TestCase):
+    def assert_cli_error(self, args: list[str], expected: str = "") -> str:
+        output = io.StringIO()
+        with redirect_stderr(output):
+            self.assertEqual(main(args), 1)
+        text = output.getvalue()
+        if expected:
+            self.assertIn(expected, text)
+        return text
+
     def test_init_creates_guardrail_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -35,6 +45,73 @@ class CliTests(unittest.TestCase):
             ]
             for expected_path in expected_paths:
                 self.assertTrue((root / expected_path).exists(), expected_path)
+            self.assertTrue((root / ".ai-board" / "config.json").exists())
+
+    def test_config_controls_default_lane_agent_kind_and_lease(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
+            config_file = root / ".ai-board" / "config.json"
+            config = json.loads(config_file.read_text(encoding="utf-8"))
+            config.update(
+                {
+                    "default_lane": "Docs",
+                    "default_agent_kind": "codex",
+                    "default_lease_minutes": 15,
+                }
+            )
+            config_file.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+
+            self.assertEqual(main(["--root", str(root), "add", "Config task"]), 0)
+            claim_output = io.StringIO()
+            with redirect_stdout(claim_output):
+                self.assertEqual(main(["--root", str(root), "agents", "claim"]), 0)
+            self.assertIn("codex-00", claim_output.getvalue())
+            self.assertEqual(main(["--root", str(root), "schedule", "T-0001"]), 0)
+            self.assertEqual(main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "docs"]), 0)
+
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["lane"], "Docs")
+            self.assertEqual(board["agents"][0]["kind"], "codex")
+            self.assertIn("lease_expires_at", board["tasks"][0])
+
+    def test_config_language_controls_rendered_board_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
+            config_file = root / ".ai-board" / "config.json"
+            config = json.loads(config_file.read_text(encoding="utf-8"))
+            config["language"] = "en-US"
+            config_file.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+
+            self.assertEqual(main(["--root", str(root), "add", "Write docs", "--source", "test"]), 0)
+            self.assertEqual(main(["--root", str(root), "render"]), 0)
+
+            board_text = (root / "docs" / "计划看板.md").read_text(encoding="utf-8")
+            archive_text = (root / "docs" / "归档计划看板.md").read_text(encoding="utf-8")
+            self.assertIn("# Planning Board", board_text)
+            self.assertIn("## Current Goal", board_text)
+            self.assertIn("## Inbox", board_text)
+            self.assertIn("| ID | Priority | Task | Owner | Scope | Source |", board_text)
+            self.assertIn("# Archived Planning Board", archive_text)
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("doctor: ok", doctor_output.getvalue())
+
+    def test_missing_config_keeps_defaults_for_old_projects(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
+            (root / ".ai-board" / "config.json").unlink()
+
+            self.assertEqual(main(["--root", str(root), "add", "Old project task"]), 0)
+            self.assertEqual(main(["--root", str(root), "agents", "claim"]), 0)
+
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["lane"], "默认")
+            self.assertEqual(board["agents"][0]["id"], "agent-00")
 
     def test_onboard_initializes_and_classifies_empty_project(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -179,13 +256,9 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0003"])
             main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api"])
 
-            with self.assertRaises(SystemExit) as busy_error:
-                main(["--root", str(root), "start", "T-0002", "--agent", "codex-00", "--scope", "docs"])
-            self.assertIn("busy on T-0001", str(busy_error.exception))
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "codex-00", "--scope", "docs"], "busy on T-0001")
 
-            with self.assertRaises(SystemExit) as scope_error:
-                main(["--root", str(root), "start", "T-0003", "--agent", "codex-01", "--scope", "src/api/README.md"])
-            self.assertIn("Scope is locked", str(scope_error.exception))
+            self.assert_cli_error(["--root", str(root), "start", "T-0003", "--agent", "codex-01", "--scope", "src/api/README.md"], "Scope is locked")
 
             main(["--root", str(root), "start", "T-0002", "--agent", "codex-01", "--scope", "docs"])
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
@@ -222,22 +295,14 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "init"])
             main(["--root", str(root), "add", "Task A"])
 
-            with self.assertRaises(SystemExit) as start_error:
-                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "src/a.py"])
-            self.assertIn("from inbox to active", str(start_error.exception))
+            self.assert_cli_error(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "src/a.py"], "from inbox to active")
 
-            with self.assertRaises(SystemExit) as complete_error:
-                main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
-            self.assertIn("from inbox to done", str(complete_error.exception))
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification", "checked"], "from inbox to done")
 
-            with self.assertRaises(SystemExit) as archive_error:
-                main(["--root", str(root), "archive", "T-0001"])
-            self.assertIn("from inbox to archived", str(archive_error.exception))
+            self.assert_cli_error(["--root", str(root), "archive", "T-0001"], "from inbox to archived")
 
             main(["--root", str(root), "schedule", "T-0001"])
-            with self.assertRaises(SystemExit) as scheduled_complete_error:
-                main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
-            self.assertIn("from scheduled to done", str(scheduled_complete_error.exception))
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification", "checked"], "from scheduled to done")
 
     def test_block_follows_state_machine_and_releases_active_agent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -261,9 +326,7 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0001"])
             main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/a.py"])
             main(["--root", str(root), "complete", "T-0001", "--verification", "checked"])
-            with self.assertRaises(SystemExit) as error:
-                main(["--root", str(root), "block", "T-0001"])
-            self.assertIn("from done to blocked", str(error.exception))
+            self.assert_cli_error(["--root", str(root), "block", "T-0001"], "from done to blocked")
 
     def test_conflict_detection(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -274,8 +337,7 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0001"])
             main(["--root", str(root), "schedule", "T-0002"])
             main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "src"])
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/app.py"])
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/app.py"], "Scope is locked")
             main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/app.py", "--force"])
 
             self.assertEqual(main(["--root", str(root), "conflicts"]), 0)
@@ -304,8 +366,7 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0002"])
             main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "docs"])
 
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/../docs/guide.md"])
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/../docs/guide.md"], "Scope is locked")
 
     def test_invalid_scope_paths_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -314,10 +375,8 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "add", "Task A"])
             main(["--root", str(root), "schedule", "T-0001"])
 
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "../outside"])
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "C:/outside"])
+            self.assert_cli_error(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "../outside"], "Scope cannot leave")
+            self.assert_cli_error(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "C:/outside"], "Scope must be relative")
 
     def test_expired_lock_renew_and_unlock(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -344,8 +403,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "renew", "T-0001", "--agent", "a", "--lease-minutes", "30"]), 0)
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
 
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "unlock", "T-0001", "--agent", "b"])
+            self.assert_cli_error(["--root", str(root), "unlock", "T-0001", "--agent", "b"], "owned by a")
             self.assertEqual(main(["--root", str(root), "unlock", "T-0001", "--agent", "b", "--force"]), 0)
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
             board = load_board(root)
@@ -375,8 +433,7 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0001"])
             main(["--root", str(root), "schedule", "T-0002"])
             self.assertEqual(main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/a.py"]), 0)
-            with self.assertRaises(SystemExit):
-                main(["--root", str(root), "start", "T-0002", "--agent", "codex-00", "--scope", "src/b.py"])
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "codex-00", "--scope", "src/b.py"], "busy on T-0001")
             self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "codex-01", "--scope", "src/b.py"]), 0)
 
             board = load_board(root)
@@ -477,9 +534,7 @@ class CliTests(unittest.TestCase):
 
             events_file = root / ".ai-board" / "events.jsonl"
             events_file.write_text("{ broken\n", encoding="utf-8")
-            with self.assertRaises(SystemExit) as error:
-                main(["--root", str(root), "history"])
-            self.assertIn("Event log is not valid JSONL", str(error.exception))
+            self.assert_cli_error(["--root", str(root), "history"], "Event log is not valid JSONL")
 
     def test_event_write_failure_does_not_block_board_write(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -546,19 +601,13 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "init"])
             main(["--root", str(root), "add", "Task A"])
 
-            with self.assertRaises(SystemExit) as unknown_error:
-                main(["--root", str(root), "add", "Task B", "--depends-on", "T-9999"])
-            self.assertIn("Unknown dependency", str(unknown_error.exception))
+            self.assert_cli_error(["--root", str(root), "add", "Task B", "--depends-on", "T-9999"], "Unknown dependency")
 
-            with self.assertRaises(SystemExit) as self_error:
-                main(["--root", str(root), "add", "Task B", "--depends-on", "T-0002"])
-            self.assertIn("cannot depend on itself", str(self_error.exception))
+            self.assert_cli_error(["--root", str(root), "add", "Task B", "--depends-on", "T-0002"], "cannot depend on itself")
 
             main(["--root", str(root), "add", "Task B", "--depends-on", "T-0001"])
             main(["--root", str(root), "schedule", "T-0002"])
-            with self.assertRaises(SystemExit) as start_error:
-                main(["--root", str(root), "start", "T-0002", "--agent", "a", "--scope", "src/b.py"])
-            self.assertIn("dependencies are not complete", str(start_error.exception))
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "a", "--scope", "src/b.py"], "dependencies are not complete")
 
             self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "a", "--scope", "src/b.py", "--force"]), 0)
 
@@ -572,9 +621,7 @@ class CliTests(unittest.TestCase):
             board["tasks"][0]["depends_on"] = ["T-0002"]
             save_board(root, board)
 
-            with self.assertRaises(SystemExit) as error:
-                main(["--root", str(root), "schedule", "T-0001"])
-            self.assertIn("Dependency cycle", str(error.exception))
+            self.assert_cli_error(["--root", str(root), "schedule", "T-0001"], "Dependency cycle")
 
     def test_init_keeps_existing_guardrail_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -694,7 +741,7 @@ class CliTests(unittest.TestCase):
             board_dir.mkdir()
             (board_dir / "board.json").write_text("{ broken", encoding="utf-8")
 
-            with self.assertRaises(SystemExit) as error:
+            with self.assertRaises(BoardError) as error:
                 load_board(root)
 
             self.assertIn("Board file is not valid JSON", str(error.exception))
@@ -709,7 +756,7 @@ class CliTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaises(SystemExit) as error:
+            with self.assertRaises(BoardError) as error:
                 load_board(root)
 
             self.assertIn("Unsupported board schema_version", str(error.exception))

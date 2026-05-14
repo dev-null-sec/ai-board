@@ -4,8 +4,22 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .errors import BoardError, ScopeConflictError
 from .render import render_docs
-from .store import PRIORITIES, STATUSES, active_tasks, append_event, board_lock, find_task, load_board, next_task_id, normalize_scope, now_iso, save_board
+from .store import (
+    PRIORITIES,
+    STATUSES,
+    active_tasks,
+    append_event,
+    board_lock,
+    find_task,
+    load_board,
+    load_config,
+    next_task_id,
+    normalize_scope,
+    now_iso,
+    save_board,
+)
 
 DEFAULT_LEASE_MINUTES = 240
 DEFAULT_AGENT_KIND = "agent"
@@ -36,7 +50,7 @@ def ensure_agents(board: dict[str, Any]) -> list[dict[str, Any]]:
 def normalize_agent_kind(kind: str) -> str:
     normalized = kind.strip().lower().replace(" ", "-")
     if not normalized:
-        raise SystemExit("Agent kind is required.")
+        raise BoardError("Agent kind is required.")
     return normalized
 
 
@@ -99,7 +113,11 @@ def release_agent_record(agent: dict[str, Any]) -> None:
 
 
 def claim_agent(root: Path, kind: str, lease_minutes: int = DEFAULT_LEASE_MINUTES) -> dict[str, Any]:
+    if not kind:
+        kind = str(load_config(root)["default_agent_kind"])
     normalized_kind = normalize_agent_kind(kind)
+    if lease_minutes < 0:
+        lease_minutes = int(load_config(root)["default_lease_minutes"])
     with board_lock(root):
         board = load_board(root)
         agents = ensure_agents(board)
@@ -141,12 +159,12 @@ def release_agent(root: Path, agent_id: str, force: bool = False) -> dict[str, A
         board = load_board(root)
         agent = find_agent(board, agent_id)
         if agent is None:
-            raise SystemExit(f"Agent not found: {agent_id}")
+            raise BoardError(f"Agent not found: {agent_id}")
         task_id = agent.get("task_id") or ""
         if task_id and not force:
             task = find_task(board, task_id)
             if task.get("status") == "active":
-                raise SystemExit(f"Agent is busy on active task {task_id}. Complete/archive the task or use --force.")
+                raise BoardError(f"Agent is busy on active task {task_id}. Complete/archive the task or use --force.")
         release_agent_record(agent)
         persist(root, board)
         record_event(root, "agents.release", agent=agent_id, data={"previous_task_id": task_id, "force": force})
@@ -169,7 +187,7 @@ def assign_agent_to_task(board: dict[str, Any], agent_id: str, task_id: str, lea
     state = agent_state(agent)
     current_task_id = agent.get("task_id") or ""
     if state == "busy" and current_task_id and current_task_id != task_id:
-        raise SystemExit(f"Agent {agent_id} is busy on {current_task_id}. Claim an idle identity first.")
+        raise BoardError(f"Agent {agent_id} is busy on {current_task_id}. Claim an idle identity first.")
     reserve_agent(agent, lease_minutes, task_id)
     return agent
 
@@ -185,10 +203,10 @@ def release_task_agent(board: dict[str, Any], task: dict[str, Any]) -> None:
 
 def ensure_status_transition(task: dict[str, Any], target_status: str) -> None:
     if target_status not in STATUSES:
-        raise SystemExit(f"Invalid status: {target_status}. Use one of {', '.join(STATUSES)}.")
+        raise BoardError(f"Invalid status: {target_status}. Use one of {', '.join(STATUSES)}.")
     current_status = task.get("status", "")
     if target_status not in ALLOWED_STATUS_TRANSITIONS.get(current_status, set()):
-        raise SystemExit(f"Cannot move task {task.get('id', '')} from {current_status} to {target_status}.")
+        raise BoardError(f"Cannot move task {task.get('id', '')} from {current_status} to {target_status}.")
 
 
 def transition_task(task: dict[str, Any], target_status: str) -> None:
@@ -200,7 +218,7 @@ def transition_task(task: dict[str, Any], target_status: str) -> None:
 def normalize_task_id(task_id: str) -> str:
     normalized = task_id.strip().upper()
     if not normalized:
-        raise SystemExit("Dependency task ID cannot be empty.")
+        raise BoardError("Dependency task ID cannot be empty.")
     return normalized
 
 
@@ -226,12 +244,12 @@ def preview_next_task_id(board: dict[str, Any]) -> str:
 def validate_task_dependencies(board: dict[str, Any], task_id: str, depends_on: list[str]) -> None:
     normalized_task_id = task_id.upper()
     if normalized_task_id in depends_on:
-        raise SystemExit(f"Task {task_id} cannot depend on itself.")
+        raise BoardError(f"Task {task_id} cannot depend on itself.")
     missing = [dependency for dependency in depends_on if dependency not in all_task_ids(board)]
     if missing:
-        raise SystemExit(f"Unknown dependency task(s): {', '.join(missing)}")
+        raise BoardError(f"Unknown dependency task(s): {', '.join(missing)}")
     if has_dependency_cycle(board, normalized_task_id, depends_on):
-        raise SystemExit(f"Dependency cycle detected for {task_id}.")
+        raise BoardError(f"Dependency cycle detected for {task_id}.")
 
 
 def has_dependency_cycle(board: dict[str, Any], task_id: str, depends_on: list[str]) -> bool:
@@ -268,7 +286,7 @@ def ensure_dependencies_complete(board: dict[str, Any], task: dict[str, Any], fo
         if dependency.get("status") not in ("done", "archived"):
             unfinished.append(f"{dependency_id} [{dependency.get('status')}]")
     if unfinished:
-        raise SystemExit("Task dependencies are not complete: " + ", ".join(unfinished) + ". Use --force only after confirming this is intentional.")
+        raise BoardError("Task dependencies are not complete: " + ", ".join(unfinished) + ". Use --force only after confirming this is intentional.")
 
 
 def add_task(
@@ -282,7 +300,9 @@ def add_task(
     depends_on: list[str] | None = None,
 ) -> dict[str, Any]:
     if priority not in PRIORITIES:
-        raise SystemExit(f"Invalid priority: {priority}. Use one of {', '.join(PRIORITIES)}.")
+        raise BoardError(f"Invalid priority: {priority}. Use one of {', '.join(PRIORITIES)}.")
+    if not lane:
+        lane = str(load_config(root)["default_lane"])
     with board_lock(root):
         board = load_board(root)
         dependency_ids = normalize_dependency_ids(depends_on or [])
@@ -324,7 +344,7 @@ def set_status(root: Path, task_id: str, status: str) -> dict[str, Any]:
         board = load_board(root)
         task = find_task(board, task_id)
         if task in board["archive"]:
-            raise SystemExit("Archived tasks cannot be changed.")
+            raise BoardError("Archived tasks cannot be changed.")
         previous_status = task["status"]
         transition_task(task, status)
         if previous_status == "active" and status == "blocked":
@@ -360,7 +380,7 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
         conflicts = find_scope_conflicts(board, task, task_scope)
         if conflicts and not force:
             lines = [f"{left['id']} ({left.get('owner_agent')}) conflicts on {scope_text}" for left, scope_text in conflicts]
-            raise SystemExit("Scope is locked by active task(s):\n" + "\n".join(lines))
+            raise ScopeConflictError("Scope is locked by active task(s):\n" + "\n".join(lines))
         assign_agent_to_task(board, agent, task_id, lease_minutes)
         transition_task(task, "active")
         task["owner_agent"] = agent
@@ -380,10 +400,10 @@ def renew_task_lock(root: Path, task_id: str, agent: str, lease_minutes: int = D
         board = load_board(root)
         task = find_task(board, task_id)
         if task["status"] != "active":
-            raise SystemExit("Only active tasks can renew locks.")
+            raise BoardError("Only active tasks can renew locks.")
         owner = task.get("lock_owner") or task.get("owner_agent")
         if owner and owner != agent:
-            raise SystemExit(f"Task lock is owned by {owner}. Use the owning agent or unlock with --force.")
+            raise BoardError(f"Task lock is owned by {owner}. Use the owning agent or unlock with --force.")
         task["lock_owner"] = agent
         task["lease_expires_at"] = lease_expires_at(lease_minutes)
         task["updated_at"] = now_iso()
@@ -400,10 +420,10 @@ def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> di
         board = load_board(root)
         task = find_task(board, task_id)
         if task["status"] != "active":
-            raise SystemExit("Only active tasks can be unlocked.")
+            raise BoardError("Only active tasks can be unlocked.")
         owner = task.get("lock_owner") or task.get("owner_agent")
         if owner and owner != agent and not force:
-            raise SystemExit(f"Task lock is owned by {owner}. Use --force to unlock it anyway.")
+            raise BoardError(f"Task lock is owned by {owner}. Use --force to unlock it anyway.")
         task["scope"] = []
         task["lock_owner"] = ""
         task["lease_expires_at"] = ""
@@ -419,7 +439,7 @@ def complete_task(root: Path, task_id: str, verification: str, leftovers: str = 
         board = load_board(root)
         task = find_task(board, task_id)
         if not verification.strip():
-            raise SystemExit("Verification is required.")
+            raise BoardError("Verification is required.")
         transition_task(task, "done")
         task["verification"] = verification
         task["leftovers"] = leftovers
