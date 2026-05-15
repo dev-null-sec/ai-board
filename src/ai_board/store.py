@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ from .errors import BoardError, BoardLockError, BoardSchemaError, TaskNotFoundEr
 BOARD_DIR = ".ai-board"
 BOARD_FILE = "board.json"
 EVENTS_FILE = "events.jsonl"
+FAILED_EVENTS_FILE = "events.failed.jsonl"
 CONFIG_FILE = "config.json"
 DOCS_DIR = "docs"
 
@@ -43,6 +45,10 @@ class Paths:
     @property
     def events_file(self) -> Path:
         return self.board_dir / EVENTS_FILE
+
+    @property
+    def failed_events_file(self) -> Path:
+        return self.board_dir / FAILED_EVENTS_FILE
 
     @property
     def config_file(self) -> Path:
@@ -97,6 +103,9 @@ def default_config() -> dict[str, Any]:
         "default_lane": "默认",
         "default_agent_kind": "agent",
         "default_lease_minutes": 240,
+        "doctor_stale_active_hours": 48,
+        "doctor_lease_warning_minutes": 30,
+        "doctor_broad_scopes": [".", "src", "docs", "tests"],
     }
 
 
@@ -124,6 +133,13 @@ def load_config(root: Path) -> dict[str, Any]:
         config["default_lease_minutes"] = int(config["default_lease_minutes"])
     except (TypeError, ValueError) as error:
         raise BoardSchemaError("Config file is invalid: default_lease_minutes must be a number.") from error
+    try:
+        config["doctor_stale_active_hours"] = int(config["doctor_stale_active_hours"])
+        config["doctor_lease_warning_minutes"] = int(config["doctor_lease_warning_minutes"])
+    except (TypeError, ValueError) as error:
+        raise BoardSchemaError("Config file is invalid: doctor thresholds must be numbers.") from error
+    if not isinstance(config["doctor_broad_scopes"], list) or any(not isinstance(item, str) for item in config["doctor_broad_scopes"]):
+        raise BoardSchemaError("Config file is invalid: doctor_broad_scopes must be a list of strings.")
     return config
 
 
@@ -390,8 +406,19 @@ def append_event(root: Path, action: str, task_id: str = "", agent: str = "", da
         paths.board_dir.mkdir(parents=True, exist_ok=True)
         with paths.events_file.open("a", encoding="utf-8") as file:
             file.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
-    except OSError:
-        return
+    except OSError as error:
+        print(f"warning: could not append event log: {paths.events_file} ({error})", file=sys.stderr)
+        failed_event = {
+            "created_at": now_iso(),
+            "error": str(error),
+            "event": event,
+        }
+        try:
+            paths.board_dir.mkdir(parents=True, exist_ok=True)
+            with paths.failed_events_file.open("a", encoding="utf-8") as file:
+                file.write(json.dumps(failed_event, ensure_ascii=False, sort_keys=True) + "\n")
+        except OSError as fallback_error:
+            print(f"warning: could not append failed event log: {paths.failed_events_file} ({fallback_error})", file=sys.stderr)
 
 
 def read_events(root: Path, task_id: str = "") -> list[dict[str, Any]]:

@@ -1,134 +1,45 @@
 ---
 name: ai-board
-description: Local planning board CLI for AI agents working on software projects. Use when a project needs demand intake, scheduling, task claim, scope tracking, acceptance, archival, Markdown board rendering, or active-task conflict checks. Prefer ai-board when the repository has `.ai-board/board.json` or docs such as `docs/计划看板.md`, `docs/当前状态.md`, or `AGENTS.md` requiring board-driven work.
+description: Discovery stub for the ai-board CLI. Use this to find the installed command, then read the bundled guide from ai-board skills get core.
 allowed-tools: Bash(ai-board:*), Bash(pipx:*), Bash(uv:*), Bash(python:*), Bash(python3:*)
 ---
 
 # ai-board
 
-Lightweight local planning board CLI for AI agents.
+这是一个发现入口，不是完整说明书。
 
-This file is a discovery stub. Its job is to help an agent install or find the
-CLI, then load the workflow guide from the installed CLI version.
+## 你该怎么做
 
-## Agent install prompt
+1. 先确认 `ai-board` 命令在不在。
+2. 如果没有，优先从 PyPI 装成用户级 CLI：`pipx install ai-board`，没有 `pipx` 再用 `uv tool install ai-board`。
+3. 然后跑 `ai-board onboard --init-if-missing` 接手项目。
+4. 需要规则细节时，用 `ai-board skills get core`。
 
-If a user gives you this repository or GitHub URL, treat the request as:
+## 安装顺序
 
-```text
-Install ai-board as a user-level CLI, place this skill file in the target
-agent's skill/skills directory, then use the bundled guide to manage this
-project's planning board. Do not install the CLI into the current project
-virtual environment unless the user explicitly asks for a development install.
-```
+优先级保持和 CLI 内置 guide 一致：
 
-## Start here
+1. Python 3.10+
+2. `pipx`
+3. `python -m pipx`
+4. `uv tool install`
 
-If the user only invokes this skill, says `/ai-board`, or says "use ai-board"
-without any further instructions, do not merely explain the tool. First make
-sure the `ai-board` command exists. If it is missing, install it with the steps
-below. Then start the onboarding flow:
+常用命令：
 
 ```bash
-ai-board onboard --init-if-missing
+pipx install ai-board
+uv tool install ai-board
 ```
 
-Then follow the question or next action printed by that command.
+## 这个文件放哪
 
-Check whether the CLI is already available:
+把它放到目标 agent 的 skill/skills 目录里，例如 Codex、Claude，或者其他支持 skill 的工具。
 
-```bash
-ai-board --help
-```
+## 修改入口
 
-If the user asks for command details, load the current guide:
+以后要改安装口径、接手流程或命令规则，请改：
 
-```bash
-ai-board skills get core
-```
+- CLI 内置 guide：`ai-board skills get core`
+- 仓库里的源码：`src/ai_board/skill_guides.py`
 
-For the extended command reference:
-
-```bash
-ai-board skills get core --full
-```
-
-## Install if missing
-
-Install the CLI as a user-level tool, similar to npm global CLI tools. Do not
-blindly run a project-local `pip install`.
-
-Preferred order:
-
-1. Find Python 3.10+.
-2. Use `pipx` if it exists.
-3. If Python exists but `pipx` does not, install pipx for the current user and
-   run it through `python -m pipx`.
-4. If the Python/pipx route is not available, use `uv tool install`.
-
-Common commands:
-
-```bash
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
-```
-
-If Python exists but `pipx` does not:
-
-```bash
-python -m pip install --user pipx
-python -m pipx ensurepath
-python -m pipx install "git+https://github.com/dev-null-sec/ai-board.git"
-```
-
-If only `uv` is available:
-
-```bash
-uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
-```
-
-These install methods create an `ai-board` command from the package's console
-script entry point.
-
-## Install this skill
-
-The CLI and the skill are separate:
-
-- The CLI does the work.
-- This skill lets an agent discover when and how to use the CLI.
-
-After cloning or downloading the repository, copy this file into the skill or
-skills directory for the target agent, such as Codex, Claude, or another
-skill-aware tool:
-
-```text
-skills/ai-board/SKILL.md
-```
-
-Use that agent's own skill installation rules and directory layout. If the user
-already placed this file in the agent's skill directory, do not duplicate it.
-
-If this repository has already been cloned locally and the user wants a
-development install, install from the repository root instead:
-
-```bash
-uv tool install --editable .
-```
-
-Use the user's project or machine proxy rules when network access is required.
-
-## How to use this skill
-
-After installation, do not rely on this stub for command details. Load the
-current guide from the CLI:
-
-```bash
-ai-board skills list
-ai-board skills get core
-```
-
-Then follow the project's own rules before editing files.
-
-If the target project has no board yet, initialize and inspect it with
-`ai-board onboard --init-if-missing`.
-If it already has `.ai-board/board.json`, treat that JSON as the source of
-truth and do not hand-edit generated Markdown board files.
+这个文件只保留发现和入口，不再复制完整流程。

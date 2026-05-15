@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -17,6 +18,21 @@ from ai_board.store import load_board, now_iso, save_board
 
 
 class CliTests(unittest.TestCase):
+    @contextmanager
+    def cli_lang(self, value: str | None):
+        previous = os.environ.get("AI_BOARD_LANG")
+        if value is None:
+            os.environ.pop("AI_BOARD_LANG", None)
+        else:
+            os.environ["AI_BOARD_LANG"] = value
+        try:
+            yield
+        finally:
+            if previous is None:
+                os.environ.pop("AI_BOARD_LANG", None)
+            else:
+                os.environ["AI_BOARD_LANG"] = previous
+
     def assert_cli_error(self, args: list[str], expected: str = "") -> str:
         output = io.StringIO()
         with redirect_stderr(output):
@@ -53,6 +69,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
             config_file = root / ".ai-board" / "config.json"
             config = json.loads(config_file.read_text(encoding="utf-8"))
+            self.assertEqual(config["doctor_broad_scopes"], [".", "src", "docs", "tests"])
             config.update(
                 {
                     "default_lane": "Docs",
@@ -150,6 +167,42 @@ class CliTests(unittest.TestCase):
             self.assertIn("project_kind: existing", existing_output.getvalue())
             self.assertIn("pyproject.toml", existing_output.getvalue())
 
+    def test_onboard_warns_new_agent_about_other_active_scope_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Build API"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api.py"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing"]), 0)
+            text = output.getvalue()
+            self.assertIn("Active task scope locks:", text)
+            self.assertIn("T-0001 owner=codex-00 lock=active", text)
+            self.assertIn("scope=src/api.py", text)
+            self.assertIn("if you are not codex-00, do not edit this scope", text)
+
+    def test_onboard_lock_notice_can_use_chinese_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, self.cli_lang("zh-CN"):
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Build API"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api.py"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing"]), 0)
+            text = output.getvalue()
+            self.assertIn("当前 active task scope 锁：", text)
+            self.assertIn("T-0001 负责人=codex-00 锁=有效", text)
+            self.assertIn("范围=src/api.py", text)
+            self.assertIn("如果你不是 codex-00，不要修改这些 scope", text)
+
     def test_task_lifecycle_renders_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -182,6 +235,48 @@ class CliTests(unittest.TestCase):
             self.assertEqual(events[3]["task_id"], "T-0001")
             self.assertEqual(events[3]["agent"], "agent-a")
             self.assertEqual(events[3]["data"]["scope"], ["src/login.py"])
+
+    def test_write_commands_refresh_generated_board_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            current_doc = root / "docs" / "计划看板.md"
+            archive_doc = root / "docs" / "归档计划看板.md"
+
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
+            self.assertIn("## 当前目标", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after init", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "goal", "Ship refreshed docs"]), 0)
+            self.assertIn("Ship refreshed docs", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after goal", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "add", "Refresh board docs", "--priority", "P1"]), 0)
+            self.assertIn("Refresh board docs", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after add", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "schedule", "T-0001"]), 0)
+            self.assertIn("## 下一批", current_doc.read_text(encoding="utf-8"))
+            self.assertIn("Refresh board docs", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after schedule", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "agents", "claim", "--kind", "codex"]), 0)
+            self.assertIn("Refresh board docs", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after agent claim", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "README.md"]), 0)
+            self.assertIn("## 正在进行", current_doc.read_text(encoding="utf-8"))
+            self.assertIn("README.md", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after start", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "complete", "T-0001", "--verification", "checked", "--leftovers", "无"]), 0)
+            self.assertIn("## 已完成待归档", current_doc.read_text(encoding="utf-8"))
+            self.assertIn("Refresh board docs", current_doc.read_text(encoding="utf-8"))
+
+            current_doc.write_text("stale after complete", encoding="utf-8")
+            archive_doc.write_text("stale archive", encoding="utf-8")
+            self.assertEqual(main(["--root", str(root), "archive", "T-0001"]), 0)
+            self.assertIn("暂无", current_doc.read_text(encoding="utf-8"))
+            self.assertIn("checked", archive_doc.read_text(encoding="utf-8"))
 
     def test_e2e_real_project_onboarding_lifecycle_doctor_and_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -288,6 +383,66 @@ class CliTests(unittest.TestCase):
             self.assertEqual(board["tasks"], [])
             self.assertEqual(len(board["archive"]), 3)
             self.assertTrue(all(agent["status"] == "idle" for agent in board["agents"]))
+
+    def test_next_suggests_candidates_and_warns_about_active_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Build API", "--priority", "P0"])
+            main(["--root", str(root), "add", "Write docs", "--priority", "P1"])
+            main(["--root", str(root), "add", "Review plan", "--priority", "P1"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api.py"])
+            board = load_board(root)
+            board["tasks"][1]["scope"] = ["docs/guide.md"]
+            save_board(root, board)
+            main(["--root", str(root), "render"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            text = output.getvalue()
+            self.assertIn("Current active locks:", text)
+            self.assertIn("T-0001 owner=codex-00", text)
+            self.assertIn("do not operate this task or edit its scope", text)
+            self.assertIn("T-0002 [scheduled] P1 Write docs - appears non-overlapping", text)
+            self.assertIn("T-0003 [inbox] P1 Review plan - needs scope before conflict check", text)
+
+    def test_next_reports_stale_generated_board_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "add", "Write docs"])
+            (root / "docs" / "计划看板.md").write_text("stale", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            text = output.getvalue()
+            self.assertIn("Generated board warning:", text)
+            self.assertIn("generated doc stale", text)
+            self.assertIn("trust JSON and run ai-board render", text)
+
+    def test_schedule_and_start_active_task_errors_include_owner_scope_and_lease(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/a.py"])
+
+            schedule_error = self.assert_cli_error(["--root", str(root), "schedule", "T-0001"], "already active")
+            self.assertIn("owner=codex-00", schedule_error)
+            self.assertIn("scope=src/a.py", schedule_error)
+            self.assertIn("lease_expires_at=", schedule_error)
+
+            start_error = self.assert_cli_error(["--root", str(root), "start", "T-0001", "--agent", "codex-01", "--scope", "src/b.py"], "already active")
+            self.assertIn("owner=codex-00", start_error)
+            self.assertIn("scope=src/a.py", start_error)
+            self.assertIn("lease_expires_at=", start_error)
 
     def test_status_transitions_reject_invalid_lifecycle_moves(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -488,14 +643,99 @@ class CliTests(unittest.TestCase):
             self.assertIn("agents.release", actions)
             self.assertIn("task.block", actions)
 
-    def test_show_outputs_task_json(self) -> None:
+    def test_show_defaults_to_human_output_and_can_print_json(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init"])
-            main(["--root", str(root), "add", "Document API"])
-            board_file = root / ".ai-board" / "board.json"
-            data = json.loads(board_file.read_text(encoding="utf-8"))
-            self.assertEqual(data["tasks"][0]["id"], "T-0001")
+            main(["--root", str(root), "add", "Document API", "--lane", "文档治理", "--acceptance", "API is documented"])
+
+            human_output = io.StringIO()
+            with redirect_stdout(human_output):
+                self.assertEqual(main(["--root", str(root), "show", "T-0001"]), 0)
+            human_text = human_output.getvalue()
+            self.assertIn("T-0001 [inbox] P2 Document API", human_text)
+            self.assertIn("lane: 文档治理", human_text)
+            self.assertIn("acceptance:", human_text)
+
+            json_output = io.StringIO()
+            with redirect_stdout(json_output):
+                self.assertEqual(main(["--root", str(root), "show", "T-0001", "--format", "json"]), 0)
+            data = json.loads(json_output.getvalue())
+            self.assertEqual(data["id"], "T-0001")
+
+    def test_cli_human_output_can_use_chinese_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, self.cli_lang("zh-CN"):
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "agents", "claim", "--kind", "codex"])
+            main(["--root", str(root), "add", "Document API", "--acceptance", "checked"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/api.py"])
+
+            status_output = io.StringIO()
+            with redirect_stdout(status_output):
+                self.assertEqual(main(["--root", str(root), "status"]), 0)
+            self.assertIn("项目: ", status_output.getvalue())
+            self.assertIn("active: 1", status_output.getvalue())
+
+            show_output = io.StringIO()
+            with redirect_stdout(show_output):
+                self.assertEqual(main(["--root", str(root), "show", "T-0001"]), 0)
+            self.assertIn("负责人: codex-00", show_output.getvalue())
+            self.assertIn("验收标准:", show_output.getvalue())
+
+            agents_output = io.StringIO()
+            with redirect_stdout(agents_output):
+                self.assertEqual(main(["--root", str(root), "agents", "list"]), 0)
+            self.assertIn("类型=codex", agents_output.getvalue())
+            self.assertIn("任务=T-0001", agents_output.getvalue())
+
+            locks_output = io.StringIO()
+            with redirect_stdout(locks_output):
+                self.assertEqual(main(["--root", str(root), "locks"]), 0)
+            self.assertIn("锁=active", locks_output.getvalue())
+            self.assertIn("范围=src/api.py", locks_output.getvalue())
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            doctor_text = doctor_output.getvalue()
+            self.assertIn("board 锁：正常", doctor_text)
+            self.assertIn("doctor：正常", doctor_text)
+
+            json_output = io.StringIO()
+            with redirect_stdout(json_output):
+                self.assertEqual(main(["--root", str(root), "show", "T-0001", "--format", "json"]), 0)
+            data = json.loads(json_output.getvalue())
+            self.assertIn("owner_agent", data)
+            self.assertEqual(data["status"], "active")
+
+    def test_lang_command_prints_bilingual_shell_hints(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["lang", "zh-CN"]), 0)
+        text = output.getvalue()
+        self.assertIn("Language / 语言: zh-CN", text)
+        self.assertIn('$env:AI_BOARD_LANG="zh-CN"', text)
+        self.assertIn("One-shot / 单次运行:", text)
+
+    def test_lang_command_defaults_to_chinese_hints(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["lang"]), 0)
+        text = output.getvalue()
+        self.assertIn("Language / 语言: zh-CN", text)
+        self.assertIn("export AI_BOARD_LANG=zh-CN", text)
+
+    def test_lang_argument_overrides_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, self.cli_lang("zh-CN"):
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "--lang", "en-US", "status"]), 0)
+            self.assertIn("project:", output.getvalue())
+            self.assertNotIn("项目:", output.getvalue())
 
     def test_history_outputs_all_events_and_filters_by_task(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -542,10 +782,18 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "init"])
             (root / ".ai-board" / "events.jsonl").mkdir()
 
-            self.assertEqual(main(["--root", str(root), "add", "Still recorded in board"]), 0)
+            output = io.StringIO()
+            with redirect_stderr(output):
+                self.assertEqual(main(["--root", str(root), "add", "Still recorded in board"]), 0)
+            self.assertIn("warning: could not append event log", output.getvalue())
 
             board = load_board(root)
             self.assertEqual(board["tasks"][0]["title"], "Still recorded in board")
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("event log fallback", doctor_output.getvalue())
 
     def read_events(self, root: Path) -> list[dict[str, object]]:
         events_file = root / ".ai-board" / "events.jsonl"
@@ -635,9 +883,66 @@ class CliTests(unittest.TestCase):
             self.assertTrue((root / "AGENTS.md.example").exists())
 
     def test_skills_commands_do_not_require_board(self) -> None:
+        self.assertEqual(main(["skills"]), 0)
         self.assertEqual(main(["skills", "list"]), 0)
         self.assertEqual(main(["skills", "get", "core"]), 0)
         self.assertEqual(main(["skills", "get", "core", "--full"]), 0)
+
+    def test_key_help_output_includes_examples(self) -> None:
+        for command in ("add", "start", "show", "skills"):
+            output = io.StringIO()
+            with redirect_stdout(output), self.assertRaises(SystemExit) as error:
+                main([command, "--help"])
+            self.assertEqual(error.exception.code, 0)
+            self.assertIn("Examples:", output.getvalue())
+
+    def test_start_help_guides_agents_to_use_narrow_scope(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(SystemExit) as error:
+            main(["start", "--help"])
+        self.assertEqual(error.exception.code, 0)
+        text = output.getvalue()
+        self.assertIn("keep --scope narrow", text)
+        self.assertIn("specific files or small subdirectories", text)
+
+    def test_help_output_can_use_chinese_language(self) -> None:
+        with self.cli_lang("zh-CN"):
+            output = io.StringIO()
+            with redirect_stdout(output), self.assertRaises(SystemExit) as error:
+                main(["-h"])
+            self.assertEqual(error.exception.code, 0)
+            text = output.getvalue()
+            self.assertIn("用法:", text)
+            self.assertIn("位置参数:", text)
+            self.assertIn("选项:", text)
+            self.assertIn("创建项目看板。", text)
+            self.assertIn("人类可读输出语言", text)
+
+    def test_lang_argument_controls_help_language(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(SystemExit) as error:
+            main(["--lang", "zh-CN", "-h"])
+        self.assertEqual(error.exception.code, 0)
+        self.assertIn("读取 CLI 内置的 AI 使用指南。", output.getvalue())
+
+    def test_argparse_errors_can_use_chinese_language(self) -> None:
+        with self.cli_lang("zh-CN"):
+            output = io.StringIO()
+            with redirect_stderr(output), self.assertRaises(SystemExit) as error:
+                main([])
+            self.assertEqual(error.exception.code, 2)
+            text = output.getvalue()
+            self.assertIn("用法:", text)
+            self.assertIn("错误:", text)
+            self.assertIn("缺少必填参数:", text)
+
+    def test_core_skill_guide_mentions_narrow_scope(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["skills", "get", "core"]), 0)
+        text = output.getvalue()
+        self.assertIn("honest, narrow", text)
+        self.assertIn("broad roots", text)
 
     def test_board_renders_tasks_by_priority(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -847,9 +1152,91 @@ class CliTests(unittest.TestCase):
                     "status": "active",
                     "lane": "默认",
                     "owner_agent": "codex-00",
-                    "scope": [],
+                    "scope": ["."],
                     "depends_on": [],
                     "acceptance": [],
+                    "created_at": now_iso(),
+                    "updated_at": (datetime.now(timezone.utc) - timedelta(hours=72)).replace(microsecond=0).isoformat(),
+                }
+            )
+            board["agents"].append(
+                {
+                    "id": "codex-00",
+                    "kind": "codex",
+                    "status": "busy",
+                    "task_id": "T-0001",
+                    "lease_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).replace(microsecond=0).isoformat(),
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            text = output.getvalue()
+            self.assertIn("active task T-0001 scope is broad", text)
+            self.assertIn("prefer specific files or smaller subdirectories", text)
+            self.assertIn("active task T-0001 has no acceptance criteria", text)
+            self.assertIn("active task T-0001 has not been updated", text)
+            self.assertIn("agent codex-00 lease expires soon", text)
+
+    def test_doctor_reports_default_broad_directory_scopes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            board = load_board(root)
+            board["tasks"].append(
+                {
+                    "id": "T-0001",
+                    "title": "Broad source task",
+                    "priority": "P2",
+                    "status": "active",
+                    "lane": "默认",
+                    "owner_agent": "codex-00",
+                    "scope": ["src"],
+                    "depends_on": [],
+                    "acceptance": ["checked"],
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            board["agents"].append(
+                {
+                    "id": "codex-00",
+                    "kind": "codex",
+                    "status": "busy",
+                    "task_id": "T-0001",
+                    "lease_expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).replace(microsecond=0).isoformat(),
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            save_board(root, board)
+            main(["--root", str(root), "render"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("active task T-0001 scope is broad (src)", output.getvalue())
+
+    def test_doctor_reports_active_task_and_agent_integrity_issues(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            board = load_board(root)
+            board["tasks"].append(
+                {
+                    "id": "T-0001",
+                    "title": "Broken active",
+                    "priority": "P2",
+                    "status": "active",
+                    "lane": "默认",
+                    "owner_agent": "codex-00",
+                    "scope": [],
+                    "depends_on": [],
+                    "acceptance": ["checked"],
                     "created_at": now_iso(),
                     "updated_at": now_iso(),
                 }
@@ -866,6 +1253,7 @@ class CliTests(unittest.TestCase):
                 }
             )
             save_board(root, board)
+            main(["--root", str(root), "render"])
 
             output = io.StringIO()
             with redirect_stdout(output):
@@ -873,6 +1261,55 @@ class CliTests(unittest.TestCase):
             text = output.getvalue()
             self.assertIn("active task T-0001 has no scope", text)
             self.assertIn("agent codex-00 points to T-9999", text)
+
+    def test_doctor_business_thresholds_can_be_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+            config_file = root / ".ai-board" / "config.json"
+            config = json.loads(config_file.read_text(encoding="utf-8"))
+            config.update(
+                {
+                    "doctor_stale_active_hours": 100,
+                    "doctor_lease_warning_minutes": 5,
+                    "doctor_broad_scopes": ["."],
+                }
+            )
+            config_file.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+            board = load_board(root)
+            board["tasks"].append(
+                {
+                    "id": "T-0001",
+                    "title": "Healthy enough active",
+                    "priority": "P2",
+                    "status": "active",
+                    "lane": "默认",
+                    "owner_agent": "codex-00",
+                    "scope": ["src"],
+                    "depends_on": [],
+                    "acceptance": ["checked"],
+                    "created_at": now_iso(),
+                    "updated_at": (datetime.now(timezone.utc) - timedelta(hours=72)).replace(microsecond=0).isoformat(),
+                }
+            )
+            board["agents"].append(
+                {
+                    "id": "codex-00",
+                    "kind": "codex",
+                    "status": "busy",
+                    "task_id": "T-0001",
+                    "lease_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).replace(microsecond=0).isoformat(),
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                }
+            )
+            save_board(root, board)
+            main(["--root", str(root), "render"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("doctor: ok", output.getvalue())
 
     def test_doctor_reports_bad_event_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

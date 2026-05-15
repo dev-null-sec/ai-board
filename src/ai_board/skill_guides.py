@@ -15,17 +15,19 @@ description: Core ai-board usage guide. Read this before changing a project boar
 
 ## AI-native entry prompt
 
-When a user gives you the ai-board GitHub URL, invokes `/ai-board`, or says
-"use ai-board" without extra instructions, treat it as an instruction to install
-or find the CLI and enter onboarding. Do not stop after `init`.
+When a user gives you the ai-board package name, GitHub URL, invokes
+`/ai-board`, or says "use ai-board" without extra instructions, treat it as an
+instruction to install or find the CLI and enter onboarding. Do not stop after
+`init`.
 
 ```text
-Install ai-board from https://github.com/dev-null-sec/ai-board.git as a
-user-level CLI. Also place skills/ai-board/SKILL.md from the repository into
-the target agent's skill/skills directory, such as Codex, Claude, or another
-skill-aware tool. After installation, run ai-board onboard --init-if-missing.
-Follow the onboarding output. Use ai-board skills get core only when command
-details are needed.
+Install ai-board as a user-level CLI, preferably from PyPI with
+pipx install ai-board. If pipx is not available, use uv tool install ai-board.
+If an agent skill is needed, copy skills/ai-board/SKILL.md from
+https://github.com/dev-null-sec/ai-board.git into the target agent's
+skill/skills directory. After installation, run ai-board onboard
+--init-if-missing. Follow the onboarding output. Use ai-board skills get core
+only when command details are needed.
 ```
 
 ## First checks
@@ -33,9 +35,18 @@ details are needed.
 ```bash
 ai-board --help
 ai-board onboard --init-if-missing
+ai-board agents list
+ai-board locks
+ai-board next
 ai-board status
 ai-board conflicts --fail-on-conflict
 ```
+
+Before editing files, read the active owner and scope locks. If an active task
+is owned by another agent and its lock is not expired, do not edit that scope.
+Wait for the owner, choose non-overlapping scheduled work, or coordinate an
+explicit takeover after the lease expires. Use `ai-board next` to ask the CLI
+for non-conflicting candidates before choosing work.
 
 If `ai-board` is not installed, install it as a user-level CLI tool. Do not
 silently install it into the current project virtual environment.
@@ -51,11 +62,12 @@ Preferred install order:
 Common commands:
 
 ```bash
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
+pipx install ai-board
 python -m pip install --user pipx
 python -m pipx ensurepath
-python -m pipx install "git+https://github.com/dev-null-sec/ai-board.git"
-uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
+python -m pipx install ai-board
+uv tool install ai-board
+pipx install "git+https://github.com/dev-null-sec/ai-board.git"  # source fallback
 ```
 
 These install methods create the `ai-board` command from the package's console script.
@@ -99,7 +111,12 @@ Use ai-board as the planning source for this project. Run ai-board onboard
 --init-if-missing first. If onboarding says the project is empty or lightweight,
 ask whether to plan first or write handoff docs from the current files. If it is
 an existing project, ask whether to do a handoff summary before scheduling work.
-Only edit files after a task is scheduled and started with an honest --scope.
+Then run ai-board agents list and ai-board locks. If a non-expired active task
+belongs to another agent, do not edit its scope.
+Run ai-board next to see non-conflicting candidates and stale generated-board
+warnings before choosing a task.
+Only edit files after a task is scheduled and started with an honest, narrow
+--scope.
 Complete tasks with verification and leftovers, then archive them.
 ```
 
@@ -132,17 +149,19 @@ claim will return `codex-01`.
 ```bash
 ai-board agents claim --kind codex
 ai-board agents list
-ai-board start T-0001 --agent codex-00 --scope src/ai_board README.md tests
+ai-board start T-0001 --agent codex-00 --scope src/ai_board/cli.py README.md tests/test_cli.py
 ai-board locks
 ai-board renew T-0001 --agent codex-00
 ```
 
 `agents claim` reserves a reusable identity with a 240-minute lease by default.
 `start` binds that identity to the task, gives the scope lock the same default
-lease, and blocks overlapping non-expired active task scopes. Use
-`--lease-minutes 0` for no expiry. `start` also blocks unfinished dependencies
-unless `--force` is used. Use `--force` only when the overlap or dependency
-bypass is intentional and you have coordinated with the other owner.
+lease, and blocks overlapping non-expired active task scopes. Keep `--scope`
+narrow: prefer specific files or small subdirectories instead of broad roots
+such as `src`, `docs`, `tests`, or `.`. Use `--lease-minutes 0` for no expiry.
+`start` also blocks unfinished dependencies unless `--force` is used. Use
+`--force` only when the overlap or dependency bypass is intentional and you
+have coordinated with the other owner.
 
 If an agent crashes or a scope is no longer needed, release it without
 completing the active task:
@@ -170,7 +189,11 @@ ai-board archive T-0001
 
 ## Board views
 
-Do not hand-edit generated board Markdown. Regenerate it from JSON:
+Do not hand-edit generated board Markdown. CLI write commands such as `add`,
+`schedule`, `start`, `complete`, and `archive` automatically refresh the
+Markdown views after saving `.ai-board/board.json`. Use manual render only as a
+repair step after changing config, pulling updates, or seeing a stale generated
+doc warning:
 
 ```bash
 ai-board render
@@ -200,6 +223,7 @@ before continuing work if you still own the task.
 ai-board goal "Current delivery goal"
 ai-board show T-0001
 ai-board status
+ai-board next
 ai-board history
 ai-board history T-0001
 ```
@@ -210,7 +234,9 @@ ai-board history T-0001
 - Add new work to the inbox unless it is already part of the active task.
 - Start only scheduled tasks.
 - Claim an agent identity such as `codex-00` before starting work; do not reuse a busy non-expired identity.
-- Keep scope narrow and honest.
+- Treat active owner and scope locks as a hard gate before coding.
+- Use `ai-board next` when active work exists or the Markdown board may be stale.
+- Keep scope narrow and honest: prefer concrete files or small subdirectories, not broad roots like `src`, `docs`, `tests`, or `.`.
 - Complete tasks only after verification.
 - Write verification and leftovers as human-readable summaries. Do not leave archive records as raw command strings only.
 - Archive completed tasks so the current board stays short.
@@ -223,8 +249,10 @@ FULL_GUIDE = CORE_GUIDE + """
 
 ```bash
 ai-board init [--project-name NAME] [--force] [--overwrite-docs]
+ai-board --lang zh-CN status
 ai-board onboard [--init-if-missing] [--project-name NAME]
 ai-board goal GOAL
+ai-board lang zh-CN
 ai-board add TITLE [--priority P0|P1|P2|P3] [--description TEXT] [--lane LANE] [--source TEXT] [--acceptance TEXT] [--depends-on TASK_ID ...]
 ai-board schedule TASK_ID
 ai-board agents claim [--kind KIND] [--lease-minutes MINUTES]
@@ -237,11 +265,13 @@ ai-board complete TASK_ID --verification TEXT [--leftovers TEXT]
 ai-board archive TASK_ID
 ai-board block TASK_ID
 ai-board status
+ai-board next
 ai-board conflicts [--fail-on-conflict]
 ai-board locks
 ai-board history [TASK_ID]
 ai-board render
-ai-board show TASK_ID
+ai-board show TASK_ID [--format human|json]
+ai-board skills
 ai-board skills list
 ai-board skills get core [--full]
 ```
@@ -259,8 +289,8 @@ current board and become history.
 ## Storage contract
 
 `.ai-board/board.json` is the source of truth. Markdown files under `docs/` are
-generated reading views. If Markdown and JSON disagree, trust JSON and run
-`ai-board render`.
+generated reading views and are normally refreshed by CLI write commands. If
+Markdown and JSON disagree, trust JSON and run `ai-board render`.
 """
 
 

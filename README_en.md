@@ -81,7 +81,7 @@ The AI schedules the request instead of acting on it immediately. Urgent bugs ge
 The recommended way: let the AI handle installation and setup. One sentence:
 
 ```text
-Install ai-board from https://github.com/dev-null-sec/ai-board.git, then run ai-board onboard --init-if-missing to take over this project.
+Install ai-board with pipx install ai-board, then run ai-board onboard --init-if-missing to take over this project.
 ```
 
 The agent checks your environment, installs the CLI, places the skill file, and loads the version-matched guide. No manual steps required.
@@ -89,13 +89,19 @@ The agent checks your environment, installs the CLI, places the skill file, and 
 If you prefer to install it yourself:
 
 ```powershell
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
+pipx install ai-board
 ```
 
 No `pipx` but have `uv`:
 
 ```powershell
-uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
+uv tool install ai-board
+```
+
+To install the latest source version from GitHub:
+
+```powershell
+pipx install "git+https://github.com/dev-null-sec/ai-board.git"
 ```
 
 ## Command cheat sheet

@@ -12,7 +12,7 @@
 
 给 AI agent 用的本地计划看板。你跟 AI 对话提需求，它帮你排期、跟踪、防冲突，而不是直接开改。
 
-当前版本：`v0.1.0-alpha.1`，第一个可试用 alpha。
+当前版本：`v0.1.0-alpha.2`，仍是 alpha，但已经支持从 PyPI 安装。
 
 ## 为什么做这个
 
@@ -81,7 +81,11 @@ AI 会把需求排进看板，而不是立刻动手。紧急的 bug 会标高优
 最推荐的方式：把安装和初始化都交给 AI。给它一句话：
 
 ```text
-请从 https://github.com/dev-null-sec/ai-board.git 安装 ai-board，然后运行 ai-board onboard --init-if-missing 接手当前项目。
+请安装 ai-board 并接手当前项目：
+1. 优先用 pipx install ai-board 安装用户级 CLI。
+2. 如果 pipx 不可用，再用 uv tool install ai-board。
+3. 安装后运行 ai-board onboard --init-if-missing。
+4. 如需 agent skill，请从 https://github.com/dev-null-sec/ai-board.git 取 skills/ai-board/SKILL.md 放到对应 agent 的 skills 目录。
 ```
 
 AI 会检查环境、装 CLI、放 skill 文件、读版本匹配的使用说明。全程不用你手动操作。
@@ -89,13 +93,19 @@ AI 会检查环境、装 CLI、放 skill 文件、读版本匹配的使用说明
 如果你想自己装：
 
 ```powershell
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
+pipx install ai-board
 ```
 
 没有 `pipx` 但有 `uv`：
 
 ```powershell
-uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
+uv tool install ai-board
+```
+
+想安装 GitHub 上的最新源码版时，再使用：
+
+```powershell
+pipx install "git+https://github.com/dev-null-sec/ai-board.git"
 ```
 
 ## 命令速查
@@ -106,6 +116,7 @@ uv tool install "git+https://github.com/dev-null-sec/ai-board.git"
 ai-board status                      # 当前任务分布
 ai-board show T-0001                 # 查看某个任务详情
 ai-board render                      # 重新生成 Markdown 看板
+ai-board lang zh-CN                  # 查看中文输出的环境变量设置方式
 ```
 
 完整命令参考：`ai-board --help` 或 `ai-board skills get core --full`。
@@ -127,6 +138,7 @@ AI / 人读取状态，继续推进
 | 设计点 | 说明 |
 | --- | --- |
 | 真相源 | `.ai-board/board.json` 是唯一写入源，Markdown 看板只是生成视图。 |
+| 看板渲染 | `add`、`schedule`、`start`、`complete`、`archive` 等 CLI 写操作会自动刷新 Markdown；`ai-board render` 是手动修复和配置变更后的兜底命令。 |
 | 多 agent | 重叠文件范围默认被拦住；这是路径级防撞，不是理解代码语义的万能锁。 |
 | 项目配置 | `.ai-board/config.json` 可设置默认语言、默认泳道、默认 agent 类型和默认租约。 |
 | scope lock | 默认 240 分钟租约；可通过项目配置调整；任务 `complete` 后释放 agent 身份，`archive` 把已验收任务移出当前看板。 |
@@ -136,7 +148,13 @@ AI / 人读取状态，继续推进
 | 历史 | `history` 从 `.ai-board/events.jsonl` 查看任务变更记录。 |
 | 生命周期 | `inbox → scheduled → active → done → archived`。 |
 
-默认生成中文看板。如果项目主要使用英文，可以把 `.ai-board/config.json` 里的 `language` 改成 `en-US`，再运行 `ai-board render`。
+默认生成中文看板。如果项目主要使用英文，可以把 `.ai-board/config.json` 里的 `language` 改成 `en-US`，再运行 `ai-board render`。正常通过 CLI 改任务时不需要手动 render；只有手改配置、拉取代码后怀疑生成视图过期，或 `doctor` 提示 stale 时才需要运行。
+
+`doctor` 的轻量业务检查可以通过 `.ai-board/config.json` 调整，例如 active 任务多久算停滞、agent lease 剩多久开始提醒、哪些 scope 算过宽。
+
+CLI 默认输出英文，方便 AI、脚本和 CI 稳定使用。人手动看时可以用 `AI_BOARD_LANG=zh-CN` 或 `ai-board --lang zh-CN status` 切到中文；不想记环境变量就运行 `ai-board lang zh-CN`。
+
+如果要改安装口径、接手流程或命令规则，优先改 `ai-board skills get core` 对应的内置指南；仓库里的 `skills/ai-board/SKILL.md` 只负责发现入口。
 
 ## FAQ
 
@@ -154,7 +172,7 @@ AI / 人读取状态，继续推进
 
 不建议。真正存数据的是 `.ai-board/board.json`，它更像这个小工具的本地数据库。`docs/计划看板.md` 和 `docs/归档计划看板.md` 只是从 JSON 渲染出来的阅读视图，给人和 AI 快速扫一眼用。
 
-如果你手改 Markdown，下一次 `ai-board render` 可能会覆盖它。要改任务状态、负责人、scope、验收结果，走 CLI。
+如果你手改 Markdown，下一次 CLI 写操作或 `ai-board render` 可能会覆盖它。要改任务状态、负责人、scope、验收结果，走 CLI。
 
 </details>
 
