@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .datetime_utils import parse_iso_datetime
 from .errors import BoardError, BoardLockError, BoardSchemaError, TaskNotFoundError
 
 BOARD_DIR = ".ai-board"
@@ -18,6 +19,7 @@ BOARD_FILE = "board.json"
 EVENTS_FILE = "events.jsonl"
 FAILED_EVENTS_FILE = "events.failed.jsonl"
 CONFIG_FILE = "config.json"
+MESSAGES_FILE = "messages.jsonl"
 DOCS_DIR = "docs"
 
 STATUSES = ("inbox", "scheduled", "active", "done", "archived", "blocked")
@@ -55,6 +57,10 @@ class Paths:
         return self.board_dir / CONFIG_FILE
 
     @property
+    def messages_file(self) -> Path:
+        return self.board_dir / MESSAGES_FILE
+
+    @property
     def docs_dir(self) -> Path:
         return self.root / DOCS_DIR
 
@@ -71,16 +77,17 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def parse_iso_datetime(value: str) -> datetime | None:
-    if not value:
-        return None
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+def next_message_id(messages: list[dict[str, Any]]) -> str:
+    max_id = 0
+    for message in messages:
+        value = str(message.get("id", ""))
+        if not value.startswith("M-"):
+            continue
+        try:
+            max_id = max(max_id, int(value.split("-", 1)[1]))
+        except (IndexError, ValueError):
+            continue
+    return f"M-{max_id + 1:04d}"
 
 
 def default_board() -> dict[str, Any]:
@@ -106,7 +113,33 @@ def default_config() -> dict[str, Any]:
         "doctor_stale_active_hours": 48,
         "doctor_lease_warning_minutes": 30,
         "doctor_broad_scopes": [".", "src", "docs", "tests"],
+        "shared_verification_scopes": ["tests", "tests/test_cli.py", "src/ai_board/cli.py", "src/ai_board/operations.py"],
+        "shared_scope_warning_minutes": 30,
     }
+
+
+def validate_config(config: dict[str, Any]) -> dict[str, Any]:
+    if config["language"] not in ("zh-CN", "en-US"):
+        raise BoardSchemaError("Config file is invalid: language must be zh-CN or en-US.")
+    if not isinstance(config["default_lane"], str) or not config["default_lane"].strip():
+        raise BoardSchemaError("Config file is invalid: default_lane must be a non-empty string.")
+    if not isinstance(config["default_agent_kind"], str) or not config["default_agent_kind"].strip():
+        raise BoardSchemaError("Config file is invalid: default_agent_kind must be a non-empty string.")
+    try:
+        config["default_lease_minutes"] = int(config["default_lease_minutes"])
+    except (TypeError, ValueError) as error:
+        raise BoardSchemaError("Config file is invalid: default_lease_minutes must be a number.") from error
+    try:
+        config["doctor_stale_active_hours"] = int(config["doctor_stale_active_hours"])
+        config["doctor_lease_warning_minutes"] = int(config["doctor_lease_warning_minutes"])
+        config["shared_scope_warning_minutes"] = int(config["shared_scope_warning_minutes"])
+    except (TypeError, ValueError) as error:
+        raise BoardSchemaError("Config file is invalid: doctor thresholds must be numbers.") from error
+    if not isinstance(config["doctor_broad_scopes"], list) or any(not isinstance(item, str) for item in config["doctor_broad_scopes"]):
+        raise BoardSchemaError("Config file is invalid: doctor_broad_scopes must be a list of strings.")
+    if not isinstance(config["shared_verification_scopes"], list) or any(not isinstance(item, str) for item in config["shared_verification_scopes"]):
+        raise BoardSchemaError("Config file is invalid: shared_verification_scopes must be a list of strings.")
+    return config
 
 
 def load_config(root: Path) -> dict[str, Any]:
@@ -123,24 +156,25 @@ def load_config(root: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise BoardSchemaError("Config file is invalid: top-level value must be an object.")
     config.update({key: value for key, value in loaded.items() if key in config})
-    if config["language"] not in ("zh-CN", "en-US"):
-        raise BoardSchemaError("Config file is invalid: language must be zh-CN or en-US.")
-    if not isinstance(config["default_lane"], str) or not config["default_lane"].strip():
-        raise BoardSchemaError("Config file is invalid: default_lane must be a non-empty string.")
-    if not isinstance(config["default_agent_kind"], str) or not config["default_agent_kind"].strip():
-        raise BoardSchemaError("Config file is invalid: default_agent_kind must be a non-empty string.")
-    try:
-        config["default_lease_minutes"] = int(config["default_lease_minutes"])
-    except (TypeError, ValueError) as error:
-        raise BoardSchemaError("Config file is invalid: default_lease_minutes must be a number.") from error
-    try:
-        config["doctor_stale_active_hours"] = int(config["doctor_stale_active_hours"])
-        config["doctor_lease_warning_minutes"] = int(config["doctor_lease_warning_minutes"])
-    except (TypeError, ValueError) as error:
-        raise BoardSchemaError("Config file is invalid: doctor thresholds must be numbers.") from error
-    if not isinstance(config["doctor_broad_scopes"], list) or any(not isinstance(item, str) for item in config["doctor_broad_scopes"]):
-        raise BoardSchemaError("Config file is invalid: doctor_broad_scopes must be a list of strings.")
-    return config
+    return validate_config(config)
+
+
+def save_config(root: Path, updates: dict[str, Any]) -> dict[str, Any]:
+    paths = Paths(root.resolve())
+    allowed_keys = set(default_config())
+    unknown_keys = sorted(key for key in updates if key not in allowed_keys)
+    if unknown_keys:
+        raise BoardError(f"Unknown config key: {', '.join(unknown_keys)}")
+    with board_lock(root):
+        current = load_config(root)
+        current.update(updates)
+        current = validate_config(current)
+        paths.board_dir.mkdir(parents=True, exist_ok=True)
+        content = json.dumps(current, ensure_ascii=False, indent=2) + "\n"
+        temp_file = paths.config_file.with_suffix(".json.tmp")
+        temp_file.write_text(content, encoding="utf-8")
+        temp_file.replace(paths.config_file)
+        return current
 
 
 def init_config(root: Path, force: bool = False) -> dict[str, Any]:
@@ -228,9 +262,12 @@ def normalize_task(task: Any, archived: bool) -> dict[str, Any]:
     task.setdefault("owner_agent", "")
     ensure_task_list(task, "scope", task_id)
     task["scope"] = normalize_scope(task["scope"])
+    ensure_task_list(task, "verify_scope", task_id)
+    task["verify_scope"] = normalize_scope(task["verify_scope"])
     ensure_task_list(task, "depends_on", task_id)
     ensure_task_list(task, "acceptance", task_id)
     task.setdefault("verification", "")
+    task.setdefault("deferred_verification", "")
     task.setdefault("leftovers", "")
     task.setdefault("created_at", now_iso())
     task.setdefault("updated_at", task.get("created_at") or now_iso())
@@ -444,6 +481,104 @@ def read_events(root: Path, task_id: str = "") -> list[dict[str, Any]]:
             continue
         events.append(event)
     return events
+
+
+def read_messages(root: Path) -> list[dict[str, Any]]:
+    paths = Paths(root.resolve())
+    if not paths.messages_file.exists():
+        return []
+    messages: list[dict[str, Any]] = []
+    try:
+        lines = paths.messages_file.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        raise BoardError(f"Could not read message log: {paths.messages_file} ({error})") from error
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            message = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise BoardSchemaError(f"Message log is not valid JSONL: {paths.messages_file} line {line_number} ({error.msg})") from error
+        if not isinstance(message, dict):
+            raise BoardSchemaError(f"Message log is invalid: {paths.messages_file} line {line_number} must be an object.")
+        messages.append(message)
+    return messages
+
+
+def write_messages(root: Path, messages: list[dict[str, Any]]) -> None:
+    paths = Paths(root.resolve())
+    paths.board_dir.mkdir(parents=True, exist_ok=True)
+    content = "".join(json.dumps(message, ensure_ascii=False, sort_keys=True) + "\n" for message in messages)
+    temp_file = paths.messages_file.with_suffix(".jsonl.tmp")
+    temp_file.write_text(content, encoding="utf-8")
+    temp_file.replace(paths.messages_file)
+
+
+def append_message(root: Path, sender: str, recipient: str, message_type: str, task_id: str, message_text: str) -> dict[str, Any]:
+    allowed_types = {"info", "wait", "release", "handoff", "request"}
+    if not sender.strip():
+        raise BoardError("Message sender is required.")
+    if not recipient.strip():
+        raise BoardError("Message recipient is required.")
+    if recipient != "all" and not recipient.strip():
+        raise BoardError("Message recipient is required.")
+    if message_type not in allowed_types:
+        raise BoardError(f"Invalid message type: {message_type}. Use one of {', '.join(sorted(allowed_types))}.")
+    if not message_text.strip():
+        raise BoardError("Message text is required.")
+    with board_lock(root):
+        messages = read_messages(root)
+        message = {
+            "id": next_message_id(messages),
+            "from": sender.strip(),
+            "to": recipient.strip(),
+            "type": message_type,
+            "task_id": task_id.strip(),
+            "message": message_text.strip(),
+            "created_at": now_iso(),
+            "acknowledged_at": "",
+            "resolved_at": "",
+        }
+        messages.append(message)
+        write_messages(root, messages)
+        append_event(root, "message.tell", task_id=message["task_id"], agent=message["from"], data={"message_id": message["id"], "to": message["to"], "type": message["type"]})
+        return message
+
+
+def messages_for_agent(root: Path, agent: str, include_resolved: bool = False) -> list[dict[str, Any]]:
+    if not agent.strip():
+        raise BoardError("Agent is required.")
+    messages = read_messages(root)
+    result = []
+    for message in messages:
+        if message.get("to") not in (agent, "all"):
+            continue
+        if not include_resolved and message.get("resolved_at"):
+            continue
+        result.append(message)
+    return result
+
+
+def update_message_status(root: Path, message_id: str, agent: str, resolve: bool = False) -> dict[str, Any]:
+    if not agent.strip():
+        raise BoardError("Agent is required.")
+    with board_lock(root):
+        messages = read_messages(root)
+        for message in messages:
+            if message.get("id") != message_id:
+                continue
+            if message.get("to") not in (agent, "all"):
+                raise BoardError(f"Message {message_id} is not addressed to {agent}.")
+            if not message.get("acknowledged_at"):
+                message["acknowledged_at"] = now_iso()
+            action = "message.ack"
+            if resolve:
+                message["resolved_at"] = now_iso()
+                action = "message.resolve"
+            write_messages(root, messages)
+            append_event(root, action, task_id=str(message.get("task_id") or ""), agent=agent, data={"message_id": message_id})
+            return message
+    raise BoardError(f"Message not found: {message_id}")
 
 
 def init_board(root: Path, project_name: str = "", force: bool = False) -> dict[str, Any]:

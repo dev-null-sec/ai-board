@@ -1,0 +1,1 @@
+{"acknowledged_at": "2026-05-15T07:04:58+00:00", "created_at": "2026-05-15T07:04:44+00:00", "from": "codex-00", "id": "M-0001", "message": "notice smoke test", "resolved_at": "2026-05-15T07:04:58+00:00", "task_id": "T-0071", "to": "codex-01", "type": "info"}

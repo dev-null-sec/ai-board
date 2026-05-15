@@ -2,6 +2,43 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.0-alpha.3 - 2026-05-15
+
+第三个 alpha 版本，重点补齐多 agent 协作收口、notice 响应流程、共享验证资源、scope 误用防线和发布前口径一致性。
+
+### 新增
+
+- 新增 `config list/get/set`，通过 CLI 校验并读写 `.ai-board/config.json`，避免 agent 直接手改配置。
+- 新增 `reopen`，done 或 archived 任务验收后发现没做完时可带原因回到 scheduled。
+- 新增 `tell` / `inbox` 轻量 agent notice：支持点对点和 `all` 广播、ack、resolve。
+- 新增 `inbox --fail-on-unresolved`，可作为监工或 CI 的协作消息收口检查。
+- 新增共享验证资源规则和 `verify_scope` / `deferred_verification`，用于记录局部验证和等待全量验收的原因。
+- 新增 `start --scope` 空格歧义检查：包含空格但不是现有路径的单个 scope 参数会被拒绝，降低多个路径误合并的风险。
+
+### 调整
+
+- `doctor` 增加业务健康检查：active 任务停滞、过宽 scope、空 acceptance、agent lease 即将到期、共享验证资源长期占用、生成看板 stale、事件日志 fallback 等。
+- `ai-board skills get core` 增强多 agent 指南：要求同一任务保持同一个 agent 身份、按 notice 响应流程处理消息，并在 `inbox --fail-on-unresolved` 非零时不得视为干净收口。
+- CLI i18n 第二轮整理：常见业务错误和 doctor issue 在 `zh-CN` 下输出中文说明，JSON 字段、状态枚举和事件名继续保持英文。
+- 已完成 Claude 多进程协作实测和复测，验证 scope lock、notice 收口检查和 scope 空格误合并防线在真实 agent 协作中可用。
+- README / README_en 和版本说明改为 `v0.1.0-alpha.3` 口径，补充轻量 agent notice 的能力边界。
+
+### 当前边界
+
+- 仍是 alpha 版本，暂不承诺稳定 API。
+- scope lock 仍是路径级防撞，不做 glob、文件级强制锁或语义冲突判断。
+- agent notice 是轻量提醒和收口检查，不是实时聊天系统，也不会自动改变任务状态。
+- `ai-board render` 不是后台监听；正常 CLI 写操作会自动渲染，手动 render 作为修复按钮保留。
+- PyPI 发布依赖 GitHub Actions 和 PyPI Trusted Publishing 配置。
+
+### 发布前验证
+
+- `uv run python -m unittest discover -s tests`
+- `uv run --with ruff ruff check .`
+- `uv run --with build python -m build`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run ai-board conflicts --fail-on-conflict`
+
 ## v0.1.0-alpha.2 - 2026-05-15
 
 第二个 alpha 版本，重点补齐 AI 原生协作闭环、中文 CLI 体验、发布自动化和 PyPI 发布准备。
@@ -26,7 +63,6 @@
 - `schedule` / `start` 遇到已 active 任务时，错误信息会带 owner、scope 和 lease，减少新 agent 抢占任务的误判。
 - README 和内置 guide 统一说明：CLI 写操作会自动渲染 Markdown 看板，`ai-board render` 是配置变更、拉取后修复或 stale 提示时的兜底命令。
 - README FAQ 和版面做了轻量整理，澄清 JSON 是真相源、Markdown 是生成视图、ai-board 不保存聊天上下文。
-- `doctor` 增加业务健康检查：active 任务停滞、过宽 scope、空 acceptance、agent lease 即将到期、生成看板 stale、事件日志 fallback 等。
 
 ### 当前边界
 

@@ -1,6 +1,6 @@
 # ai-board
 
-English | [中文](./README.md)
+English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.3/README.md)
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -8,11 +8,11 @@ English | [中文](./README.md)
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](./assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.3/assets/ai-board.png)
 
 A local planning board for AI agents. You talk to the AI about what you need, it schedules, tracks, and prevents conflicts — instead of jumping straight into code.
 
-Current version: `v0.1.0-alpha.1`, the first usable alpha.
+Current version: `v0.1.0-alpha.3`, still alpha, focused on stronger multi-agent cleanup checks and release wording consistency.
 
 ## Why I built this
 
@@ -81,7 +81,11 @@ The AI schedules the request instead of acting on it immediately. Urgent bugs ge
 The recommended way: let the AI handle installation and setup. One sentence:
 
 ```text
-Install ai-board with pipx install ai-board, then run ai-board onboard --init-if-missing to take over this project.
+Install ai-board and take over this project:
+1. Prefer pipx install ai-board for a user-level CLI.
+2. If pipx is unavailable, use uv tool install ai-board.
+3. After installation, run ai-board onboard --init-if-missing.
+4. If an agent skill is needed, copy skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into the agent's skills directory.
 ```
 
 The agent checks your environment, installs the CLI, places the skill file, and loads the version-matched guide. No manual steps required.
@@ -112,6 +116,7 @@ Most of the time you won't need commands — just talk to the AI. But if you wan
 ai-board status                      # task distribution
 ai-board show T-0001                 # task details
 ai-board render                      # regenerate Markdown board
+ai-board lang zh-CN                  # print language switch hints
 ```
 
 Full command reference: `ai-board --help` or `ai-board skills get core --full`.
@@ -140,9 +145,14 @@ Humans / agents read the state and continue
 | Simple dependencies | Tasks can declare dependencies; `start` blocks unfinished dependencies by default. Complex dependency graphs are out of scope for now. |
 | Doctor | `doctor` checks the board, generated docs, event log, scope conflicts, and agent state. |
 | History | `history` reads `.ai-board/events.jsonl` and shows task changes. |
+| Agent notices | `tell` / `inbox` provide lightweight cross-agent notices, and `inbox --fail-on-unresolved` can gate handoff cleanup. This is not real-time chat. |
 | Lifecycle | `inbox → scheduled → active → done → archived`. |
 
-Generated boards are Chinese by default. For English projects, set `language` to `en-US` in `.ai-board/config.json`, then run `ai-board render`.
+Generated boards are Chinese by default. For English projects, set `language` to `en-US` in `.ai-board/config.json`, then run `ai-board render`. Normal CLI write commands refresh generated boards automatically; manual render is mainly for config changes, pull-after-edit repair, or stale-doc warnings.
+
+`doctor` has lightweight business checks that can be adjusted through `.ai-board/config.json`, such as stale active-task thresholds, agent lease warnings, and broad scope warnings.
+
+Human-readable CLI output defaults to English for AI, scripts, and CI. Use `AI_BOARD_LANG=zh-CN` or `ai-board --lang zh-CN status` for Chinese output, and run `ai-board lang zh-CN` if you want shell-specific hints.
 
 ## FAQ
 
@@ -152,6 +162,15 @@ Generated boards are Chinese by default. For English projects, set `language` to
 No. `ai-board` does not dump the model's hidden context into a file, and it does not pretend to restore an entire conversation.
 
 It saves the project facts that need to survive: requests, priority, status, owner, scope, verification, and leftovers. The chat can end and the model can change, but the project plan should not live only in chat history.
+
+</details>
+
+<details>
+<summary><strong>Why not manage tasks directly in Markdown instead of JSON?</strong></summary>
+
+Markdown is good for reading, but it is a poor source of truth for structured state. Task status, owner, scope, dependencies, verification, and leftovers need to be read, validated, sorted, and updated by code. If that data only lives in Markdown, a small formatting change by a person or an agent can make the structure ambiguous.
+
+So `ai-board` stores structured data in `.ai-board/board.json`, then renders Markdown for people to read. In short: JSON keeps it precise, Markdown keeps it readable.
 
 </details>
 
@@ -227,6 +246,7 @@ Not Jira, not a web project manager. This version focuses on a local CLI, JSON a
 | Event log and `history` | OS-level file locks |
 | `doctor` project checks | Semantic code-conflict detection |
 | Multi-agent path-level scope safety | Cross-machine coordination locks |
+| Lightweight agent notices | Real-time chat system |
 
 ## Development
 

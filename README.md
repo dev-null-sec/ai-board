@@ -1,6 +1,6 @@
 # ai-board
 
-[English](./README_en.md) | 中文
+[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.3/README_en.md) | 中文
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -8,11 +8,11 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](./assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.3/assets/ai-board.png)
 
 给 AI agent 用的本地计划看板。你跟 AI 对话提需求，它帮你排期、跟踪、防冲突，而不是直接开改。
 
-当前版本：`v0.1.0-alpha.2`，仍是 alpha，但已经支持从 PyPI 安装。
+当前版本：`v0.1.0-alpha.3`，仍是 alpha，重点增强多 agent 协作收口和发布前口径一致性。
 
 ## 为什么做这个
 
@@ -146,6 +146,7 @@ AI / 人读取状态，继续推进
 | 简单依赖 | 任务可以声明依赖，`start` 默认会挡住依赖未完成的任务；复杂依赖图暂时不做。 |
 | 自检 | `doctor` 检查 board、生成文档、事件日志、scope 冲突和 agent 状态。 |
 | 历史 | `history` 从 `.ai-board/events.jsonl` 查看任务变更记录。 |
+| agent notice | `tell` / `inbox` 提供轻量跨 agent 提醒，`inbox --fail-on-unresolved` 可用于收口检查；它不是实时聊天。 |
 | 生命周期 | `inbox → scheduled → active → done → archived`。 |
 
 默认生成中文看板。如果项目主要使用英文，可以把 `.ai-board/config.json` 里的 `language` 改成 `en-US`，再运行 `ai-board render`。正常通过 CLI 改任务时不需要手动 render；只有手改配置、拉取代码后怀疑生成视图过期，或 `doctor` 提示 stale 时才需要运行。
@@ -164,6 +165,15 @@ CLI 默认输出英文，方便 AI、脚本和 CI 稳定使用。人手动看时
 不是。`ai-board` 不会把 AI 脑子里的上下文原样保存下来，也不会假装恢复一整段对话记忆。
 
 它保存的是项目推进需要稳定存在的东西：需求、优先级、状态、负责人、scope、验收结果、遗留问题。换句话说，聊天可以断，模型可以换，但项目计划不应该只活在聊天记录里。
+
+</details>
+
+<details>
+<summary><strong>为什么不用 Markdown 直接管理任务，而要用 JSON？</strong></summary>
+
+Markdown 适合给人读，不适合当稳定的数据源。任务状态、负责人、scope、依赖、验收结果这些字段需要被程序可靠地读取、校验、排序和更新；如果都写在 Markdown 里，AI 或人一改格式，工具就很难判断哪些是内容、哪些是结构。
+
+所以 `ai-board` 用 `.ai-board/board.json` 存结构化数据，再生成 Markdown 给人看。简单说：JSON 负责准确，Markdown 负责好读。
 
 </details>
 
@@ -239,6 +249,7 @@ docs/                  这个项目自己的计划和状态文档
 | 事件日志和 `history` | OS 级文件锁 |
 | `doctor` 项目自检 | 语义级代码冲突判断 |
 | 多 agent 路径级 scope 防撞 | 跨机器协作锁 |
+| 轻量 agent notice | 实时聊天系统 |
 
 ## 开发
 

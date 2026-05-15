@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .datetime_utils import parse_iso_datetime
 from .errors import BoardError, ScopeConflictError
 from .render import render_docs
 from .store import (
@@ -110,6 +111,21 @@ def release_agent_record(agent: dict[str, Any]) -> None:
     agent["lease_expires_at"] = ""
     agent["released_at"] = now_iso()
     agent["updated_at"] = now_iso()
+
+
+def ensure_scope_arguments_are_unambiguous(root: Path, scope: list[str]) -> None:
+    for item in scope:
+        raw = item.strip()
+        if " " not in raw:
+            continue
+        if (root / raw).exists():
+            continue
+        raise BoardError(
+            "Scope path contains spaces and does not exist: "
+            f"{raw}. If you meant multiple paths, pass each path as a separate "
+            "--scope argument; if this is one path with spaces, create it first "
+            "or check the spelling."
+        )
 
 
 def claim_agent(root: Path, kind: str, lease_minutes: int = DEFAULT_LEASE_MINUTES) -> dict[str, Any]:
@@ -298,6 +314,7 @@ def add_task(
     source: str = "",
     acceptance: list[str] | None = None,
     depends_on: list[str] | None = None,
+    verify_scope: list[str] | None = None,
 ) -> dict[str, Any]:
     if priority not in PRIORITIES:
         raise BoardError(f"Invalid priority: {priority}. Use one of {', '.join(PRIORITIES)}.")
@@ -306,6 +323,7 @@ def add_task(
     with board_lock(root):
         board = load_board(root)
         dependency_ids = normalize_dependency_ids(depends_on or [])
+        normalized_verify_scope = normalize_scope(verify_scope or [])
         validate_task_dependencies(board, preview_next_task_id(board), dependency_ids)
         task = {
             "id": next_task_id(board),
@@ -317,16 +335,18 @@ def add_task(
             "source": source,
             "owner_agent": "",
             "scope": [],
+            "verify_scope": normalized_verify_scope,
             "depends_on": dependency_ids,
             "acceptance": acceptance or [],
             "verification": "",
+            "deferred_verification": "",
             "leftovers": "",
             "created_at": now_iso(),
             "updated_at": now_iso(),
         }
         board["tasks"].append(task)
         persist(root, board)
-        record_event(root, "task.add", task, data={"title": title, "priority": priority, "lane": task["lane"], "source": source})
+        record_event(root, "task.add", task, data={"title": title, "priority": priority, "lane": task["lane"], "source": source, "verify_scope": normalized_verify_scope})
         return task
 
 
@@ -375,7 +395,10 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
         board = load_board(root)
         task = find_task(board, task_id)
         ensure_status_transition(task, "active")
+        ensure_scope_arguments_are_unambiguous(root, scope)
         task_scope = normalize_scope(scope)
+        if not task_scope:
+            raise BoardError("Task scope is required. Start with specific files or small subdirectories, for example --scope src/app.py README.md.")
         ensure_dependencies_complete(board, task, force)
         conflicts = find_scope_conflicts(board, task, task_scope)
         if conflicts and not force:
@@ -434,7 +457,7 @@ def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> di
         return task
 
 
-def complete_task(root: Path, task_id: str, verification: str, leftovers: str = "") -> dict[str, Any]:
+def complete_task(root: Path, task_id: str, verification: str, leftovers: str = "", deferred_verification: str = "") -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
@@ -442,6 +465,7 @@ def complete_task(root: Path, task_id: str, verification: str, leftovers: str = 
             raise BoardError("Verification is required.")
         transition_task(task, "done")
         task["verification"] = verification
+        task["deferred_verification"] = deferred_verification
         task["leftovers"] = leftovers
         task["lock_owner"] = ""
         task["lease_expires_at"] = ""
@@ -449,7 +473,7 @@ def complete_task(root: Path, task_id: str, verification: str, leftovers: str = 
         task["updated_at"] = now_iso()
         release_task_agent(board, task)
         persist(root, board)
-        record_event(root, "task.complete", task, data={"status": "done", "verification": verification, "leftovers": leftovers})
+        record_event(root, "task.complete", task, data={"status": "done", "verification": verification, "deferred_verification": deferred_verification, "leftovers": leftovers})
         return task
 
 
@@ -468,16 +492,25 @@ def archive_task(root: Path, task_id: str) -> dict[str, Any]:
         return task
 
 
-def parse_iso_datetime(value: str) -> datetime | None:
-    if not value:
-        return None
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+def reopen_task(root: Path, task_id: str, reason: str) -> dict[str, Any]:
+    if not reason.strip():
+        raise BoardError("Reopen reason is required.")
+    with board_lock(root):
+        board = load_board(root)
+        task = find_task(board, task_id)
+        previous_status = task["status"]
+        if previous_status not in ("done", "archived"):
+            raise BoardError(f"Cannot reopen task {task['id']} from {previous_status}. Only done or archived tasks can be reopened.")
+        if task in board["archive"]:
+            board["archive"] = [item for item in board["archive"] if item["id"] != task["id"]]
+            board["tasks"].append(task)
+        task["status"] = "scheduled"
+        task["reopened_at"] = now_iso()
+        task["reopen_reason"] = reason
+        task["updated_at"] = now_iso()
+        persist(root, board)
+        record_event(root, "task.reopen", task, data={"from_status": previous_status, "status": "scheduled", "reason": reason})
+        return task
 
 
 def lease_expires_at(lease_minutes: int) -> str:

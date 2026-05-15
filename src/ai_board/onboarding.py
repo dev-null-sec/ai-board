@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -101,14 +102,16 @@ def scan_project_files(root: Path, limit: int = 200) -> list[str]:
     files: list[str] = []
     if not root.exists():
         return files
-    for path in sorted(root.rglob("*")):
-        if len(files) >= limit:
-            break
-        if path.is_dir():
-            continue
-        if should_ignore(path, root):
-            continue
-        files.append(relative_path(root, path))
+    for current_root, dirnames, filenames in os.walk(root):
+        current_path = Path(current_root)
+        dirnames[:] = sorted(name for name in dirnames if name not in IGNORED_DIRS)
+        for filename in sorted(filenames):
+            if len(files) >= limit:
+                return files
+            path = current_path / filename
+            if should_ignore(path, root):
+                continue
+            files.append(relative_path(root, path))
     return files
 
 

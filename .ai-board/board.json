@@ -4,52 +4,59 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 55,
+  "next_id": 88,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-15T03:39:25+00:00",
+  "updated_at": "2026-05-15T10:20:56+00:00",
   "tasks": [
     {
-      "id": "T-0037",
-      "title": "补充 agent 过期身份的 doctor 提醒",
+      "id": "T-0087",
+      "title": "发布 v0.1.0-alpha.3 到 GitHub",
       "description": "",
-      "priority": "P2",
-      "status": "inbox",
-      "lane": "多 agent 协作",
-      "source": "外部 review 采纳",
-      "owner_agent": "",
-      "scope": [],
+      "priority": "P0",
+      "status": "active",
+      "lane": "发布",
+      "source": "用户请求",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        ".github/workflows/ci.yml",
+        ".github/workflows/release.yml",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_version.py"
+      ],
+      "verify_scope": [
+        ".github/workflows",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
       "depends_on": [],
       "acceptance": [
-        "active task 的 owner agent lease 过期时 doctor 给出明确提醒"
+        "版本口径确认为第三版 v0.1.0-alpha.3 / 0.1.0a3",
+        "发版前 conflicts、doctor、ruff、全量 unittest、构建和 twine check 均通过",
+        "提交 release 相关改动，创建并推送 v0.1.0-alpha.3 tag 到 GitHub"
       ],
       "verification": "",
+      "deferred_verification": "",
       "leftovers": "",
-      "created_at": "2026-05-14T09:37:17+00:00",
-      "updated_at": "2026-05-14T09:37:17+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0038",
-      "title": "评估并实现任务 reopen 命令",
-      "description": "",
-      "priority": "P2",
-      "status": "inbox",
-      "lane": "工作流",
-      "source": "外部 review 采纳",
-      "owner_agent": "",
-      "scope": [],
-      "depends_on": [],
-      "acceptance": [
-        "done 或 archived 任务可带 reason 回到 scheduled",
-        "reopen 写入事件日志并重新渲染看板"
-      ],
-      "verification": "",
-      "leftovers": "",
-      "created_at": "2026-05-14T09:37:17+00:00",
-      "updated_at": "2026-05-14T09:37:17+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
+      "created_at": "2026-05-15T10:20:32+00:00",
+      "updated_at": "2026-05-15T10:20:56+00:00",
+      "lock_owner": "codex-00",
+      "lease_expires_at": "2026-05-15T14:20:56+00:00",
+      "locked_at": "2026-05-15T10:20:56+00:00",
+      "started_at": "2026-05-15T10:20:56+00:00"
     }
   ],
   "archive": [
@@ -80,7 +87,9 @@
       "lane": "默认",
       "source": "",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0004",
@@ -108,7 +117,9 @@
       "lane": "默认",
       "source": "",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0005",
@@ -136,7 +147,9 @@
       "lane": "默认",
       "source": "",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0007",
@@ -163,7 +176,9 @@
       "lane": "默认",
       "source": "",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0006",
@@ -191,7 +206,9 @@
       "lane": "默认",
       "source": "",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0008",
@@ -219,7 +236,9 @@
       "completed_at": "2026-05-13T10:17:14+00:00",
       "archived_at": "2026-05-13T10:17:26+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0010",
@@ -247,7 +266,9 @@
       "completed_at": "2026-05-13T10:23:21+00:00",
       "archived_at": "2026-05-13T10:23:34+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0009",
@@ -276,7 +297,9 @@
       "completed_at": "2026-05-13T10:33:06+00:00",
       "archived_at": "2026-05-13T10:33:15+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0002",
@@ -302,7 +325,9 @@
       "completed_at": "2026-05-13T10:46:48+00:00",
       "archived_at": "2026-05-13T10:47:00+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0012",
@@ -338,7 +363,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T10:59:23+00:00",
       "completed_at": "2026-05-13T11:03:16+00:00",
-      "archived_at": "2026-05-13T11:03:16+00:00"
+      "archived_at": "2026-05-13T11:03:16+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0013",
@@ -371,7 +398,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T11:09:45+00:00",
       "completed_at": "2026-05-13T11:11:01+00:00",
-      "archived_at": "2026-05-13T11:11:01+00:00"
+      "archived_at": "2026-05-13T11:11:01+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0014",
@@ -403,7 +432,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T11:12:25+00:00",
       "completed_at": "2026-05-13T11:12:49+00:00",
-      "archived_at": "2026-05-13T11:12:49+00:00"
+      "archived_at": "2026-05-13T11:12:49+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0015",
@@ -439,7 +470,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-13T11:14:27+00:00",
       "completed_at": "2026-05-13T11:15:40+00:00",
-      "archived_at": "2026-05-13T11:15:40+00:00"
+      "archived_at": "2026-05-13T11:15:40+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0011",
@@ -468,7 +501,9 @@
       "completed_at": "2026-05-14T02:48:33+00:00",
       "archived_at": "2026-05-14T02:48:33+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0016",
@@ -505,7 +540,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T03:29:51+00:00",
       "completed_at": "2026-05-14T03:38:17+00:00",
-      "archived_at": "2026-05-14T03:38:22+00:00"
+      "archived_at": "2026-05-14T03:38:22+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0017",
@@ -538,7 +575,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T03:50:54+00:00",
       "completed_at": "2026-05-14T03:53:35+00:00",
-      "archived_at": "2026-05-14T03:53:43+00:00"
+      "archived_at": "2026-05-14T03:53:43+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0003",
@@ -571,7 +610,9 @@
       "completed_at": "2026-05-14T04:01:02+00:00",
       "archived_at": "2026-05-14T04:01:07+00:00",
       "lane": "默认",
-      "source": ""
+      "source": "",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0018",
@@ -608,7 +649,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T04:07:46+00:00",
       "completed_at": "2026-05-14T04:16:21+00:00",
-      "archived_at": "2026-05-14T04:16:30+00:00"
+      "archived_at": "2026-05-14T04:16:30+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0019",
@@ -641,7 +684,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T04:21:31+00:00",
       "completed_at": "2026-05-14T04:22:44+00:00",
-      "archived_at": "2026-05-14T04:22:53+00:00"
+      "archived_at": "2026-05-14T04:22:53+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0023",
@@ -675,7 +720,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T07:27:50+00:00",
       "completed_at": "2026-05-14T07:31:55+00:00",
-      "archived_at": "2026-05-14T07:32:03+00:00"
+      "archived_at": "2026-05-14T07:32:03+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0024",
@@ -709,7 +756,9 @@
       "lease_expires_at": "",
       "started_at": "2026-05-14T07:34:51+00:00",
       "completed_at": "2026-05-14T07:37:29+00:00",
-      "archived_at": "2026-05-14T07:37:36+00:00"
+      "archived_at": "2026-05-14T07:37:36+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0025",
@@ -744,7 +793,9 @@
       "locked_at": "2026-05-14T07:38:11+00:00",
       "started_at": "2026-05-14T07:38:11+00:00",
       "completed_at": "2026-05-14T07:39:38+00:00",
-      "archived_at": "2026-05-14T07:39:43+00:00"
+      "archived_at": "2026-05-14T07:39:43+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0020",
@@ -779,7 +830,9 @@
       "locked_at": "2026-05-14T07:41:13+00:00",
       "started_at": "2026-05-14T07:41:13+00:00",
       "completed_at": "2026-05-14T07:43:59+00:00",
-      "archived_at": "2026-05-14T07:44:05+00:00"
+      "archived_at": "2026-05-14T07:44:05+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0021",
@@ -815,7 +868,9 @@
       "locked_at": "2026-05-14T07:56:23+00:00",
       "started_at": "2026-05-14T07:56:23+00:00",
       "completed_at": "2026-05-14T07:58:41+00:00",
-      "archived_at": "2026-05-14T07:58:47+00:00"
+      "archived_at": "2026-05-14T07:58:47+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0022",
@@ -850,7 +905,9 @@
       "locked_at": "2026-05-14T08:00:08+00:00",
       "started_at": "2026-05-14T08:00:08+00:00",
       "completed_at": "2026-05-14T08:01:46+00:00",
-      "archived_at": "2026-05-14T08:01:52+00:00"
+      "archived_at": "2026-05-14T08:01:52+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0026",
@@ -888,7 +945,9 @@
       "locked_at": "2026-05-14T08:05:04+00:00",
       "started_at": "2026-05-14T08:05:04+00:00",
       "completed_at": "2026-05-14T08:06:41+00:00",
-      "archived_at": "2026-05-14T08:06:46+00:00"
+      "archived_at": "2026-05-14T08:06:46+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0028",
@@ -922,7 +981,9 @@
       "locked_at": "2026-05-14T08:12:43+00:00",
       "started_at": "2026-05-14T08:12:43+00:00",
       "completed_at": "2026-05-14T08:13:10+00:00",
-      "archived_at": "2026-05-14T08:13:14+00:00"
+      "archived_at": "2026-05-14T08:13:14+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0027",
@@ -955,7 +1016,9 @@
       "locked_at": "2026-05-14T08:16:34+00:00",
       "started_at": "2026-05-14T08:16:34+00:00",
       "completed_at": "2026-05-14T08:18:36+00:00",
-      "archived_at": "2026-05-14T08:18:41+00:00"
+      "archived_at": "2026-05-14T08:18:41+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0029",
@@ -987,7 +1050,9 @@
       "locked_at": "2026-05-14T08:21:30+00:00",
       "started_at": "2026-05-14T08:21:30+00:00",
       "completed_at": "2026-05-14T08:23:26+00:00",
-      "archived_at": "2026-05-14T08:23:34+00:00"
+      "archived_at": "2026-05-14T08:23:34+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0030",
@@ -1020,7 +1085,9 @@
       "locked_at": "2026-05-14T08:26:26+00:00",
       "started_at": "2026-05-14T08:26:26+00:00",
       "completed_at": "2026-05-14T08:27:40+00:00",
-      "archived_at": "2026-05-14T08:27:47+00:00"
+      "archived_at": "2026-05-14T08:27:47+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0031",
@@ -1053,7 +1120,9 @@
       "locked_at": "2026-05-14T08:33:09+00:00",
       "started_at": "2026-05-14T08:33:09+00:00",
       "completed_at": "2026-05-14T08:36:52+00:00",
-      "archived_at": "2026-05-14T08:37:01+00:00"
+      "archived_at": "2026-05-14T08:37:01+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0032",
@@ -1087,7 +1156,9 @@
       "locked_at": "2026-05-14T08:40:36+00:00",
       "started_at": "2026-05-14T08:40:36+00:00",
       "completed_at": "2026-05-14T08:43:23+00:00",
-      "archived_at": "2026-05-14T08:43:40+00:00"
+      "archived_at": "2026-05-14T08:43:40+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0033",
@@ -1120,7 +1191,9 @@
       "locked_at": "2026-05-14T09:02:35+00:00",
       "started_at": "2026-05-14T09:02:35+00:00",
       "completed_at": "2026-05-14T09:03:06+00:00",
-      "archived_at": "2026-05-14T09:03:21+00:00"
+      "archived_at": "2026-05-14T09:03:21+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0034",
@@ -1154,7 +1227,9 @@
       "locked_at": "2026-05-14T09:37:18+00:00",
       "started_at": "2026-05-14T09:37:18+00:00",
       "completed_at": "2026-05-14T09:52:33+00:00",
-      "archived_at": "2026-05-14T09:52:33+00:00"
+      "archived_at": "2026-05-14T09:52:33+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0035",
@@ -1187,7 +1262,9 @@
       "locked_at": "2026-05-14T09:52:34+00:00",
       "started_at": "2026-05-14T09:52:34+00:00",
       "completed_at": "2026-05-14T09:55:35+00:00",
-      "archived_at": "2026-05-14T09:55:35+00:00"
+      "archived_at": "2026-05-14T09:55:35+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0036",
@@ -1220,7 +1297,9 @@
       "locked_at": "2026-05-14T09:55:35+00:00",
       "started_at": "2026-05-14T09:55:35+00:00",
       "completed_at": "2026-05-14T10:01:13+00:00",
-      "archived_at": "2026-05-14T10:01:14+00:00"
+      "archived_at": "2026-05-14T10:01:14+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0039",
@@ -1254,7 +1333,9 @@
       "locked_at": "2026-05-14T10:03:41+00:00",
       "started_at": "2026-05-14T10:03:41+00:00",
       "completed_at": "2026-05-14T10:30:06+00:00",
-      "archived_at": "2026-05-14T10:30:07+00:00"
+      "archived_at": "2026-05-14T10:30:07+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0040",
@@ -1288,7 +1369,9 @@
       "locked_at": "2026-05-14T10:34:48+00:00",
       "started_at": "2026-05-14T10:34:48+00:00",
       "completed_at": "2026-05-14T10:37:42+00:00",
-      "archived_at": "2026-05-14T10:37:42+00:00"
+      "archived_at": "2026-05-14T10:37:42+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0041",
@@ -1322,7 +1405,9 @@
       "locked_at": "2026-05-14T10:50:02+00:00",
       "started_at": "2026-05-14T10:50:02+00:00",
       "completed_at": "2026-05-14T10:58:20+00:00",
-      "archived_at": "2026-05-14T10:58:30+00:00"
+      "archived_at": "2026-05-14T10:58:30+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0042",
@@ -1356,7 +1441,9 @@
       "locked_at": "2026-05-15T02:04:47+00:00",
       "started_at": "2026-05-15T02:04:47+00:00",
       "completed_at": "2026-05-15T02:07:05+00:00",
-      "archived_at": "2026-05-15T02:07:05+00:00"
+      "archived_at": "2026-05-15T02:07:05+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0043",
@@ -1389,7 +1476,9 @@
       "locked_at": "2026-05-15T02:07:12+00:00",
       "started_at": "2026-05-15T02:07:12+00:00",
       "completed_at": "2026-05-15T02:12:26+00:00",
-      "archived_at": "2026-05-15T02:12:27+00:00"
+      "archived_at": "2026-05-15T02:12:27+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0044",
@@ -1422,7 +1511,9 @@
       "locked_at": "2026-05-15T02:15:44+00:00",
       "started_at": "2026-05-15T02:15:44+00:00",
       "completed_at": "2026-05-15T02:18:32+00:00",
-      "archived_at": "2026-05-15T02:18:32+00:00"
+      "archived_at": "2026-05-15T02:18:32+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0045",
@@ -1456,7 +1547,9 @@
       "locked_at": "2026-05-15T02:23:20+00:00",
       "started_at": "2026-05-15T02:23:20+00:00",
       "completed_at": "2026-05-15T02:28:53+00:00",
-      "archived_at": "2026-05-15T02:28:53+00:00"
+      "archived_at": "2026-05-15T02:28:53+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0047",
@@ -1492,7 +1585,9 @@
       "locked_at": "2026-05-15T02:40:09+00:00",
       "started_at": "2026-05-15T02:40:09+00:00",
       "completed_at": "2026-05-15T02:43:51+00:00",
-      "archived_at": "2026-05-15T02:43:51+00:00"
+      "archived_at": "2026-05-15T02:43:51+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0048",
@@ -1523,7 +1618,9 @@
       "locked_at": "2026-05-15T02:54:41+00:00",
       "started_at": "2026-05-15T02:54:41+00:00",
       "completed_at": "2026-05-15T02:58:55+00:00",
-      "archived_at": "2026-05-15T02:59:13+00:00"
+      "archived_at": "2026-05-15T02:59:13+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0049",
@@ -1556,7 +1653,9 @@
       "locked_at": "2026-05-15T03:01:45+00:00",
       "started_at": "2026-05-15T03:01:45+00:00",
       "completed_at": "2026-05-15T03:05:07+00:00",
-      "archived_at": "2026-05-15T03:05:14+00:00"
+      "archived_at": "2026-05-15T03:05:14+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0050",
@@ -1590,7 +1689,9 @@
       "locked_at": "2026-05-15T03:08:23+00:00",
       "started_at": "2026-05-15T03:08:23+00:00",
       "completed_at": "2026-05-15T03:11:22+00:00",
-      "archived_at": "2026-05-15T03:11:31+00:00"
+      "archived_at": "2026-05-15T03:11:31+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0051",
@@ -1624,7 +1725,9 @@
       "locked_at": "2026-05-15T03:11:53+00:00",
       "started_at": "2026-05-15T03:11:53+00:00",
       "completed_at": "2026-05-15T03:16:04+00:00",
-      "archived_at": "2026-05-15T03:16:12+00:00"
+      "archived_at": "2026-05-15T03:16:12+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0052",
@@ -1656,7 +1759,9 @@
       "locked_at": "2026-05-15T03:17:14+00:00",
       "started_at": "2026-05-15T03:17:14+00:00",
       "completed_at": "2026-05-15T03:18:49+00:00",
-      "archived_at": "2026-05-15T03:18:59+00:00"
+      "archived_at": "2026-05-15T03:18:59+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0046",
@@ -1685,7 +1790,9 @@
       "locked_at": "2026-05-15T03:18:24+00:00",
       "started_at": "2026-05-15T03:18:24+00:00",
       "completed_at": "2026-05-15T03:19:37+00:00",
-      "archived_at": "2026-05-15T03:19:49+00:00"
+      "archived_at": "2026-05-15T03:19:49+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0053",
@@ -1715,7 +1822,9 @@
       "locked_at": "2026-05-15T03:22:55+00:00",
       "started_at": "2026-05-15T03:22:55+00:00",
       "completed_at": "2026-05-15T03:24:38+00:00",
-      "archived_at": "2026-05-15T03:24:54+00:00"
+      "archived_at": "2026-05-15T03:24:54+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
     },
     {
       "id": "T-0054",
@@ -1760,20 +1869,1246 @@
       "started_at": "2026-05-15T03:36:27+00:00",
       "unlocked_at": "2026-05-15T03:36:04+00:00",
       "completed_at": "2026-05-15T03:39:04+00:00",
-      "archived_at": "2026-05-15T03:39:25+00:00"
+      "archived_at": "2026-05-15T03:39:25+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
+    },
+    {
+      "id": "T-0056",
+      "title": "禁止 start 空 scope 绕过路径锁",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board start 未传 --scope 时返回错误，不进入 active",
+        "错误文案说明 start 必须声明具体文件或小目录 scope",
+        "新增测试覆盖空 scope 被拒绝，已有冲突检测测试不回退"
+      ],
+      "verification": "已在业务层 start_task 拒绝空 scope；ai-board start 未传 --scope 时返回错误并保持 scheduled；start --help 和内置 guide 说明 --scope 必填且建议具体文件/小目录。验证通过：相关单元测试和手动复现。",
+      "leftovers": "无",
+      "created_at": "2026-05-15T04:21:26+00:00",
+      "updated_at": "2026-05-15T04:25:41+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T04:23:41+00:00",
+      "started_at": "2026-05-15T04:23:41+00:00",
+      "completed_at": "2026-05-15T04:25:29+00:00",
+      "archived_at": "2026-05-15T04:25:41+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
+    },
+    {
+      "id": "T-0057",
+      "title": "同步包版本和 __version__",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-01",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/__init__.py",
+        "tests/test_version.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "src/ai_board/__init__.py 的 __version__ 与 pyproject.toml 版本一致",
+        "形成后续版本单一来源方案，避免发布时漏改",
+        "新增或更新测试/检查覆盖版本一致性"
+      ],
+      "verification": "已将 src/ai_board/__init__.py 的 __version__ 同步为 0.1.0a2，并新增 tests/test_version.py 校验 pyproject.toml 与包版本一致。已运行 uv run python -m unittest tests.test_version，结果通过。",
+      "leftovers": "后续更彻底的单一来源可以等正式发布流程稳定后再评估，例如从包元数据读取版本；当前先用测试防漏改。",
+      "created_at": "2026-05-15T04:21:26+00:00",
+      "updated_at": "2026-05-15T04:27:54+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T04:24:25+00:00",
+      "started_at": "2026-05-15T04:24:25+00:00",
+      "completed_at": "2026-05-15T04:27:33+00:00",
+      "archived_at": "2026-05-15T04:27:54+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
+    },
+    {
+      "id": "T-0058",
+      "title": "优化 onboard 项目扫描跳过大目录",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "工作流",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-01",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/onboarding.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "scan_project_files 不再用 root.rglob('*') 先全量遍历再过滤",
+        "遇到 .git、node_modules、.venv、dist、build 等忽略目录时直接剪枝不进入",
+        "新增测试覆盖忽略目录中的文件不会被扫描，轻量/已有项目分类不回退"
+      ],
+      "verification": "已将 scan_project_files 从 root.rglob('*') 改为 os.walk 剪枝遍历，遇到 .git、node_modules、.venv、dist、build 等忽略目录时不会继续进入。新增 test_scan_project_files_prunes_ignored_directories，验证 dirnames 被原地剪枝；同时运行 onboard 分类和 E2E onboarding 流程测试，结果通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T04:21:26+00:00",
+      "updated_at": "2026-05-15T04:29:34+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T04:28:09+00:00",
+      "started_at": "2026-05-15T04:28:09+00:00",
+      "completed_at": "2026-05-15T04:29:29+00:00",
+      "archived_at": "2026-05-15T04:29:34+00:00",
+      "verify_scope": [],
+      "deferred_verification": ""
+    },
+    {
+      "id": "T-0063",
+      "title": "区分写入 scope 和验证依赖 scope",
+      "description": "多 agent 并行时，任务即使写入 scope 不冲突，也可能因为全量测试或共享测试文件产生验收依赖冲突。需要让任务或 next/start 流程显式识别验证依赖，避免硬接后才发现全量验证不稳定。",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "T-0057 与 T-0056 并行验收复盘",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "评估并设计 write scope 与 verify scope / depends_on_scope 的最小表达方式",
+        "ai-board next 或 start 能提示候选任务的验证依赖与 active scope 可能冲突",
+        "任务完成记录能区分局部验证已过与全量验证因其他 active lock 延后",
+        "更新 AI 使用指南，要求接任务前同时声明修改范围和验证范围",
+        "新增测试或文档案例覆盖写入不冲突但验证依赖冲突的场景"
+      ],
+      "verification": "已实现 write scope / verify scope 的最小表达：任务新增 verify_scope 字段，ai-board add 支持 --verify-scope；ai-board next 会提示候选任务的验证范围是否等待 active lock；ai-board complete 支持 --deferred-verification 记录局部验证已过但全量验证延后的原因；show 和归档看板会展示验证范围与延后验收。验证：新增相关单元测试通过；uv run python -m unittest discover -s tests 通过 64 条；手动临时项目复现写入 scope 不冲突但 verify_scope 被 active lock 阻塞的 next 提示；uv run ai-board conflicts --fail-on-conflict 和 uv run ai-board doctor --fail-on-issue 通过。",
+      "leftovers": "ruff 未运行：当前环境 uv run ruff check . 失败，提示 Failed to spawn: ruff / program not found。",
+      "created_at": "2026-05-15T04:29:19+00:00",
+      "updated_at": "2026-05-15T04:39:26+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T04:34:33+00:00",
+      "started_at": "2026-05-15T04:34:33+00:00",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "completed_at": "2026-05-15T04:39:15+00:00",
+      "archived_at": "2026-05-15T04:39:26+00:00"
+    },
+    {
+      "id": "T-0064",
+      "title": "增加共享验证资源释放和等待全量验收机制",
+      "description": "当某个 agent 长时间占用 tests 或核心 CLI 文件等共享验证资源时，其他任务可能只能局部验证，无法获得全量测试窗口。需要记录等待全量验收的任务，并提醒持有共享资源的 agent 释放后优先处理这些等待项。",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "多 agent 验证窗口复盘",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "定义 shared verification scope，如 tests、tests/test_cli.py、核心 CLI 文件，并支持后续配置",
+        "任务因 active lock 无法全量验证时，能记录等待全量验收的原因和阻塞任务",
+        "ai-board next 优先提示等待全量验收的任务，而不是继续推荐新任务",
+        "doctor 检查长期占用 shared scope 或连续占用 shared scope 的 agent，并提示可能阻塞其他任务验收",
+        "AI 使用指南要求释放共享验证资源后，先处理等待全量验收任务，再接新任务"
+      ],
+      "verification": "已增加可配置 shared verification scope；next 会优先提示等待全量验收任务；doctor 会提醒长期占用共享验证资源的 active task；AI 使用指南已要求释放共享验证资源后先处理等待验收项。已运行 uv run python -m unittest discover -s tests，66 tests OK；已运行 uv run ai-board conflicts --fail-on-conflict，无冲突；已运行 uv run ai-board doctor --fail-on-issue，通过。",
+      "leftovers": "ruff 未运行：当前环境执行 uv run ruff check . 失败，提示 Failed to spawn: ruff / program not found。",
+      "created_at": "2026-05-15T04:33:06+00:00",
+      "updated_at": "2026-05-15T06:08:16+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:03:26+00:00",
+      "started_at": "2026-05-15T06:03:26+00:00",
+      "completed_at": "2026-05-15T06:08:10+00:00",
+      "archived_at": "2026-05-15T06:08:16+00:00"
+    },
+    {
+      "id": "T-0059",
+      "title": "去重 parse_iso_datetime 定义",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "代码质量",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-01",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/datetime_utils.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/store.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "parse_iso_datetime 只保留一个公共实现",
+        "store、operations、cli 复用同一实现",
+        "时间解析相关锁过期和 doctor 测试通过"
+      ],
+      "verification": "已新增 src/ai_board/datetime_utils.py 作为唯一 parse_iso_datetime 实现，store.py 和 operations.py 改为复用该公共函数；rg 确认只剩一个 def parse_iso_datetime。已运行 uv run python -m unittest discover -s tests、uv run --with ruff ruff check .、uv run python -m ai_board conflicts --fail-on-conflict、uv run python -m ai_board doctor --fail-on-issue，结果均通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T04:21:27+00:00",
+      "updated_at": "2026-05-15T06:14:13+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:12:12+00:00",
+      "started_at": "2026-05-15T06:12:12+00:00",
+      "completed_at": "2026-05-15T06:14:05+00:00",
+      "archived_at": "2026-05-15T06:14:13+00:00"
+    },
+    {
+      "id": "T-0055",
+      "title": "下次发版前修复 PyPI README 图片和链接",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布",
+      "source": "PyPI 页面实测破图",
+      "owner_agent": "codex-00",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "pyproject.toml"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README 和 README_en 的 logo 使用公网可访问的绝对 URL，不再使用 ./assets 相对路径",
+        "PyPI README 中的 English/中文 跨语言链接使用 GitHub tag 绝对链接，不能跳到 pypi.org/project/.../README_en.md",
+        "发布前构建包并检查 long description 中图片和跨语言链接可被 PyPI 正确渲染或跳转",
+        "随下一次版本发布一起修复，不为此单独重发当前版本"
+      ],
+      "verification": "README.md 和 README_en.md 的 logo 已改为 raw.githubusercontent.com 的 v0.1.0-alpha.2 tag 绝对 URL；中英文跨语言链接已改为 GitHub v0.1.0-alpha.2 tag 绝对 URL。已运行 rg 检查 README 中不再有 ./assets/ai-board.png 或 ./README 跨语言链接；已运行 uv build，成功生成 dist/ai_board-0.1.0a2.tar.gz 和 dist/ai_board-0.1.0a2-py3-none-any.whl；已检查 src/ai_board.egg-info/PKG-INFO，PyPI long description 使用的是 GitHub/raw 绝对链接；已运行 uv run ai-board conflicts --fail-on-conflict 和 uv run ai-board doctor --fail-on-issue，均通过。",
+      "leftovers": "无。本任务只修 README/PyPI 链接，不单独触发发布。",
+      "created_at": "2026-05-15T03:46:04+00:00",
+      "updated_at": "2026-05-15T06:14:27+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:11:01+00:00",
+      "started_at": "2026-05-15T06:11:01+00:00",
+      "completed_at": "2026-05-15T06:14:20+00:00",
+      "archived_at": "2026-05-15T06:14:27+00:00"
+    },
+    {
+      "id": "T-0065",
+      "title": "README FAQ 解释为什么用 JSON 而不是 Markdown 管理",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "文档",
+      "source": "用户追加 FAQ",
+      "owner_agent": "codex-00",
+      "scope": [
+        "README.md",
+        "README_en.md"
+      ],
+      "verify_scope": [
+        "README.md",
+        "README_en.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "README FAQ 增加为什么 JSON 是唯一真相源、Markdown 只是生成视图的解释",
+        "如 README_en 有对应 FAQ，也同步英文说明"
+      ],
+      "verification": "README.md 已新增 FAQ：解释为什么不用 Markdown 直接管理任务，而用 .ai-board/board.json 作为结构化真相源；README_en.md 已同步英文 FAQ。已运行 rg 确认中英文 FAQ 存在，README 的 PyPI 绝对链接仍保留；已运行 uv run ai-board conflicts --fail-on-conflict 和 uv run ai-board doctor --fail-on-issue，均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:14:02+00:00",
+      "updated_at": "2026-05-15T06:15:53+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T06:14:50+00:00",
+      "started_at": "2026-05-15T06:14:50+00:00",
+      "completed_at": "2026-05-15T06:15:48+00:00",
+      "archived_at": "2026-05-15T06:15:53+00:00"
+    },
+    {
+      "id": "T-0037",
+      "title": "补充 agent 过期身份的 doctor 提醒",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-01",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "active task 的 owner agent lease 过期时 doctor 给出明确提醒"
+      ],
+      "verification": "已新增 test_doctor_reports_expired_owner_agent_lease，覆盖 active task 的 owner agent lease 已过期时 doctor 返回非零并提示 agent lease is expired。现有 doctor 逻辑已满足需求，无需额外改业务代码。已运行 focused doctor 测试、uv run python -m unittest discover -s tests、uv run --with ruff ruff check .、uv run python -m ai_board conflicts --fail-on-conflict、uv run python -m ai_board doctor --fail-on-issue，结果均通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-14T09:37:17+00:00",
+      "updated_at": "2026-05-15T06:17:22+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:15:52+00:00",
+      "started_at": "2026-05-15T06:15:52+00:00",
+      "completed_at": "2026-05-15T06:17:15+00:00",
+      "archived_at": "2026-05-15T06:17:22+00:00"
+    },
+    {
+      "id": "T-0066",
+      "title": "归档第二次多 agent 协作实测报告",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "用户要求沉淀新约束实测",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/第二次多agent协作实测报告.md"
+      ],
+      "verify_scope": [
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "新增报告记录本次 codex-00 与 codex-01 并行协作的真实过程、任务分工、避让行为和验证结果",
+        "报告说明新约束如何让 agent 识别 active lock、避免抢占共享验证资源或他人 scope",
+        "报告写出仍然暴露的边界和后续改进建议"
+      ],
+      "verification": "已新增 docs/项目路线/第二次多agent协作实测报告.md，记录 T-0055/T-0059/T-0065/T-0037 的真实事件时间线、scope 分工、主动避让行为、验证结果、暴露边界和后续建议；docs/当前状态.md 已补充第二次多 agent 协作实测归档说明。已运行 rg 检查报告包含关键任务编号、主动避让、conflicts 和 doctor 结论；已运行 uv run ai-board conflicts --fail-on-conflict 和 uv run ai-board doctor --fail-on-issue，均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:18:07+00:00",
+      "updated_at": "2026-05-15T06:20:30+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T06:18:22+00:00",
+      "started_at": "2026-05-15T06:18:22+00:00",
+      "completed_at": "2026-05-15T06:20:23+00:00",
+      "archived_at": "2026-05-15T06:20:30+00:00"
+    },
+    {
+      "id": "T-0038",
+      "title": "评估并实现任务 reopen 命令",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "工作流",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-01",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "done 或 archived 任务可带 reason 回到 scheduled",
+        "reopen 写入事件日志并重新渲染看板"
+      ],
+      "verification": "已实现 ai-board reopen TASK_ID --reason TEXT：done 或 archived 任务可回到 scheduled；archived 任务会从 archive 移回当前 tasks；reopen 会写入 task.reopen 事件并通过 persist 自动重新渲染 Markdown。已更新 ai-board skills get core 命令参考和 docs/当前状态.md。已新增 test_reopen_done_and_archived_tasks_with_reason 覆盖 done/archived 两条路径、reason 记录、history 事件和非法状态报错。验证已运行 focused 测试、uv run python -m unittest discover -s tests、uv run --with ruff ruff check .、uv run python -m ai_board conflicts --fail-on-conflict、uv run python -m ai_board doctor --fail-on-issue，均通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-14T09:37:17+00:00",
+      "updated_at": "2026-05-15T06:25:44+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:22:51+00:00",
+      "started_at": "2026-05-15T06:22:51+00:00",
+      "completed_at": "2026-05-15T06:25:34+00:00",
+      "archived_at": "2026-05-15T06:25:44+00:00"
+    },
+    {
+      "id": "T-0062",
+      "title": "评估 config get/set 命令",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "工作流",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "评估是否提供 ai-board config get/set/list",
+        "如实现，必须校验语言、默认泳道、agent 类型、租约和 doctor 阈值",
+        "避免让 AI 直接手改 .ai-board/config.json"
+      ],
+      "verification": "已评估并实现 ai-board config list/get/set：支持通过 CLI 读取和校验更新 .ai-board/config.json，覆盖 language、default_lane、default_agent_kind、default_lease_minutes、doctor 阈值、doctor_broad_scopes、shared_verification_scopes 和 shared_scope_warning_minutes。config set 使用 board lock 和临时文件替换，写入前复用配置校验，写入后自动渲染 Markdown 并记录 config.set 事件，避免 AI 直接手改配置文件。已更新 ai-board skills get core 和 docs/当前状态.md。已新增测试覆盖 list/get/set、语言变更自动 render、数字和列表配置、非法 key/非法值拒绝以及 config.set 事件。已运行 targeted config 测试、uv run python -m unittest discover -s tests、uv run --with ruff ruff check .、uv run ai-board conflicts --fail-on-conflict、uv run ai-board doctor --fail-on-issue，均通过。",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T04:21:49+00:00",
+      "updated_at": "2026-05-15T06:37:18+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T06:31:21+00:00",
+      "started_at": "2026-05-15T06:31:21+00:00",
+      "completed_at": "2026-05-15T06:37:10+00:00",
+      "archived_at": "2026-05-15T06:37:18+00:00"
+    },
+    {
+      "id": "T-0067",
+      "title": "改进 next 的安全候选和阻塞后动作建议",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "本轮协作复盘：阻塞后过早停手",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board next 能区分可直接推进、需声明 scope、与 active lock 冲突、验证范围等待 active lock 等状态",
+        "当候选被 active lock 阻塞时，输出继续找非冲突任务、拆分只读评估/文档任务、或记录等待原因的动作建议",
+        "新增测试覆盖 active lock 存在时 next 不只提示不要抢，还给出可执行的安全下一步"
+      ],
+      "verification": "已改进 ai-board next 输出：候选任务会标记为 available、needs-scope、blocked-by-active-lock 或 verification-waiting；存在 active lock 时会输出下一步动作建议，要求优先找不冲突任务、为 needs-scope 候选声明窄 scope、对阻塞候选协调 owner 或拆只读评估/文档任务，并明确只有确认没有安全工作后才暂停。已更新 ai-board skills get core 和 docs/当前状态.md。已新增 test_next_gives_action_advice_when_active_lock_blocks_candidates，并更新相关 next 测试。验证已运行 targeted next 测试、uv run python -m unittest discover -s tests（71 tests OK）、uv run --with ruff ruff check .、uv run ai-board conflicts --fail-on-conflict、uv run ai-board doctor --fail-on-issue，均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:40:39+00:00",
+      "updated_at": "2026-05-15T06:56:13+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T06:53:13+00:00",
+      "started_at": "2026-05-15T06:53:13+00:00",
+      "completed_at": "2026-05-15T06:56:05+00:00",
+      "archived_at": "2026-05-15T06:56:13+00:00"
+    },
+    {
+      "id": "T-0070",
+      "title": "评估 agent notice 通信协议和工程边界",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "T-0069 拆分：先评估再实现",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/agent-notice通信评估.md"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/agent-notice通信评估.md"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "形成 docs/项目路线/agent-notice通信评估.md，覆盖送达语义、触发点、身份来源、ack/resolved、消息与 board 冲突、长任务期间收不到、噪音控制和非目标",
+        "给出是否由 CLI 承担最小 notice 职责的明确建议，并说明为什么不做实时聊天或长对话频道",
+        "给出后续最小实现的字段、命令和测试范围"
+      ],
+      "verification": "已新增 docs/项目路线/agent-notice通信评估.md，明确建议 CLI 只承担轻量 notice/inbox/ack/resolve 职责，不做实时聊天、不承诺即时送达、不根据消息自动修改任务状态。报告覆盖送达语义、触发点、身份来源、ack/resolved、消息与 board 冲突、长任务期间收不到、噪音控制、非目标、存储建议、后续最小实现字段/命令/测试范围。docs/当前状态.md 已补充该评估结论。已运行 rg 检查关键章节和命令字段；uv run ai-board conflicts --fail-on-conflict 与 uv run ai-board doctor --fail-on-issue 均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:49:06+00:00",
+      "updated_at": "2026-05-15T07:00:30+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T06:58:00+00:00",
+      "started_at": "2026-05-15T06:58:00+00:00",
+      "completed_at": "2026-05-15T07:00:19+00:00",
+      "archived_at": "2026-05-15T07:00:30+00:00"
+    },
+    {
+      "id": "T-0071",
+      "title": "实现最小 agent notice inbox",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "agent notice 评估后实施",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [
+        "T-0070"
+      ],
+      "acceptance": [
+        "提供 tell/inbox/next --agent 的最小 notice 能力，消息字段包含 id/from/to/type/task_id/message/created_at/acknowledged_at/resolved_at",
+        "支持点对点和 all 广播；支持 ack 和 resolve，不把展示等同于已处理",
+        "next --agent 在候选任务前显示未处理 notice，但不自动改变任务状态",
+        "新增测试覆盖发送、读取、ack、resolve、all 广播、next 提示和消息与 board 状态以 board 为准"
+      ],
+      "verification": "已实现最小 agent notice inbox：新增 .ai-board/messages.jsonl 存储；tell 可发送点对点或 all 广播 notice，字段包含 id/from/to/type/task_id/message/created_at/acknowledged_at/resolved_at；inbox --agent 可查看未 resolved notice，并支持 --ack / --resolve；next --agent 会在候选任务前显示未处理 notice。消息显示不会自动 ack，也不会修改任务状态，锁和任务状态仍以 board 为准。已更新 ai-board skills get core 和 docs/当前状态.md。已新增 test_agent_notices_support_inbox_ack_resolve_and_next_prompt，覆盖发送、非目标不可见、next 提示、ack、resolve、all 广播，以及消息不改变 active lock。已运行 targeted notice 测试、uv run python -m unittest discover -s tests（72 tests OK）、uv run --with ruff ruff check .、uv run ai-board conflicts --fail-on-conflict、uv run ai-board doctor --fail-on-issue，均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。已用本项目发送并 resolve 一条 M-0001 冒烟 notice，作为功能 dogfood 记录。",
+      "created_at": "2026-05-15T06:49:06+00:00",
+      "updated_at": "2026-05-15T07:08:11+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:02:39+00:00",
+      "started_at": "2026-05-15T07:02:39+00:00",
+      "completed_at": "2026-05-15T07:07:58+00:00",
+      "archived_at": "2026-05-15T07:08:11+00:00"
+    },
+    {
+      "id": "T-0072",
+      "title": "补充 agent notice 响应协议指南",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "agent notice 评估后流程固化",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/agent-notice通信评估.md",
+        "src/ai_board/skill_guides.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线",
+        "src/ai_board/skill_guides.py"
+      ],
+      "depends_on": [
+        "T-0070"
+      ],
+      "acceptance": [
+        "ai-board skills get core 增加收到 notice 后的固定响应流程：查 inbox、判断类型、跑 locks/show/conflicts、能释放就 unlock/缩小 scope，不能释放就 tell 回复原因和预计释放条件",
+        "指南明确消息不改变 board 状态，任何任务边界变化必须通过 CLI 写入 board",
+        "docs/当前状态.md 或路线文档记录 notice 响应协议"
+      ],
+      "verification": "已在 ai-board skills get core 补充收到 notice 后的固定响应流程；已在 agent-notice 通信评估文档固化响应协议；docs/当前状态.md 已记录当前能力。已验证：rg 内容复核通过，conflicts/doctor/ruff/72 条单元测试均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:49:06+00:00",
+      "updated_at": "2026-05-15T07:12:21+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:09:28+00:00",
+      "started_at": "2026-05-15T07:09:28+00:00",
+      "completed_at": "2026-05-15T07:12:17+00:00",
+      "archived_at": "2026-05-15T07:12:21+00:00"
+    },
+    {
+      "id": "T-0068",
+      "title": "把阻塞后继续调度规则写入 AI 使用指南",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "本轮协作复盘：停手门槛不清晰",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线",
+        "src/ai_board/skill_guides.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board skills get core 明确：遇到 active lock 时，先找不冲突任务，再考虑拆只读评估/文档任务，最后才暂停",
+        "指南说明不能把候选任务大概率会冲突等同于没有任何可做任务",
+        "docs/当前状态.md 或项目路线文档记录这条流程改进"
+      ],
+      "verification": "经复核，ai-board skills get core 已明确 active lock 后不能直接停手：先找 available 候选，再拆非重叠文档/评估任务，blocked/needs-scope 分别协调或声明窄 scope，最后才暂停；docs/当前状态.md 已记录 next 会标记候选状态并给出继续调度建议。已验证：rg 内容复核通过，conflicts/doctor/ruff 均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T06:40:39+00:00",
+      "updated_at": "2026-05-15T07:14:02+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:13:09+00:00",
+      "started_at": "2026-05-15T07:13:09+00:00",
+      "completed_at": "2026-05-15T07:13:58+00:00",
+      "archived_at": "2026-05-15T07:14:02+00:00"
+    },
+    {
+      "id": "T-0073",
+      "title": "Claude 多进程协作实测前置准备",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "用户要求：先建临时项目、更新 Claude 侧 ai-board、确认能调用和监控",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/Claude多进程协作实测准备.md",
+        "tmp/claude-multi-agent-test"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "临时测试项目创建完成，并用 ai-board 初始化看板",
+        "确认 Claude 命令可调用，记录版本、路径和失败原因（如有）",
+        "确认 Claude 进程能在测试项目中访问最新版 ai-board 使用入口",
+        "记录监控方式和前置准备结果"
+      ],
+      "verification": "已创建临时项目 tmp/claude-multi-agent-test，并用 ai-board 初始化；已安装本仓库 editable 版 ai-board 到临时项目环境，确认 uv run ai-board 可见 tell/inbox/reopen/config 和 notice 响应指南；已同步 Claude ai-board skill；claude --version 可用，为 Claude Code 2.1.121；已用 Claude 非交互探针确认可调用 uv run ai-board status 和 skills get core；已预置 T-0001/T-0002/T-0003 测试任务；已写入 docs/项目路线/Claude多进程协作实测准备.md 并同步 docs/当前状态.md。验证：主项目 conflicts/doctor/ruff 通过，临时项目 doctor 和 pytest 4 条测试通过。",
+      "deferred_verification": "",
+      "leftovers": "正式测试必须要求 Claude 使用 uv run ai-board；裸 ai-board 当前可能指向用户级旧版命令，不保证含 tell/inbox。",
+      "created_at": "2026-05-15T07:19:17+00:00",
+      "updated_at": "2026-05-15T07:25:44+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:19:47+00:00",
+      "started_at": "2026-05-15T07:19:47+00:00",
+      "completed_at": "2026-05-15T07:25:35+00:00",
+      "archived_at": "2026-05-15T07:25:44+00:00"
+    },
+    {
+      "id": "T-0074",
+      "title": "Claude 双进程 notice 协作实测",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程实测计划",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md",
+        "tmp/claude-multi-agent-test"
+      ],
+      "verify_scope": [
+        ".ai-board",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "两个独立 Claude 进程在临时项目中分别 claim/start 不同任务",
+        "至少一次通过 tell/inbox/ack/resolve 完成 notice 协作",
+        "最终 conflicts、doctor 和项目测试通过或记录失败原因"
+      ],
+      "verification": "已在 tmp/claude-multi-agent-test 启动两个独立 Claude 进程完成实测：claude-00/claude-01 分别 claim 身份并 start T-0001/T-0002，scope 分别为 math_tools/text_tools 相关文件，两个任务均完成归档；随后通过 T-0003 notice drill 产生 M-0001/M-0002/M-0003，完成 tell/inbox/ack/locks/show/conflicts/resolve 收口。最终临时项目 status 为 archived=3、active=0，locks=no locks，conflicts=no conflicts，doctor ok，pytest 9 passed，claude-00/claude-01 inbox 均 no notices。证据保存在临时项目 monitor/*.log、.ai-board/events.jsonl 和 .ai-board/messages.jsonl。",
+      "deferred_verification": "",
+      "leftovers": "需要在 T-0075 写正式报告；本次暴露两点：功能开发阶段不会自然触发 notice，需设计触发场景；Claude 自述偶有身份表述混乱，报告应以 events/messages/board 状态为准。",
+      "created_at": "2026-05-15T07:19:24+00:00",
+      "updated_at": "2026-05-15T07:44:49+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:27:36+00:00",
+      "started_at": "2026-05-15T07:27:36+00:00",
+      "completed_at": "2026-05-15T07:44:42+00:00",
+      "archived_at": "2026-05-15T07:44:49+00:00"
+    },
+    {
+      "id": "T-0076",
+      "title": "修正 Claude 临时项目 ruff import 顺序",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "T-0075 验证发现：ruff check . 扫到临时项目 import 顺序",
+      "owner_agent": "codex-01",
+      "scope": [
+        "tmp/claude-multi-agent-test/tests/test_text_tools.py"
+      ],
+      "verify_scope": [
+        "tmp/claude-multi-agent-test/tests/test_text_tools.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "tmp/claude-multi-agent-test/tests/test_text_tools.py import 顺序通过 ruff",
+        "主项目 ruff check . 通过"
+      ],
+      "verification": "已修正 tmp/claude-multi-agent-test/tests/test_text_tools.py 的 import 顺序；验证 uv run --with ruff ruff check . 通过，临时项目 pytest 9 passed，conflicts 无冲突。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T07:50:32+00:00",
+      "updated_at": "2026-05-15T07:52:03+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:51:21+00:00",
+      "started_at": "2026-05-15T07:51:21+00:00",
+      "completed_at": "2026-05-15T07:51:52+00:00",
+      "archived_at": "2026-05-15T07:52:03+00:00"
+    },
+    {
+      "id": "T-0075",
+      "title": "归档 Claude 多进程协作实测报告",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程实测计划",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/Claude多进程协作实测报告.md"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "将实测过程、证据、命令结果和暴露问题写入 docs/项目路线",
+        "docs/当前状态.md 记录本次 Claude 多进程实测结论",
+        "报告明确哪些是 ai-board 约束生效，哪些是监工介入"
+      ],
+      "verification": "已写入 docs/项目路线/Claude多进程协作实测报告.md，报告覆盖实测环境、预置任务、并行开发过程、notice drill、最终验收、ai-board 生效点、监工介入点、暴露问题、改进方向和 agent 身份建议；docs/当前状态.md 已记录 Claude 多进程实测结论和 current agent 改进方向。验证：内容 rg 复核通过；主项目 conflicts/doctor/ruff/72 条单元测试通过；临时项目 doctor 通过、pytest 9 passed。",
+      "deferred_verification": "",
+      "leftovers": "后续建议排期：清理 T-0069 替代项；评估 current agent/agents current 机制；在 complete/archive 前提示 unresolved notice；对包含空格的 scope 参数增加提醒。",
+      "created_at": "2026-05-15T07:19:30+00:00",
+      "updated_at": "2026-05-15T07:52:50+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T07:48:27+00:00",
+      "started_at": "2026-05-15T07:48:27+00:00",
+      "completed_at": "2026-05-15T07:52:44+00:00",
+      "archived_at": "2026-05-15T07:52:50+00:00"
+    },
+    {
+      "id": "T-0069",
+      "title": "设计并实现轻量 agent notice 通信",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "本轮协作复盘：需要跨会话提醒",
+      "owner_agent": "codex-01",
+      "scope": [
+        ".ai-board",
+        "docs/当前状态.md",
+        "docs/项目路线/agent-notice通信评估.md"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "提供 ai-board tell --to AGENT|all [--task TASK_ID] MESSAGE，写入可追溯消息记录",
+        "提供 ai-board inbox --agent AGENT [--mark-read] 查看未读消息",
+        "ai-board next --agent AGENT 能在候选任务前显示该 agent 的未读 notice",
+        "消息保持轻量，不做实时聊天、不做长对话频道；记录 sender、recipient、task、message、created_at、read_at",
+        "新增测试覆盖点对点、all 广播、mark-read 和 next 自动提示"
+      ],
+      "verification": "T-0069 已不再作为单一实现任务推进；其验收范围已被分阶段任务替代并完成：T-0070 完成 agent notice 通信工程评估，T-0071 实现最小 tell/inbox/ack/resolve 和 next --agent notice 提示，T-0072 补充收到 notice 后的响应协议指南。后续 Claude 多进程实测也已验证 notice 流程可用。",
+      "deferred_verification": "",
+      "leftovers": "无；后续增强已另排 T-0078/T-0079/T-0080/T-0081/T-0082。",
+      "created_at": "2026-05-15T06:40:39+00:00",
+      "updated_at": "2026-05-15T08:08:58+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T08:08:39+00:00",
+      "started_at": "2026-05-15T08:08:39+00:00",
+      "completed_at": "2026-05-15T08:08:49+00:00",
+      "archived_at": "2026-05-15T08:08:58+00:00"
+    },
+    {
+      "id": "T-0077",
+      "title": "关闭 T-0069 notice 旧阻塞项",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：T-0069 已被 T-0070/T-0071/T-0072 替代，继续 blocked 会误导 agent",
+      "owner_agent": "codex-00",
+      "scope": [],
+      "verify_scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "T-0069 不再停留在阻塞区误导后续 agent",
+        "归档记录说明它已由 T-0070/T-0071/T-0072 分阶段替代",
+        "docs/当前状态.md 或路线文档说明 notice 旧任务已清理"
+      ],
+      "verification": "T-0069 已从 blocked 清理并归档，不再停留在阻塞区误导后续 agent；T-0069 归档验收说明已明确其被 T-0070/T-0071/T-0072 分阶段替代并完成；docs/当前状态.md 已补充旧任务清理说明；rg 复核、conflicts 检查通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T08:00:50+00:00",
+      "updated_at": "2026-05-15T08:09:54+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T08:07:38+00:00",
+      "started_at": "2026-05-15T08:07:38+00:00",
+      "unlocked_at": "2026-05-15T08:08:01+00:00",
+      "completed_at": "2026-05-15T08:09:47+00:00",
+      "archived_at": "2026-05-15T08:09:54+00:00"
+    },
+    {
+      "id": "T-0078",
+      "title": "明确 agent 身份使用流程",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：Claude 自述身份可能混乱，需要流程层先收紧",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/Claude多进程协作实测报告.md",
+        "src/ai_board/skill_guides.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线",
+        "src/ai_board/skill_guides.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board skills get core 明确：claim 后必须记录当前身份，start/tell/inbox/complete/archive 使用同一身份",
+        "指南说明身份判断以 events/messages/board 为准，不以模型自然语言自述为准",
+        "docs/当前状态.md 或路线文档记录身份流程改进"
+      ],
+      "verification": "ai-board skills get core 已补充身份流程：agents claim 后记录并持续使用同一身份，start/tell/inbox/renew/unlock/complete/archive 不应随意切换；自然语言自述与 agents list、task owner、events.jsonl、messages.jsonl 冲突时以结构化 board 记录为准；notice 发送、读取、ack、resolve 也要求使用同一 claimed identity。docs/当前状态.md 已记录该流程改进。验证：skills get core 输出检索通过，rg 复核通过，conflicts/doctor/ruff/72 条单元测试均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T08:00:59+00:00",
+      "updated_at": "2026-05-15T08:13:25+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T08:11:30+00:00",
+      "started_at": "2026-05-15T08:11:30+00:00",
+      "completed_at": "2026-05-15T08:13:18+00:00",
+      "archived_at": "2026-05-15T08:13:25+00:00"
+    },
+    {
+      "id": "T-0079",
+      "title": "complete/archive 前提示未处理 notice",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：M-0001/M-0003 初次未 resolve，收口需提醒",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "complete 或 archive 前能提示该 owner/agent 仍有未 resolved notice，避免任务归档后遗留消息",
+        "提示不自动修改 notice 状态，不阻止归档，除非后续设计明确需要 fail 选项",
+        "新增测试覆盖有未 resolved notice 时的提示"
+      ],
+      "verification": "complete/archive 已增加 owner 未处理 notice 提示：命令完成后读取 messages.jsonl，若 task owner 仍有 unresolved notice，会打印 inbox 收口提醒和最多 3 条摘要；提示不自动 ack/resolve，也不阻止 complete/archive。新增 test_complete_and_archive_warn_about_unresolved_owner_notices 覆盖 complete 与 archive 提示且 inbox 状态保持未处理。docs/当前状态.md 已同步。验证：定向测试通过，conflicts/doctor/ruff/73 条单元测试均通过。",
+      "deferred_verification": "",
+      "leftovers": "无。",
+      "created_at": "2026-05-15T08:01:07+00:00",
+      "updated_at": "2026-05-15T08:20:35+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T08:17:25+00:00",
+      "started_at": "2026-05-15T08:17:25+00:00",
+      "completed_at": "2026-05-15T08:20:21+00:00",
+      "archived_at": "2026-05-15T08:20:35+00:00"
+    },
+    {
+      "id": "T-0080",
+      "title": "评估 current agent 机制",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：需要降低身份混乱，但不做伪安全认证",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/current-agent机制评估.md"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "评估 ai-board agents current --set/--clear 或 .ai-board/session.json 的边界和风险",
+        "说明 current agent 只是便利提示，不是认证或权限边界",
+        "给出是否进入实现的建议和最小命令设计"
+      ],
+      "verification": "已新增 docs/项目路线/current-agent机制评估.md，评估 .ai-board/session.json、agents current --set/--clear 的边界和风险；明确 current agent 只是本地便利提示，不是认证或权限边界；给出建议进入实现的两步方案：第一步实现 session.json、agents current、next 默认使用 current agent 展示 notice、start/tell 身份不一致 warning；第二步再评估 complete/archive warning、doctor 检查和 inbox 省略 --agent。docs/当前状态.md 已同步。验证：rg 关键点复核通过，conflicts/doctor/ruff 均通过。",
+      "deferred_verification": "",
+      "leftovers": "建议后续新增实现任务：实现最小 current agent 便利层，但保持不阻止、不认证，只做提示。",
+      "created_at": "2026-05-15T08:01:18+00:00",
+      "updated_at": "2026-05-15T08:53:18+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T08:51:24+00:00",
+      "started_at": "2026-05-15T08:51:24+00:00",
+      "completed_at": "2026-05-15T08:53:10+00:00",
+      "archived_at": "2026-05-15T08:53:18+00:00"
+    },
+    {
+      "id": "T-0081",
+      "title": "start scope 空格参数提醒",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：T-0001 scope 疑似把两个路径合成一个参数",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "start --scope 遇到包含空格且不是现有路径的 scope 时给出清楚提醒或拒绝",
+        "不影响合法存在的带空格路径",
+        "新增测试覆盖误合并路径和合法空格路径"
+      ],
+      "verification": "已在 start_task 前新增 scope 空格歧义检查：包含空格且不是现有路径的单个 --scope 参数会被拒绝，并提示把多个路径拆成多个 --scope 参数；真实存在的带空格路径仍允许。新增两条测试覆盖误合并路径和合法带空格路径。已通过 conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 75 tests。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-15T08:01:26+00:00",
+      "updated_at": "2026-05-15T09:07:37+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:04:04+00:00",
+      "started_at": "2026-05-15T09:04:04+00:00",
+      "completed_at": "2026-05-15T09:07:30+00:00",
+      "archived_at": "2026-05-15T09:07:37+00:00"
+    },
+    {
+      "id": "T-0082",
+      "title": "inbox unresolved 检查开关",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作实测报告：收口检查需要机器可判定未处理 notice",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "提供 inbox --agent AGENT --fail-on-unresolved 或等价只读检查",
+        "有未 resolved notice 时返回非零并显示消息摘要",
+        "无未 resolved notice 时返回成功，可用于监工/CI 收口"
+      ],
+      "verification": "已为 inbox 增加 --fail-on-unresolved：默认读取未 resolved notice，有未处理消息时打印消息摘要和 unresolved notices 数量并返回 1；无未处理消息时返回 0。新增测试覆盖有未处理失败、resolve 后成功。已通过 conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 76 tests。",
+      "deferred_verification": "",
+      "leftovers": "已新增 T-0083：把 --fail-on-unresolved 同步到内置 skills get core 使用指南。",
+      "created_at": "2026-05-15T08:01:35+00:00",
+      "updated_at": "2026-05-15T09:11:09+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:08:41+00:00",
+      "started_at": "2026-05-15T09:08:41+00:00",
+      "completed_at": "2026-05-15T09:11:03+00:00",
+      "archived_at": "2026-05-15T09:11:09+00:00"
+    },
+    {
+      "id": "T-0083",
+      "title": "同步 inbox 检查开关到内置指南",
+      "description": "",
+      "priority": "P3",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "T-0082 实现后发现 skill_guides 命令参考未列出 --fail-on-unresolved",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board skills get core 的 notice 示例或命令参考包含 inbox --fail-on-unresolved",
+        "相关测试或现有 skills 输出测试通过"
+      ],
+      "verification": "已在 ai-board skills get core 的 notice 示例中加入 inbox --agent codex-01 --fail-on-unresolved，并在 --full 命令参考中补充 [--fail-on-unresolved]。扩展 skills 命令测试，确认普通指南和 full 指南都包含该开关。已通过 conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 76 tests。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-15T09:10:49+00:00",
+      "updated_at": "2026-05-15T09:14:18+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:13:04+00:00",
+      "started_at": "2026-05-15T09:13:04+00:00",
+      "completed_at": "2026-05-15T09:14:13+00:00",
+      "archived_at": "2026-05-15T09:14:18+00:00"
+    },
+    {
+      "id": "T-0084",
+      "title": "Claude 多 agent 协作复测：验证 scope 空格提醒与 inbox 收口",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "用户提议继续调用 Claude 做真实协作复测",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/Claude多进程协作复测报告.md",
+        "tmp/claude-multi-agent-retest"
+      ],
+      "verify_scope": [
+        "docs/项目路线",
+        "tmp/claude-multi-agent-retest"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "创建新的临时测试项目并安装/使用本仓库最新版 ai-board",
+        "调用两个 Claude 进程并行完成至少两个不重叠任务",
+        "复测覆盖 notice 协调，并用 inbox --fail-on-unresolved 做收口检查",
+        "记录是否出现 scope 误合并、身份混乱、未处理 notice、锁冲突或锁残留",
+        "生成复测报告归档到 docs/项目路线/"
+      ],
+      "verification": "已创建 tmp/claude-multi-agent-retest 临时项目，并用本仓库 editable 版 ai-board 调用两个 Claude Code 非交互进程并行协作。claude-00 完成 T-0002 text slug helper，claude-01 完成 T-0001 math multiply helper，二者 scope 不重叠；复测中 M-0001 notice 初次未 resolve，被 inbox --fail-on-unresolved 成功抓到，随后按响应流程 resolve 并归档。额外探针验证合并 scope 参数会被 start 拒绝。临时项目最终 archived 3、无锁、无冲突、doctor ok、pytest 5 passed。本仓库 conflicts/doctor/ruff/unittest 76 tests 均通过。报告已写入 docs/项目路线/Claude多进程协作复测报告.md。",
+      "deferred_verification": "",
+      "leftovers": "已新增 T-0085：强化 inbox 收口失败后的 agent 响应流程。",
+      "created_at": "2026-05-15T09:18:38+00:00",
+      "updated_at": "2026-05-15T09:42:11+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:18:50+00:00",
+      "started_at": "2026-05-15T09:18:50+00:00",
+      "completed_at": "2026-05-15T09:42:02+00:00",
+      "archived_at": "2026-05-15T09:42:11+00:00"
+    },
+    {
+      "id": "T-0085",
+      "title": "强化 inbox 收口失败后的 agent 响应流程",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "多 agent 协作",
+      "source": "Claude 多进程协作复测：Claude B 看到 inbox --fail-on-unresolved 非零后仍未主动 resolve",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board skills get core 明确 inbox --fail-on-unresolved 返回非零时不得结束任务",
+        "指南要求先按 notice 响应流程 ack/resolve 或 tell 说明阻塞原因，再重新运行收口检查",
+        "相关 skills 输出测试覆盖该规则"
+      ],
+      "verification": "已强化 ai-board skills get core 的 notice 响应流程：结束任务前要运行 inbox --agent YOUR_AGENT --fail-on-unresolved；若返回非零，不得视为干净收口，必须回到 notice 响应流程，ack/resolve 已处理 notice，或 tell 回复阻塞原因后重跑检查。rules of thumb 也补充了 non-zero inbox 检查代表 failed handoff。测试已覆盖 skills 输出中的关键规则。已通过 conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 76 tests。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-15T09:40:58+00:00",
+      "updated_at": "2026-05-15T09:46:27+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:43:53+00:00",
+      "started_at": "2026-05-15T09:43:53+00:00",
+      "completed_at": "2026-05-15T09:46:17+00:00",
+      "archived_at": "2026-05-15T09:46:27+00:00"
+    },
+    {
+      "id": "T-0060",
+      "title": "CLI i18n 第二轮整理业务错误文案",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "CLI 体验",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "doctor 和常见 BoardError 输出在 zh-CN 下使用中文或双语文案",
+        "JSON 字段、状态枚举、事件名继续保持英文",
+        "新增测试覆盖至少一类 BoardError 和 doctor issue 的中文输出"
+      ],
+      "verification": "已完成 CLI i18n 第二轮窄范围整理：main 捕获 BoardError 时在 zh-CN 下对常见业务错误做中文化，例如缺少 start --scope、scope 空格误合并、未知配置项和依赖未完成；doctor active-task 常见 issue 在 zh-CN 下输出中文说明，例如 scope 过宽、缺少 scope、缺少验收、agent 租约问题等。JSON 字段、状态枚举、事件名未翻译。新增测试覆盖 zh-CN BoardError 和 zh-CN doctor issue。已通过 conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 78 tests。",
+      "leftovers": "无",
+      "created_at": "2026-05-15T04:21:49+00:00",
+      "updated_at": "2026-05-15T09:54:34+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T09:48:55+00:00",
+      "started_at": "2026-05-15T09:48:55+00:00",
+      "completed_at": "2026-05-15T09:54:22+00:00",
+      "archived_at": "2026-05-15T09:54:34+00:00"
+    },
+    {
+      "id": "T-0086",
+      "title": "新版本发布前检查与版本说明/README 口径校对",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布准备",
+      "source": "用户要求：排期新版本发布前检查与版本说明/readme口径文案校对",
+      "owner_agent": "codex-00",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "核对 pyproject.toml、包版本和 CHANGELOG 的版本口径一致",
+        "校对 README.md / README_en.md 中安装、使用、协作能力和当前边界说明，避免过度承诺",
+        "跑发布前基础检查：doctor、ruff、全量测试，必要时说明未覆盖项",
+        "同步 docs/当前状态.md，并归档发布前检查结果"
+      ],
+      "verification": "已纠正发布口径为第三版 v0.1.0-alpha.3：pyproject.toml 和 src/ai_board/__init__.py 均为 0.1.0a3；README.md / README_en.md 的版本、tag 链接和能力说明已同步到 alpha.3；CHANGELOG 新增 v0.1.0-alpha.3 章节，并把多 agent notice、inbox 收口、scope 空格防线、共享验证资源、Claude 复测和 i18n 第二轮放入第三版，不再误归到第二版；docs/当前状态.md 已同步。已通过版本一致性测试、conflicts --fail-on-conflict、doctor --fail-on-issue、ruff check、unittest discover 78 tests、uv run --with build python -m build，以及 twine check dist/*。",
+      "deferred_verification": "",
+      "leftovers": "本地 dist/ 中仍保留 alpha.1、alpha.2、alpha.3 历史构建产物；CI 发布会重新构建，若手动上传请只选 alpha.3 或先清理旧产物。",
+      "created_at": "2026-05-15T09:55:39+00:00",
+      "updated_at": "2026-05-15T10:06:29+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-15T09:56:11+00:00",
+      "started_at": "2026-05-15T09:56:11+00:00",
+      "completed_at": "2026-05-15T10:06:09+00:00",
+      "archived_at": "2026-05-15T10:06:29+00:00"
+    },
+    {
+      "id": "T-0061",
+      "title": "拆分 CLI/parser 和测试文件维护债",
+      "description": "",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "代码质量",
+      "source": "外部 review 采纳",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/parser.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "评估并拆分 build_parser 中子命令注册，避免 cli.py 继续膨胀",
+        "评估并拆分 tests/test_cli.py 为按关注点组织的测试文件",
+        "保持现有 59 条测试语义不回退，拆分后全量测试通过"
+      ],
+      "verification": "已将 argparse 子命令注册拆到 src/ai_board/parser.py，cli.py 保留命令实现与 handler 映射；已将 skills/help/lang/i18n 回归测试拆到 tests/test_skills_and_i18n.py；通过 conflicts、doctor、ruff 全仓和 78 条 unittest。",
+      "leftovers": "无",
+      "created_at": "2026-05-15T04:21:49+00:00",
+      "updated_at": "2026-05-15T10:18:20+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verify_scope": [],
+      "deferred_verification": "",
+      "locked_at": "2026-05-15T10:08:18+00:00",
+      "started_at": "2026-05-15T10:08:18+00:00",
+      "completed_at": "2026-05-15T10:18:07+00:00",
+      "archived_at": "2026-05-15T10:18:20+00:00"
     }
   ],
   "agents": [
     {
       "id": "codex-00",
       "kind": "codex",
-      "status": "idle",
-      "task_id": "",
-      "lease_expires_at": "",
+      "status": "busy",
+      "task_id": "T-0087",
+      "lease_expires_at": "2026-05-15T14:20:56+00:00",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-15T03:39:04+00:00",
+      "updated_at": "2026-05-15T10:20:56+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-15T03:39:04+00:00"
+      "released_at": "2026-05-15T10:18:07+00:00"
     },
     {
       "id": "codex-01",
@@ -1782,9 +3117,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-15T03:18:00+00:00",
-      "updated_at": "2026-05-15T03:19:37+00:00",
+      "updated_at": "2026-05-15T08:08:49+00:00",
       "claimed_at": "2026-05-15T03:18:00+00:00",
-      "released_at": "2026-05-15T03:19:37+00:00"
+      "released_at": "2026-05-15T08:08:49+00:00"
     }
   ]
 }

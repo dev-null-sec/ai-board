@@ -22,27 +22,35 @@ from .operations import (
     lock_is_expired,
     release_agent,
     renew_task_lock,
+    reopen_task,
     schedule_task,
     set_goal,
     set_status,
     start_task,
     unlock_task,
 )
+from .parser import help_text, parser_kwargs, register_subcommands
 from .render import render_archive, render_current_board, render_docs
 from .skill_guides import SKILLS, get_skill, skill_names
 from .store import (
     PRIORITIES,
     STATUSES,
     Paths,
+    append_event,
+    append_message,
+    default_config,
     find_task,
     init_board,
     init_config,
     load_board,
     load_config,
     lock_is_stale,
+    messages_for_agent,
     parse_iso_datetime,
     read_events,
     read_lock_metadata,
+    save_config,
+    update_message_status,
 )
 
 LANGUAGES = ("en-US", "zh-CN")
@@ -85,8 +93,25 @@ def text(args: argparse.Namespace, english: str, chinese: str) -> str:
     return chinese if cli_language(args) == "zh-CN" else english
 
 
-def help_text(language: str, english: str, chinese: str) -> str:
-    return chinese if language == "zh-CN" else english
+def localize_board_error(args: argparse.Namespace, message: str) -> str:
+    if cli_language(args) != "zh-CN":
+        return message
+    if message.startswith("Task scope is required."):
+        return "任务 scope 是必需的。请使用具体文件或小目录，例如 --scope src/app.py README.md。"
+    if message.startswith("Scope path contains spaces and does not exist:"):
+        return message.replace(
+            "Scope path contains spaces and does not exist:",
+            "scope 路径包含空格且该路径不存在：",
+            1,
+        ).replace(
+            "If you meant multiple paths, pass each path as a separate --scope argument; if this is one path with spaces, create it first or check the spelling.",
+            "如果你想传多个路径，请把每个路径作为单独的 --scope 参数；如果这是一个带空格的路径，请先创建它或检查拼写。",
+        )
+    if message.startswith("Unknown config key:"):
+        return message.replace("Unknown config key:", "未知配置项：", 1)
+    if "dependencies are not complete" in message:
+        return message.replace("dependencies are not complete", "依赖任务尚未完成")
+    return message
 
 
 def translate_argparse_message(message: str) -> str:
@@ -144,6 +169,76 @@ def config_value(args: argparse.Namespace, key: str) -> Any:
     return load_config(root_path(args))[key]
 
 
+def parse_config_value(key: str, value: str) -> Any:
+    defaults = default_config()
+    if key not in defaults:
+        raise BoardError(f"Unknown config key: {key}")
+    if isinstance(defaults[key], int):
+        try:
+            return int(value)
+        except ValueError as error:
+            raise BoardError(f"Config key {key} must be a number.") from error
+    if isinstance(defaults[key], list):
+        if not value.strip():
+            return []
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return value
+
+
+def print_config_value(key: str, value: Any) -> None:
+    if isinstance(value, list):
+        print(f"{key}: {', '.join(str(item) for item in value)}")
+    else:
+        print(f"{key}: {value}")
+
+
+def print_notice(message: dict[str, Any]) -> None:
+    status = "resolved" if message.get("resolved_at") else "acknowledged" if message.get("acknowledged_at") else "new"
+    task_text = f" task={message.get('task_id')}" if message.get("task_id") else ""
+    print(f"- {message.get('id')} [{message.get('type')}] {status} from={message.get('from')} to={message.get('to')}{task_text}: {message.get('message')}")
+
+
+def print_agent_notices(args: argparse.Namespace, limit: int = 5) -> None:
+    agent = getattr(args, "agent", "") or ""
+    if not agent:
+        return
+    notices = messages_for_agent(root_path(args), agent)
+    if not notices:
+        return
+    print("")
+    print(text(args, f"Notices for {agent}:", f"{agent} 的 notice："))
+    for message in notices[:limit]:
+        print_notice(message)
+    if len(notices) > limit:
+        print(
+            text(
+                args,
+                f"- ... {len(notices) - limit} more; run `ai-board inbox --agent {agent}`",
+                f"- ... 还有 {len(notices) - limit} 条；运行 `ai-board inbox --agent {agent}` 查看",
+            )
+        )
+
+
+def print_unresolved_notice_warning(args: argparse.Namespace, agent: str, limit: int = 3) -> None:
+    if not agent:
+        return
+    notices = messages_for_agent(root_path(args), agent)
+    if not notices:
+        return
+    print("")
+    print(
+        text(
+            args,
+            f"warning: {agent} still has unresolved notices; run `ai-board inbox --agent {agent}`.",
+            f"警告：{agent} 仍有未处理 notice；请运行 `ai-board inbox --agent {agent}`。",
+        )
+    )
+    for message in notices[:limit]:
+        print_notice(message)
+    if len(notices) > limit:
+        print(text(args, f"- ... {len(notices) - limit} more", f"- ... 还有 {len(notices) - limit} 条"))
+
+
 def print_task(task: dict[str, Any]) -> None:
     print(f"{task['id']} [{task['status']}] {task.get('priority', 'P2')} {task['title']}")
 
@@ -159,6 +254,7 @@ def print_task_detail(task: dict[str, Any], args: argparse.Namespace) -> None:
     print(f"{text(args, 'lane', '泳道')}: {format_value(task.get('lane'), args)}")
     print(f"{text(args, 'owner', '负责人')}: {format_value(task.get('owner_agent'), args)}")
     print(f"{text(args, 'scope', '范围')}: {format_value(task.get('scope', []), args)}")
+    print(f"{text(args, 'verify_scope', '验证范围')}: {format_value(task.get('verify_scope', []), args)}")
     print(f"{text(args, 'source', '来源')}: {format_value(task.get('source'), args)}")
     print(f"{text(args, 'depends_on', '依赖')}: {format_value(task.get('depends_on', []), args)}")
     description = task.get("description")
@@ -172,6 +268,9 @@ def print_task_detail(task: dict[str, Any], args: argparse.Namespace) -> None:
     verification = task.get("verification")
     if verification:
         print(f"{text(args, 'verification', '验收结果')}: {verification}")
+    deferred_verification = task.get("deferred_verification")
+    if deferred_verification:
+        print(f"{text(args, 'deferred_verification', '延后验收')}: {deferred_verification}")
     leftovers = task.get("leftovers")
     if leftovers:
         print(f"{text(args, 'leftovers', '遗留问题')}: {leftovers}")
@@ -223,12 +322,7 @@ def active_task_detail(task: dict[str, Any], args: argparse.Namespace) -> str:
     owner = task.get("lock_owner") or task.get("owner_agent") or text(args, "unknown", "未知")
     lease = task.get("lease_expires_at") or text(args, "none", "无")
     scope = ", ".join(str(item) for item in task.get("scope", [])) or text(args, "none", "无")
-    return (
-        f"{task['id']} "
-        f"{text(args, 'owner', '负责人')}={owner} "
-        f"{text(args, 'lease_expires_at', '租约到期')}={lease} "
-        f"{text(args, 'scope', '范围')}={scope}"
-    )
+    return f"{task['id']} {text(args, 'owner', '负责人')}={owner} {text(args, 'lease_expires_at', '租约到期')}={lease} {text(args, 'scope', '范围')}={scope}"
 
 
 def ensure_task_is_not_active_for_command(root: Path, task_id: str, command_name: str, args: argparse.Namespace) -> None:
@@ -255,15 +349,33 @@ def docs_stale_messages(root: Path, board: dict[str, Any], args: argparse.Namesp
     messages: list[str] = []
     for doc_path, expected in expected_docs.items():
         if not doc_path.exists():
-            messages.append(text(args, f"generated doc missing: {doc_path}; trust JSON and run ai-board render", f"生成看板缺失：{doc_path}；请以 JSON 为准并运行 ai-board render"))
+            messages.append(
+                text(
+                    args,
+                    f"generated doc missing: {doc_path}; trust JSON and run ai-board render",
+                    f"生成看板缺失：{doc_path}；请以 JSON 为准并运行 ai-board render",
+                )
+            )
             continue
         try:
             actual = doc_path.read_text(encoding="utf-8")
         except OSError as error:
-            messages.append(text(args, f"generated doc unreadable: {doc_path} ({error}); trust JSON and run ai-board render", f"生成看板无法读取：{doc_path}（{error}）；请以 JSON 为准并运行 ai-board render"))
+            messages.append(
+                text(
+                    args,
+                    f"generated doc unreadable: {doc_path} ({error}); trust JSON and run ai-board render",
+                    f"生成看板无法读取：{doc_path}（{error}）；请以 JSON 为准并运行 ai-board render",
+                )
+            )
             continue
         if actual != expected:
-            messages.append(text(args, f"generated doc stale: {doc_path}; trust JSON and run ai-board render", f"生成看板已过期：{doc_path}；请以 JSON 为准并运行 ai-board render"))
+            messages.append(
+                text(
+                    args,
+                    f"generated doc stale: {doc_path}; trust JSON and run ai-board render",
+                    f"生成看板已过期：{doc_path}；请以 JSON 为准并运行 ai-board render",
+                )
+            )
     return messages
 
 
@@ -283,13 +395,94 @@ def scopes_overlap_for_next(left: str, right: str) -> bool:
     return left.startswith(right_prefix) or right.startswith(left_prefix)
 
 
-def candidate_overlaps_active(candidate: dict[str, Any], active_tasks: list[dict[str, Any]]) -> bool:
+def task_scopes_overlap_active(scopes: list[str], active_tasks: list[dict[str, Any]]) -> bool:
     for active_task in active_tasks:
         for locked_scope in active_task.get("scope", []):
-            for candidate_scope in candidate.get("scope", []):
-                if scopes_overlap_for_next(str(locked_scope), str(candidate_scope)):
+            for scope in scopes:
+                if scopes_overlap_for_next(str(locked_scope), str(scope)):
                     return True
     return False
+
+
+def format_verify_scope_conflicts(verify_scope: list[str], active_tasks: list[dict[str, Any]]) -> list[str]:
+    conflicts: list[str] = []
+    for active_task in active_tasks:
+        for locked_scope in active_task.get("scope", []):
+            for scope in verify_scope:
+                if scopes_overlap_for_next(str(locked_scope), str(scope)):
+                    conflicts.append(f"{active_task['id']} {locked_scope} <-> {scope}")
+    return conflicts
+
+
+def task_matches_scopes(task_scopes: list[str], target_scopes: list[str]) -> list[str]:
+    matches: list[str] = []
+    for task_scope in task_scopes:
+        for target_scope in target_scopes:
+            if scopes_overlap_for_next(str(task_scope), str(target_scope)):
+                matches.append(f"{task_scope} <-> {target_scope}")
+    return matches
+
+
+def next_candidate_note(args: argparse.Namespace, task: dict[str, Any], locked_active: list[dict[str, Any]]) -> tuple[str, str]:
+    scope = task.get("scope") or []
+    verify_scope = task.get("verify_scope") or []
+    if not scope:
+        state = "needs-scope"
+        note = text(args, "needs scope before conflict check", "需要先声明 scope 后再判断是否冲突")
+    elif task_scopes_overlap_active(scope, locked_active):
+        state = "blocked-by-active-lock"
+        note = text(args, "overlaps active lock; do not start unless coordinated", "与 active 锁重叠；未协调前不要 start")
+    else:
+        state = "available"
+        note = text(args, "appears non-overlapping", "看起来不冲突")
+    verify_conflicts = format_verify_scope_conflicts(verify_scope, locked_active)
+    if verify_conflicts:
+        if state == "available":
+            state = "verification-waiting"
+        note += text(args, f"; verify scope waits on active lock ({'; '.join(verify_conflicts)})", f"；验证范围等待 active 锁（{'; '.join(verify_conflicts)}）")
+    elif not verify_scope:
+        note += text(args, "; verify scope undeclared", "；未声明验证范围")
+    return state, note
+
+
+def print_next_action_advice(args: argparse.Namespace, states: list[str], locked_active: list[dict[str, Any]]) -> None:
+    if not locked_active:
+        return
+    print("")
+    print(text(args, "Next action advice:", "下一步动作建议："))
+    if "available" in states:
+        print(text(args, "- Start an available non-overlapping scheduled task before waiting.", "- 优先 start 一个不冲突的 scheduled 任务，不要直接等待。"))
+    if "needs-scope" in states:
+        print(
+            text(
+                args,
+                "- For needs-scope candidates, declare a narrow scope first, then rerun `ai-board next`.",
+                "- 对需要 scope 的候选，先声明窄 scope，再重新运行 `ai-board next`。",
+            )
+        )
+    if "blocked-by-active-lock" in states:
+        print(
+            text(
+                args,
+                "- For blocked candidates, coordinate with the owner or split out read-only evaluation/docs work in a separate task.",
+                "- 对被 active 锁阻塞的候选，先协调 owner，或拆出只读评估/文档任务单独推进。",
+            )
+        )
+    if "verification-waiting" in states:
+        print(
+            text(
+                args,
+                "- If only verification is blocked, record local checks and deferred full verification instead of pretending the full suite ran.",
+                "- 如果只是验证范围被阻塞，记录局部检查和延后全量验收，不要假装已跑完整验证。",
+            )
+        )
+    print(
+        text(
+            args,
+            "- Pause only after checking for safe non-overlapping work and documenting why none is available.",
+            "- 只有确认没有安全的不冲突工作，并记录原因后，才暂停。",
+        )
+    )
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -315,7 +508,7 @@ def cmd_onboard(args: argparse.Namespace) -> int:
 
 def cmd_add(args: argparse.Namespace) -> int:
     lane = args.lane if args.lane is not None else config_value(args, "default_lane")
-    task = add_task(root_path(args), args.title, args.priority, args.description, lane, args.source, args.acceptance, args.depends_on)
+    task = add_task(root_path(args), args.title, args.priority, args.description, lane, args.source, args.acceptance, args.depends_on, args.verify_scope)
     print_task(task)
     return 0
 
@@ -375,13 +568,21 @@ def cmd_agents_release(args: argparse.Namespace) -> int:
 
 
 def cmd_complete(args: argparse.Namespace) -> int:
-    task = complete_task(root_path(args), args.task_id, args.verification, args.leftovers)
+    task = complete_task(root_path(args), args.task_id, args.verification, args.leftovers, args.deferred_verification)
     print_task(task)
+    print_unresolved_notice_warning(args, str(task.get("owner_agent") or ""))
     return 0
 
 
 def cmd_archive(args: argparse.Namespace) -> int:
     task = archive_task(root_path(args), args.task_id)
+    print_task(task)
+    print_unresolved_notice_warning(args, str(task.get("owner_agent") or ""))
+    return 0
+
+
+def cmd_reopen(args: argparse.Namespace) -> int:
+    task = reopen_task(root_path(args), args.task_id, args.reason)
     print_task(task)
     return 0
 
@@ -395,6 +596,58 @@ def cmd_block(args: argparse.Namespace) -> int:
 def cmd_goal(args: argparse.Namespace) -> int:
     board = set_goal(root_path(args), args.goal)
     print(f"goal: {board.get('project', {}).get('current_goal', '')}")
+    return 0
+
+
+def cmd_config_list(args: argparse.Namespace) -> int:
+    config = load_config(root_path(args))
+    for key in sorted(config):
+        print_config_value(key, config[key])
+    return 0
+
+
+def cmd_config_get(args: argparse.Namespace) -> int:
+    config = load_config(root_path(args))
+    if args.key not in config:
+        raise BoardError(f"Unknown config key: {args.key}")
+    print_config_value(args.key, config[args.key])
+    return 0
+
+
+def cmd_config_set(args: argparse.Namespace) -> int:
+    value = parse_config_value(args.key, args.value)
+    config = save_config(root_path(args), {args.key: value})
+    append_event(root_path(args), "config.set", data={"key": args.key, "value": config[args.key]})
+    render_docs(root_path(args), load_board(root_path(args)))
+    print_config_value(args.key, config[args.key])
+    print(text(args, "rendered docs", "已渲染文档"))
+    return 0
+
+
+def cmd_tell(args: argparse.Namespace) -> int:
+    message = append_message(root_path(args), args.sender, args.to, args.type, args.task_id, args.message)
+    print_notice(message)
+    return 0
+
+
+def cmd_inbox(args: argparse.Namespace) -> int:
+    root = root_path(args)
+    if args.ack:
+        print_notice(update_message_status(root, args.ack, args.agent, resolve=False))
+        return 0
+    if args.resolve:
+        print_notice(update_message_status(root, args.resolve, args.agent, resolve=True))
+        return 0
+    notices = messages_for_agent(root, args.agent, args.all)
+    unresolved_notices = messages_for_agent(root, args.agent)
+    if not notices:
+        print(text(args, "no notices", "暂无 notice"))
+        return 0
+    for message in notices:
+        print_notice(message)
+    if args.fail_on_unresolved and unresolved_notices:
+        print(text(args, f"unresolved notices: {len(unresolved_notices)}", f"未处理 notice 数量：{len(unresolved_notices)}"))
+        return 1
     return 0
 
 
@@ -421,7 +674,13 @@ def cmd_next(args: argparse.Namespace) -> int:
             print(f"- {active_task_detail(task, args)} {text(args, 'lock', '锁')}={state}")
             if not lock_is_expired(task):
                 owner = task.get("lock_owner") or task.get("owner_agent") or text(args, "unknown", "未知")
-                print(text(args, f"  if you are not {owner}, do not operate this task or edit its scope.", f"  如果你不是 {owner}，不要操作这个任务，也不要修改它的 scope。"))
+                print(
+                    text(
+                        args,
+                        f"  if you are not {owner}, do not operate this task or edit its scope.",
+                        f"  如果你不是 {owner}，不要操作这个任务，也不要修改它的 scope。",
+                    )
+                )
     else:
         print(text(args, "- none", "- 无"))
 
@@ -432,6 +691,15 @@ def cmd_next(args: argparse.Namespace) -> int:
         for message in stale_messages:
             print(f"- {message}")
 
+    waiting = [task for task in board["tasks"] if task["status"] in ("done", "active") and task.get("deferred_verification")]
+    if waiting:
+        print("")
+        print(text(args, "Waiting for full verification:", "等待全量验收："))
+        for task in sorted(waiting, key=lambda item: str(item.get("id", ""))):
+            print(f"- {task['id']} [{task['status']}] {task['title']} - {task.get('deferred_verification')}")
+
+    print_agent_notices(args)
+
     candidates = [task for task in board["tasks"] if task["status"] in ("scheduled", "inbox")]
     candidates.sort(key=lambda task: (candidate_status_rank(task), priority_rank(task), str(task.get("id", ""))))
     print("")
@@ -440,15 +708,12 @@ def cmd_next(args: argparse.Namespace) -> int:
         print(text(args, "- no scheduled or inbox tasks", "- 没有 scheduled 或 inbox 任务"))
         return 0
     locked_active = [task for task in active if not lock_is_expired(task)]
+    candidate_states: list[str] = []
     for task in candidates:
-        scope = task.get("scope") or []
-        if not scope:
-            note = text(args, "needs scope before conflict check", "需要先声明 scope 后再判断是否冲突")
-        elif candidate_overlaps_active(task, locked_active):
-            note = text(args, "overlaps active lock; do not start unless coordinated", "与 active 锁重叠；未协调前不要 start")
-        else:
-            note = text(args, "appears non-overlapping", "看起来不冲突")
-        print(f"- {task['id']} [{task['status']}] {task.get('priority', 'P2')} {task['title']} - {note}")
+        state, note = next_candidate_note(args, task, locked_active)
+        candidate_states.append(state)
+        print(f"- {task['id']} [{task['status']}] {task.get('priority', 'P2')} {task['title']} - {state}: {note}")
+    print_next_action_advice(args, candidate_states, locked_active)
     return 0
 
 
@@ -472,11 +737,19 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     stale_active_delta = timedelta(hours=int(config["doctor_stale_active_hours"]))
     lease_warning_delta = timedelta(minutes=int(config["doctor_lease_warning_minutes"]))
     broad_scopes = set(str(item).strip() for item in config["doctor_broad_scopes"] if str(item).strip())
+    shared_scopes = [str(item).strip() for item in config["shared_verification_scopes"] if str(item).strip()]
+    shared_scope_warning_delta = timedelta(minutes=int(config["shared_scope_warning_minutes"]))
     if paths.lock_file.exists():
         stale, reason = lock_is_stale(paths.lock_file)
         metadata = read_lock_metadata(paths.lock_file)
         if stale:
-            issues.append(text(args, f"stale board lock: {reason}; run a write command to auto-clear it or remove {paths.lock_file}", f"board 锁已过期：{reason}；运行一次写命令自动清理，或删除 {paths.lock_file}"))
+            issues.append(
+                text(
+                    args,
+                    f"stale board lock: {reason}; run a write command to auto-clear it or remove {paths.lock_file}",
+                    f"board 锁已过期：{reason}；运行一次写命令自动清理，或删除 {paths.lock_file}",
+                )
+            )
         else:
             print(text(args, f"board lock: active {metadata}", f"board 锁：占用中 {metadata}"))
     else:
@@ -486,7 +759,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     try:
         board = load_board(root)
     except BoardError as error:
-        issues.append(text(args, f"board: {error}; fix .ai-board/board.json or restore it from version control", f"board：{error}；请修复 .ai-board/board.json 或从版本控制恢复"))
+        issues.append(
+            text(
+                args,
+                f"board: {error}; fix .ai-board/board.json or restore it from version control",
+                f"board：{error}；请修复 .ai-board/board.json 或从版本控制恢复",
+            )
+        )
 
     if board is not None:
         print(text(args, "board schema: ok", "board 结构：正常"))
@@ -496,34 +775,104 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 continue
             task_id = task["id"]
             if not task.get("owner_agent"):
-                issues.append(f"active task {task_id} has no owner_agent; start it with --agent or fix the board")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} has no owner_agent; start it with --agent or fix the board",
+                        f"active 任务 {task_id} 没有 owner_agent；请用 --agent 启动，或修复 board",
+                    )
+                )
             scope = task.get("scope") or []
             if not scope:
-                issues.append(f"active task {task_id} has no scope; set an honest scope or unlock it")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} has no scope; set an honest scope or unlock it",
+                        f"active 任务 {task_id} 没有 scope；请设置真实 scope，或释放锁",
+                    )
+                )
             elif any(item in broad_scopes for item in scope):
-                issues.append(f"active task {task_id} scope is broad ({', '.join(scope)}); prefer specific files or smaller subdirectories")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} scope is broad ({', '.join(scope)}); prefer specific files or smaller subdirectories",
+                        f"active 任务 {task_id} 的 scope 过宽（{', '.join(scope)}）；优先使用具体文件或更小目录",
+                    )
+                )
             if not task.get("acceptance"):
-                issues.append(f"active task {task_id} has no acceptance criteria; add concrete acceptance before continuing")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} has no acceptance criteria; add concrete acceptance before continuing",
+                        f"active 任务 {task_id} 没有验收标准；继续前请补充具体验收",
+                    )
+                )
             updated_at = parse_iso_datetime(str(task.get("updated_at") or task.get("started_at") or ""))
             if updated_at is not None and now - updated_at >= stale_active_delta:
-                issues.append(f"active task {task_id} has not been updated for {int(config['doctor_stale_active_hours'])}+ hours; renew, complete, block, or archive it")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} has not been updated for {int(config['doctor_stale_active_hours'])}+ hours; renew, complete, block, or archive it",
+                        f"active 任务 {task_id} 已超过 {int(config['doctor_stale_active_hours'])} 小时未更新；请 renew、complete、block 或 archive",
+                    )
+                )
+            locked_at = parse_iso_datetime(str(task.get("locked_at") or task.get("started_at") or ""))
+            shared_matches = task_matches_scopes(scope, shared_scopes)
+            if shared_matches and locked_at is not None and now - locked_at >= shared_scope_warning_delta:
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} holds shared verification scope ({', '.join(shared_matches)}); release it promptly because other tasks may be waiting for full verification",
+                        f"active 任务 {task_id} 占用了共享验证 scope（{', '.join(shared_matches)}）；请尽快释放，因为其他任务可能在等待全量验收",
+                    )
+                )
             owner = task.get("owner_agent") or ""
             agent = agents.get(owner)
             if owner and agent is None:
-                issues.append(f"active task {task_id} owner {owner} is not registered; run ai-board agents claim or fix agents")
+                issues.append(
+                    text(
+                        args,
+                        f"active task {task_id} owner {owner} is not registered; run ai-board agents claim or fix agents",
+                        f"active 任务 {task_id} 的 owner {owner} 未注册；请运行 ai-board agents claim 或修复 agents",
+                    )
+                )
             elif agent is not None and agent.get("task_id") not in ("", task_id):
-                issues.append(f"agent {owner} points to {agent.get('task_id')} but active task is {task_id}; release or reclaim the identity")
+                issues.append(
+                    text(
+                        args,
+                        f"agent {owner} points to {agent.get('task_id')} but active task is {task_id}; release or reclaim the identity",
+                        f"agent {owner} 指向 {agent.get('task_id')}，但 active 任务是 {task_id}；请释放或重新认领身份",
+                    )
+                )
             elif agent is not None and agent_state(agent) == "expired":
-                issues.append(f"agent {owner} lease is expired; run ai-board agents claim or ai-board renew {task_id} --agent {owner}")
+                issues.append(
+                    text(
+                        args,
+                        f"agent {owner} lease is expired; run ai-board agents claim or ai-board renew {task_id} --agent {owner}",
+                        f"agent {owner} 租约已过期；请运行 ai-board agents claim 或 ai-board renew {task_id} --agent {owner}",
+                    )
+                )
             elif agent is not None:
                 lease_expires_at = parse_iso_datetime(str(agent.get("lease_expires_at") or ""))
                 if lease_expires_at is not None and lease_expires_at <= now + lease_warning_delta:
-                    issues.append(f"agent {owner} lease expires soon; run ai-board renew {task_id} --agent {owner}")
+                    issues.append(
+                        text(
+                            args,
+                            f"agent {owner} lease expires soon; run ai-board renew {task_id} --agent {owner}",
+                            f"agent {owner} 租约即将过期；请运行 ai-board renew {task_id} --agent {owner}",
+                        )
+                    )
 
         conflicts = find_conflicts(board)
         if conflicts:
             for left, right, scope in conflicts:
-                issues.append(f"scope conflict: {left['id']} and {right['id']} overlap on {scope}; coordinate, unlock, or narrow scope")
+                issues.append(
+                    text(
+                        args,
+                        f"scope conflict: {left['id']} and {right['id']} overlap on {scope}; coordinate, unlock, or narrow scope",
+                        f"scope 冲突：{left['id']} 和 {right['id']} 在 {scope} 上重叠；请协调、释放锁或缩小 scope",
+                    )
+                )
         else:
             print(text(args, "scope conflicts: ok", "scope 冲突：正常"))
 
@@ -661,196 +1010,53 @@ def cmd_skills_get(args: argparse.Namespace) -> int:
     return 0
 
 
-def parser_kwargs(language: str) -> dict[str, Any]:
-    return {"formatter_class": argparse.RawDescriptionHelpFormatter, "language": language}
-
-
 def build_parser(argv: list[str] | None = None) -> argparse.ArgumentParser:
     language = language_from_argv(argv)
     parser = LocalizedArgumentParser(prog="ai-board", **parser_kwargs(language))
     parser.add_argument("--root", default=".", help=help_text(language, "Project root. Defaults to current directory.", "项目根目录。默认当前目录。"))
-    parser.add_argument("--lang", choices=LANGUAGES, default=None, help=help_text(language, "Human output language. Defaults to AI_BOARD_LANG or en-US.", "人类可读输出语言。默认读取 AI_BOARD_LANG，未设置时为 en-US。"))
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    init = sub.add_parser(
-        "init",
-        help=help_text(language, "Create a board in the project.", "创建项目看板。"),
-        epilog=help_text(language, "Examples:\n  ai-board init --project-name Demo\n  ai-board init --overwrite-docs", "示例:\n  ai-board init --project-name Demo\n  ai-board init --overwrite-docs"),
-        **parser_kwargs(language),
+    parser.add_argument(
+        "--lang",
+        choices=LANGUAGES,
+        default=None,
+        help=help_text(language, "Human output language. Defaults to AI_BOARD_LANG or en-US.", "人类可读输出语言。默认读取 AI_BOARD_LANG，未设置时为 en-US。"),
     )
-    init.add_argument("--project-name", default="", help=help_text(language, "Project display name.", "项目显示名称。"))
-    init.add_argument("--force", action="store_true", help=help_text(language, "Overwrite existing board data.", "覆盖已有看板数据。"))
-    init.add_argument("--overwrite-docs", action="store_true", help=help_text(language, "Overwrite existing guardrail docs instead of writing .example files.", "覆盖已有规范文档，而不是写入 .example 文件。"))
-    init.set_defaults(func=cmd_init)
-
-    onboard = sub.add_parser(
-        "onboard",
-        help=help_text(language, "Inspect the project and print the AI-native handoff flow.", "检查项目并输出 AI 原生接手流程。"),
-        epilog=help_text(language, "Examples:\n  ai-board onboard --init-if-missing\n  ai-board onboard --init-if-missing --project-name Demo", "示例:\n  ai-board onboard --init-if-missing\n  ai-board onboard --init-if-missing --project-name Demo"),
-        **parser_kwargs(language),
+    register_subcommands(
+        parser,
+        language,
+        {
+            "init": cmd_init,
+            "onboard": cmd_onboard,
+            "add": cmd_add,
+            "schedule": cmd_schedule,
+            "start": cmd_start,
+            "renew": cmd_renew,
+            "unlock": cmd_unlock,
+            "agents_claim": cmd_agents_claim,
+            "agents_list": cmd_agents_list,
+            "agents_release": cmd_agents_release,
+            "complete": cmd_complete,
+            "archive": cmd_archive,
+            "reopen": cmd_reopen,
+            "block": cmd_block,
+            "goal": cmd_goal,
+            "tell": cmd_tell,
+            "inbox": cmd_inbox,
+            "config_list": cmd_config_list,
+            "config_get": cmd_config_get,
+            "config_set": cmd_config_set,
+            "lang": cmd_lang,
+            "status": cmd_status,
+            "next": cmd_next,
+            "conflicts": cmd_conflicts,
+            "doctor": cmd_doctor,
+            "locks": cmd_locks,
+            "render": cmd_render,
+            "show": cmd_show,
+            "history": cmd_history,
+            "skills_list": cmd_skills_list,
+            "skills_get": cmd_skills_get,
+        },
     )
-    onboard.add_argument("--init-if-missing", action="store_true", help=help_text(language, "Create the board and guardrail docs if they are missing.", "缺少看板和规范文档时自动创建。"))
-    onboard.add_argument("--project-name", default="", help=help_text(language, "Project display name when --init-if-missing creates a board.", "--init-if-missing 创建看板时使用的项目显示名称。"))
-    onboard.set_defaults(func=cmd_onboard)
-
-    add = sub.add_parser(
-        "add",
-        help=help_text(language, "Add a task to inbox.", "把任务加入需求池。"),
-        epilog=help_text(language, 'Examples:\n  ai-board add "Write docs" --priority P1 --lane 文档治理\n  ai-board add "Build API" --acceptance "tests pass"', '示例:\n  ai-board add "Write docs" --priority P1 --lane 文档治理\n  ai-board add "Build API" --acceptance "tests pass"'),
-        **parser_kwargs(language),
-    )
-    add.add_argument("title")
-    add.add_argument("--priority", choices=PRIORITIES, default="P2")
-    add.add_argument("--description", default="")
-    add.add_argument("--lane", default=None, help=help_text(language, "Planning lane, for example platform, content, docs, or default.", "计划泳道，例如 platform、content、docs 或 默认。"))
-    add.add_argument("--source", default="", help=help_text(language, "Where this task came from.", "任务来源。"))
-    add.add_argument("--acceptance", action="append", default=[], help=help_text(language, "Acceptance criterion. Can be passed multiple times.", "验收标准。可以传多次。"))
-    add.add_argument("--depends-on", nargs="*", default=[], help=help_text(language, "Task IDs this task depends on.", "该任务依赖的任务 ID。"))
-    add.set_defaults(func=cmd_add)
-
-    schedule = sub.add_parser(
-        "schedule",
-        help=help_text(language, "Move a task to scheduled work.", "把任务排入下一批。"),
-        epilog=help_text(language, "Example:\n  ai-board schedule T-0001", "示例:\n  ai-board schedule T-0001"),
-        **parser_kwargs(language),
-    )
-    schedule.add_argument("task_id")
-    schedule.set_defaults(func=cmd_schedule)
-
-    start = sub.add_parser(
-        "start",
-        help=help_text(language, "Claim a scheduled task.", "认领一个已排期任务。"),
-        epilog=help_text(language, "Examples:\n  ai-board start T-0001 --agent codex-00 --scope src/ai_board/cli.py README.md\n  ai-board start T-0001 --agent codex-00 --scope docs/当前状态.md --lease-minutes 60\n\nTip: keep --scope narrow. Prefer specific files or small subdirectories over broad roots like src, docs, tests, or .", "示例:\n  ai-board start T-0001 --agent codex-00 --scope src/ai_board/cli.py README.md\n  ai-board start T-0001 --agent codex-00 --scope docs/当前状态.md --lease-minutes 60\n\n提示：--scope 尽量写窄。优先写具体文件或小目录，不要随手锁 src、docs、tests 或 .。"),
-        **parser_kwargs(language),
-    )
-    start.add_argument("task_id")
-    start.add_argument("--agent", required=True)
-    start.add_argument("--scope", nargs="*", default=[])
-    start.add_argument("--force", action="store_true", help=help_text(language, "Start even when scope overlaps an active task.", "即使 scope 与 active 任务重叠也启动。"))
-    start.add_argument("--lease-minutes", type=int, default=None, help=help_text(language, "Lock lease in minutes. Use 0 for no expiry.", "锁租约分钟数。0 表示不过期。"))
-    start.set_defaults(func=cmd_start)
-
-    renew = sub.add_parser("renew", help=help_text(language, "Renew an active task scope lock.", "续租 active 任务的 scope 锁。"), **parser_kwargs(language))
-    renew.add_argument("task_id")
-    renew.add_argument("--agent", required=True)
-    renew.add_argument("--lease-minutes", type=int, default=None, help=help_text(language, "New lock lease in minutes. Use 0 for no expiry.", "新的锁租约分钟数。0 表示不过期。"))
-    renew.set_defaults(func=cmd_renew)
-
-    unlock = sub.add_parser("unlock", help=help_text(language, "Release an active task scope lock without completing the task.", "释放 active 任务的 scope 锁，但不完成任务。"), **parser_kwargs(language))
-    unlock.add_argument("task_id")
-    unlock.add_argument("--agent", required=True)
-    unlock.add_argument("--force", action="store_true", help=help_text(language, "Unlock even when another agent owns the lock.", "即使锁属于另一个 agent 也释放。"))
-    unlock.set_defaults(func=cmd_unlock)
-
-    agents = sub.add_parser("agents", help=help_text(language, "Manage reusable agent identities.", "管理可复用的 agent 身份。"), **parser_kwargs(language))
-    agents_sub = agents.add_subparsers(dest="agents_command", required=True)
-
-    agents_claim = agents_sub.add_parser("claim", help=help_text(language, "Claim an idle agent identity, creating one if needed.", "申领空闲 agent 身份；没有就创建。"), **parser_kwargs(language))
-    agents_claim.add_argument("--kind", default=None, help=help_text(language, "Agent family, for example codex or claude.", "agent 类型，例如 codex 或 claude。"))
-    agents_claim.add_argument("--lease-minutes", type=int, default=None, help=help_text(language, "Identity lease in minutes. Use 0 for no expiry.", "身份租约分钟数。0 表示不过期。"))
-    agents_claim.set_defaults(func=cmd_agents_claim)
-
-    agents_list = agents_sub.add_parser("list", help=help_text(language, "List registered agent identities.", "列出已注册的 agent 身份。"), **parser_kwargs(language))
-    agents_list.set_defaults(func=cmd_agents_list)
-
-    agents_release = agents_sub.add_parser("release", help=help_text(language, "Release an idle or expired agent identity.", "释放空闲或过期的 agent 身份。"), **parser_kwargs(language))
-    agents_release.add_argument("agent_id")
-    agents_release.add_argument("--force", action="store_true", help=help_text(language, "Release even when the identity is attached to an active task.", "即使身份关联 active 任务也释放。"))
-    agents_release.set_defaults(func=cmd_agents_release)
-
-    complete = sub.add_parser(
-        "complete",
-        help=help_text(language, "Complete an active task with verification.", "完成 active 任务并写入验收结果。"),
-        epilog=help_text(language, 'Example:\n  ai-board complete T-0001 --verification "tests passed" --leftovers "无"', '示例:\n  ai-board complete T-0001 --verification "tests passed" --leftovers "无"'),
-        **parser_kwargs(language),
-    )
-    complete.add_argument("task_id")
-    complete.add_argument("--verification", required=True)
-    complete.add_argument("--leftovers", default="")
-    complete.set_defaults(func=cmd_complete)
-
-    archive = sub.add_parser(
-        "archive",
-        help=help_text(language, "Archive a done task.", "归档 done 任务。"),
-        epilog=help_text(language, "Example:\n  ai-board archive T-0001", "示例:\n  ai-board archive T-0001"),
-        **parser_kwargs(language),
-    )
-    archive.add_argument("task_id")
-    archive.set_defaults(func=cmd_archive)
-
-    block = sub.add_parser("block", help=help_text(language, "Mark a task blocked.", "把任务标记为 blocked。"), **parser_kwargs(language))
-    block.add_argument("task_id")
-    block.set_defaults(func=cmd_block)
-
-    goal = sub.add_parser("goal", help=help_text(language, "Set current project goal.", "设置当前项目目标。"), **parser_kwargs(language))
-    goal.add_argument("goal")
-    goal.set_defaults(func=cmd_goal)
-
-    lang = sub.add_parser(
-        "lang",
-        help=help_text(language, "Print language switch commands.", "输出语言切换命令。"),
-        epilog=help_text(language, "Examples:\n  ai-board lang zh-CN\n  ai-board lang en-US", "示例:\n  ai-board lang\n  ai-board lang zh-CN\n  ai-board lang en-US"),
-        **parser_kwargs(language),
-    )
-    lang.add_argument("language", nargs="?", default="zh-CN", choices=("en-US", "zh-CN", "en", "zh"), help=help_text(language, "Language to print shell hints for. Defaults to zh-CN.", "要输出切换提示的语言。默认 zh-CN。"))
-    lang.set_defaults(func=cmd_lang)
-
-    status = sub.add_parser("status", help=help_text(language, "Print status counts.", "输出任务状态统计。"), **parser_kwargs(language))
-    status.set_defaults(func=cmd_status)
-
-    next_work = sub.add_parser(
-        "next",
-        help=help_text(language, "Suggest non-conflicting next work.", "推荐不冲突的下一步。"),
-        epilog=help_text(language, "Example:\n  ai-board next", "示例:\n  ai-board next"),
-        **parser_kwargs(language),
-    )
-    next_work.set_defaults(func=cmd_next)
-
-    conflicts = sub.add_parser("conflicts", help=help_text(language, "Check active task scope conflicts.", "检查 active 任务 scope 冲突。"), **parser_kwargs(language))
-    conflicts.add_argument("--fail-on-conflict", action="store_true")
-    conflicts.set_defaults(func=cmd_conflicts)
-
-    doctor = sub.add_parser("doctor", help=help_text(language, "Check project health.", "检查项目健康状态。"), **parser_kwargs(language))
-    doctor.add_argument("--fail-on-issue", action="store_true", help=help_text(language, "Return non-zero when an issue is found.", "发现问题时返回非零退出码。"))
-    doctor.set_defaults(func=cmd_doctor)
-
-    locks = sub.add_parser("locks", help=help_text(language, "List active task scope locks.", "列出 active 任务 scope 锁。"), **parser_kwargs(language))
-    locks.set_defaults(func=cmd_locks)
-
-    render = sub.add_parser("render", help=help_text(language, "Render Markdown docs.", "渲染 Markdown 文档。"), **parser_kwargs(language))
-    render.set_defaults(func=cmd_render)
-
-    show = sub.add_parser(
-        "show",
-        help=help_text(language, "Print one task.", "输出单个任务详情。"),
-        epilog=help_text(language, "Examples:\n  ai-board show T-0001\n  ai-board show T-0001 --format json", "示例:\n  ai-board show T-0001\n  ai-board show T-0001 --format json"),
-        **parser_kwargs(language),
-    )
-    show.add_argument("task_id")
-    show.add_argument("--format", choices=("human", "json"), default="human", help=help_text(language, "Output format. Defaults to human.", "输出格式。默认 human。"))
-    show.set_defaults(func=cmd_show)
-
-    history = sub.add_parser("history", help=help_text(language, "Print event history.", "输出事件历史。"), **parser_kwargs(language))
-    history.add_argument("task_id", nargs="?", default="", help=help_text(language, "Optional task ID to filter by.", "可选任务 ID，用于筛选历史。"))
-    history.set_defaults(func=cmd_history)
-
-    skills = sub.add_parser(
-        "skills",
-        help=help_text(language, "Read AI usage guides bundled with this CLI.", "读取 CLI 内置的 AI 使用指南。"),
-        epilog=help_text(language, "Examples:\n  ai-board skills\n  ai-board skills get core\n  ai-board skills get core --full", "示例:\n  ai-board skills\n  ai-board skills get core\n  ai-board skills get core --full"),
-        **parser_kwargs(language),
-    )
-    skills.set_defaults(func=cmd_skills_list)
-    skills_sub = skills.add_subparsers(dest="skills_command")
-
-    skills_list = skills_sub.add_parser("list", help=help_text(language, "List bundled AI usage guides.", "列出内置 AI 使用指南。"), **parser_kwargs(language))
-    skills_list.set_defaults(func=cmd_skills_list)
-
-    skills_get = skills_sub.add_parser("get", help=help_text(language, "Print a bundled AI usage guide.", "输出一个内置 AI 使用指南。"), **parser_kwargs(language))
-    skills_get.add_argument("skill_name", choices=skill_names())
-    skills_get.add_argument("--full", action="store_true", help=help_text(language, "Include extended command reference.", "包含扩展命令参考。"))
-    skills_get.set_defaults(func=cmd_skills_get)
-
     return parser
 
 
@@ -860,5 +1066,5 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args)
     except BoardError as error:
-        print(str(error), file=sys.stderr)
+        print(localize_board_error(args, str(error)), file=sys.stderr)
         return 1

@@ -123,7 +123,7 @@ Complete tasks with verification and leftovers, then archive them.
 New requests go to the inbox first:
 
 ```bash
-ai-board add "Short task title" --priority P1 --lane "平台开发" --source "roadmap" --acceptance "测试通过"
+ai-board add "Short task title" --priority P1 --lane "平台开发" --source "roadmap" --acceptance "测试通过" --verify-scope tests
 ```
 
 Use lanes to separate different work streams while keeping one source of truth.
@@ -131,10 +131,11 @@ For example: `平台开发`, `课程内容`, `文档治理`, `默认`.
 Dependencies can be declared with `--depends-on`. They must point to existing
 tasks, cannot point back to the same task, and simple cycles are rejected.
 
-Project defaults live in `.ai-board/config.json`. If the project usually uses
-English, set `language` to `en-US` and run `ai-board render`. The same file can
-also set `default_lane`, `default_agent_kind`, and `default_lease_minutes` so
-agents do not have to repeat them on every command.
+Project defaults live in `.ai-board/config.json`, but agents should update them
+through `ai-board config` instead of hand-editing the file. For example, use
+`ai-board config set language en-US` for English projects. The same command can
+set `default_lane`, `default_agent_kind`, `default_lease_minutes`, and doctor
+thresholds with validation.
 
 Schedule work before coding:
 
@@ -154,10 +155,34 @@ ai-board locks
 ai-board renew T-0001 --agent codex-00
 ```
 
+After `agents claim`, write down the exact identity you received and use that
+same identity for the whole task. Do not switch identities in later `start`,
+`tell`, `inbox`, `renew`, `unlock`, `complete`, or `archive` commands unless
+you intentionally release the old identity and claim another one. If your own
+notes or natural-language summary disagree with `agents list`, task owner,
+`events.jsonl`, or `messages.jsonl`, trust the structured board records.
+
+Treat `--scope` as the write scope and `--verify-scope` as the verification
+dependency scope. If full verification needs files locked by another active
+task, record local verification now and explain the deferred full verification
+instead of pretending the full suite was stable.
+
+Some paths are shared verification resources, such as `tests`,
+`tests/test_cli.py`, and core CLI modules. Do not keep them locked across a
+chain of tasks. After releasing shared verification scope, run `ai-board next`
+and handle tasks waiting for full verification before starting fresh work.
+
+When `ai-board next` shows active locks, do not treat that as "nothing can be
+done". First look for `available` candidates, then add or schedule a
+non-overlapping docs/evaluation task if that is useful. For `needs-scope`
+candidates, declare a narrow scope and rerun `next`; for blocked candidates,
+coordinate with the owner or wait with a recorded reason. Pause only after this
+check shows no safe work remains.
+
 `agents claim` reserves a reusable identity with a 240-minute lease by default.
 `start` binds that identity to the task, gives the scope lock the same default
-lease, and blocks overlapping non-expired active task scopes. Keep `--scope`
-narrow: prefer specific files or small subdirectories instead of broad roots
+lease, and blocks overlapping non-expired active task scopes. `--scope` is
+required: use specific files or small subdirectories instead of broad roots
 such as `src`, `docs`, `tests`, or `.`. Use `--lease-minutes 0` for no expiry.
 `start` also blocks unfinished dependencies unless `--force` is used. Use
 `--force` only when the overlap or dependency bypass is intentional and you
@@ -174,7 +199,7 @@ ai-board agents release codex-00 --force
 After implementation, complete it with real verification:
 
 ```bash
-ai-board complete T-0001 --verification "单元测试通过，核心流程手动验收通过" --leftovers "无"
+ai-board complete T-0001 --verification "局部测试通过" --deferred-verification "全量测试等待 T-0002 释放 tests/test_cli.py" --leftovers "无"
 ```
 
 `complete` releases the task owner's agent identity so the same AI session can
@@ -186,6 +211,51 @@ Then archive it:
 ```bash
 ai-board archive T-0001
 ```
+
+If a done or archived task turns out to be unfinished, reopen it with a clear
+reason instead of creating a duplicate task:
+
+```bash
+ai-board reopen T-0001 --reason "验收发现回归，需要补修"
+```
+
+For lightweight cross-agent notices, use `tell` and `inbox`. Notices are not
+real-time chat and do not change task state; always trust board locks and task
+status over message text.
+
+```bash
+ai-board tell --from codex-00 --to codex-01 --type wait --task T-0001 "waiting for tests/test_cli.py"
+ai-board inbox --agent codex-01
+ai-board inbox --agent codex-01 --ack M-0001
+ai-board inbox --agent codex-01 --resolve M-0001
+ai-board inbox --agent codex-01 --fail-on-unresolved
+ai-board next --agent codex-01
+```
+
+When you receive a notice, use this response flow:
+
+1. Run `ai-board inbox --agent YOUR_AGENT` and read unresolved notices.
+2. Classify each notice type: `wait`, `release`, `handoff`, `request`, or `info`.
+3. If it mentions a task or scope, run `ai-board locks`, `ai-board show TASK_ID`,
+   and when relevant `ai-board conflicts --fail-on-conflict`. Do not rely on
+   message text alone.
+4. If you no longer need a locked scope, release it with `ai-board unlock` or
+   complete/archive the task. If you still need it, reply with `ai-board tell`
+   explaining the reason and expected release condition.
+5. If the notice changes task boundaries, update the board through CLI commands;
+   never treat a notice as the source of truth.
+6. Mark the notice with `--ack` after reading it, and `--resolve` only after you
+   have acted, replied, or confirmed it does not affect your work.
+7. Before ending your task, run `ai-board inbox --agent YOUR_AGENT
+   --fail-on-unresolved`. If it returns non-zero, do not finish or hand off as
+   clean. Go back through this response flow: ack/resolve the notice if it is
+   handled, or send a `tell` reply explaining why it is still blocked, then run
+   the check again.
+
+Use the same claimed identity when sending, reading, acknowledging, or resolving
+notices. A model may describe itself with the wrong name in prose; the reliable
+identity record is the `--agent` / `--from` value written to the board events
+and message log.
 
 ## Board views
 
@@ -234,8 +304,14 @@ ai-board history T-0001
 - Add new work to the inbox unless it is already part of the active task.
 - Start only scheduled tasks.
 - Claim an agent identity such as `codex-00` before starting work; do not reuse a busy non-expired identity.
+- Keep using the exact claimed identity across start/tell/inbox/complete/archive; trust board events and message logs over natural-language self-descriptions.
 - Treat active owner and scope locks as a hard gate before coding.
 - Use `ai-board next` when active work exists or the Markdown board may be stale.
+- When blocked by active locks, keep looking for `available` work or split out non-overlapping docs/evaluation work before pausing.
+- When receiving notices, verify them against board state, act or reply, then ack/resolve explicitly.
+- Treat a non-zero `inbox --fail-on-unresolved` as a failed handoff until notices are resolved or a blocker reply is sent.
+- Declare both write scope and verification scope before relying on test results.
+- Release shared verification scope quickly, then prioritize tasks waiting for full verification.
 - Keep scope narrow and honest: prefer concrete files or small subdirectories, not broad roots like `src`, `docs`, `tests`, or `.`.
 - Complete tasks only after verification.
 - Write verification and leftovers as human-readable summaries. Do not leave archive records as raw command strings only.
@@ -253,7 +329,12 @@ ai-board --lang zh-CN status
 ai-board onboard [--init-if-missing] [--project-name NAME]
 ai-board goal GOAL
 ai-board lang zh-CN
-ai-board add TITLE [--priority P0|P1|P2|P3] [--description TEXT] [--lane LANE] [--source TEXT] [--acceptance TEXT] [--depends-on TASK_ID ...]
+ai-board config list
+ai-board config get KEY
+ai-board config set KEY VALUE
+ai-board tell --from AGENT --to AGENT|all [--type info|wait|release|handoff|request] [--task TASK_ID] MESSAGE
+ai-board inbox --agent AGENT [--ack MESSAGE_ID] [--resolve MESSAGE_ID] [--all] [--fail-on-unresolved]
+ai-board add TITLE [--priority P0|P1|P2|P3] [--description TEXT] [--lane LANE] [--source TEXT] [--acceptance TEXT] [--depends-on TASK_ID ...] [--verify-scope PATH ...]
 ai-board schedule TASK_ID
 ai-board agents claim [--kind KIND] [--lease-minutes MINUTES]
 ai-board agents list
@@ -261,11 +342,12 @@ ai-board agents release AGENT_ID [--force]
 ai-board start TASK_ID --agent NAME [--scope PATH ...] [--force] [--lease-minutes MINUTES]
 ai-board renew TASK_ID --agent NAME [--lease-minutes MINUTES]
 ai-board unlock TASK_ID --agent NAME [--force]
-ai-board complete TASK_ID --verification TEXT [--leftovers TEXT]
+ai-board complete TASK_ID --verification TEXT [--deferred-verification TEXT] [--leftovers TEXT]
 ai-board archive TASK_ID
+ai-board reopen TASK_ID --reason TEXT
 ai-board block TASK_ID
 ai-board status
-ai-board next
+ai-board next [--agent AGENT]
 ai-board conflicts [--fail-on-conflict]
 ai-board locks
 ai-board history [TASK_ID]
