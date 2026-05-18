@@ -183,7 +183,15 @@ class CliTests(unittest.TestCase):
             self.assertIn("board: created", text)
             self.assertIn("project_kind: empty", text)
             self.assertIn("docs_need_fill: yes", text)
+            self.assertIn("STOP: 项目方向尚未与用户确认", text)
+            self.assertIn("不要仅根据目录名、文件名或少量 evidence 推断项目目标", text)
+            self.assertIn("确认前不要排实现任务", text)
             self.assertIn("不要直接开始编码", text)
+
+            direction_text = (root / "docs" / "项目方向.md").read_text(encoding="utf-8")
+            self.assertIn("状态：未与用户确认", direction_text)
+            self.assertIn("待确认假设", direction_text)
+            self.assertIn("目录名、文件名或少量代码", direction_text)
 
     def test_onboard_classifies_lightweight_and_existing_projects(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -194,7 +202,11 @@ class CliTests(unittest.TestCase):
             lightweight_output = io.StringIO()
             with redirect_stdout(lightweight_output):
                 self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing"]), 0)
-            self.assertIn("project_kind: lightweight", lightweight_output.getvalue())
+            lightweight_text = lightweight_output.getvalue()
+            self.assertIn("project_kind: lightweight", lightweight_text)
+            self.assertIn("STOP: 项目方向尚未与用户确认", lightweight_text)
+            self.assertIn("不要仅根据目录名、文件名或少量 evidence 推断项目目标", lightweight_text)
+            self.assertIn("确认前不要排实现任务", lightweight_text)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

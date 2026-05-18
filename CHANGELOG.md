@@ -2,6 +2,27 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.0-alpha.4 - 2026-05-18
+
+第四个 alpha 版本，重点修正新项目接手门禁和 agent skill 安装口径，避免 AI 根据目录名或少量文件自顾自写方向规划。
+
+### 调整
+
+- `onboard` 对空项目和轻量新项目增加 `STOP` 方向确认门禁：目录名、文件名和少量 evidence 只能作为待确认假设。
+- `ai-board skills get core` 明确 hard direction gate：用户确认目标、受众、初版范围和现有文件权威性前，不得写正式路线、排实现任务或开始编码。
+- `docs/项目方向.md` 初始化模板增加“状态：未与用户确认”、已确认事实、待确认假设和需要询问用户的问题。
+- README / README_en 和内置 guide 的安装提示词改为：应按目标 agent 的 skill 安装方式放置 `skills/ai-board/SKILL.md`，除非该 agent 已经安装过；不再写成“如需 agent skill”的可选口径。
+- 已修正 GitHub 上 `v0.1.0-alpha.3` Release 的标记：不再作为 Pre-release，并显式显示为 Latest。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.0-alpha.3 - 2026-05-15
 
 第三个 alpha 版本，重点补齐多 agent 协作收口、notice 响应流程、共享验证资源、scope 误用防线和发布前口径一致性。

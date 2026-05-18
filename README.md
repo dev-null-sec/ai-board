@@ -1,6 +1,6 @@
 # ai-board
 
-[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.3/README_en.md) | 中文
+[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.4/README_en.md) | 中文
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -8,11 +8,11 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.3/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.4/assets/ai-board.png)
 
 给 AI agent 用的本地计划看板。你跟 AI 对话提需求，它帮你排期、跟踪、防冲突，而不是直接开改。
 
-当前版本：`v0.1.0-alpha.3`，仍是 alpha，重点增强多 agent 协作收口和发布前口径一致性。
+当前版本：`v0.1.0-alpha.4`，仍是 alpha，重点修正新项目接手门禁和 agent skill 安装口径。
 
 ## 为什么做这个
 
@@ -85,7 +85,7 @@ AI 会把需求排进看板，而不是立刻动手。紧急的 bug 会标高优
 1. 优先用 pipx install ai-board 安装用户级 CLI。
 2. 如果 pipx 不可用，再用 uv tool install ai-board。
 3. 安装后运行 ai-board onboard --init-if-missing。
-4. 如需 agent skill，请从 https://github.com/dev-null-sec/ai-board.git 取 skills/ai-board/SKILL.md 放到对应 agent 的 skills 目录。
+4. 按该 agent 的 skill 安装方式，把 https://github.com/dev-null-sec/ai-board.git 里的 skills/ai-board/SKILL.md 放到对应 agent 的 skills 目录；除非该 agent 已经安装过这个 skill。
 ```
 
 AI 会检查环境、装 CLI、放 skill 文件、读版本匹配的使用说明。全程不用你手动操作。

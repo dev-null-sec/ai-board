@@ -12,6 +12,8 @@ from pathlib import Path
 from ai_board.cli import main
 from ai_board.store import load_board, now_iso, save_board
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 class SkillsAndI18nTests(unittest.TestCase):
     @contextmanager
@@ -236,3 +238,22 @@ class SkillsAndI18nTests(unittest.TestCase):
         text = output.getvalue()
         self.assertIn("honest, narrow", text)
         self.assertIn("broad roots", text)
+        self.assertIn("hard direction gate", text)
+        self.assertIn("Directory names, file names, and small evidence fragments are only hypotheses", text)
+        self.assertIn("Do not write final roadmap language", text)
+        self.assertIn("Install the agent skill according to that agent's skill rules", text)
+        self.assertIn("unless that agent already has this", text)
+        self.assertIn("skill installed", text)
+        self.assertNotIn("If an agent skill is needed", text)
+
+    def test_readme_install_prompt_requires_skill_unless_present(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("按该 agent 的 skill 安装方式", chinese)
+        self.assertIn("除非该 agent 已经安装过这个 skill", chinese)
+        self.assertNotIn("如需 agent skill", chinese)
+
+        self.assertIn("Install the agent skill according to that agent's skill rules", english)
+        self.assertIn("unless that agent already has this skill installed", english)
+        self.assertNotIn("If an agent skill is needed", english)

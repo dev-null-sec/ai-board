@@ -1,6 +1,6 @@
 # ai-board
 
-English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.3/README.md)
+English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.4/README.md)
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -8,11 +8,11 @@ English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0-alpha.3/
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.3/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0-alpha.4/assets/ai-board.png)
 
 A local planning board for AI agents. You talk to the AI about what you need, it schedules, tracks, and prevents conflicts — instead of jumping straight into code.
 
-Current version: `v0.1.0-alpha.3`, still alpha, focused on stronger multi-agent cleanup checks and release wording consistency.
+Current version: `v0.1.0-alpha.4`, still alpha, focused on new-project direction gating and agent skill installation wording.
 
 ## Why I built this
 
@@ -85,7 +85,7 @@ Install ai-board and take over this project:
 1. Prefer pipx install ai-board for a user-level CLI.
 2. If pipx is unavailable, use uv tool install ai-board.
 3. After installation, run ai-board onboard --init-if-missing.
-4. If an agent skill is needed, copy skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into the agent's skills directory.
+4. Install the agent skill according to that agent's skill rules by copying skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into the agent's skills directory, unless that agent already has this skill installed.
 ```
 
 The agent checks your environment, installs the CLI, places the skill file, and loads the version-matched guide. No manual steps required.

@@ -23,11 +23,12 @@ instruction to install or find the CLI and enter onboarding. Do not stop after
 ```text
 Install ai-board as a user-level CLI, preferably from PyPI with
 pipx install ai-board. If pipx is not available, use uv tool install ai-board.
-If an agent skill is needed, copy skills/ai-board/SKILL.md from
-https://github.com/dev-null-sec/ai-board.git into the target agent's
-skill/skills directory. After installation, run ai-board onboard
---init-if-missing. Follow the onboarding output. Use ai-board skills get core
-only when command details are needed.
+Install the agent skill according to that agent's skill rules by copying
+skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into
+the target agent's skill/skills directory, unless that agent already has this
+skill installed. After installation, run ai-board onboard --init-if-missing.
+Follow the onboarding output. Use ai-board skills get core only when command
+details are needed.
 ```
 
 ## First checks
@@ -101,6 +102,13 @@ then classifies the project as empty, lightweight, or existing. It prints the
 next question the agent should ask instead of leaving the user at an empty
 board.
 
+For empty or lightweight projects, treat onboarding as a hard direction gate.
+Directory names, file names, and small evidence fragments are only hypotheses,
+not project direction. Until the user confirms the goal, audience, first-version
+scope, and whether current files are authoritative, you may only record known
+facts, list hypotheses, and ask questions. Do not write final roadmap language,
+schedule implementation work, or start coding from guessed direction.
+
 ## Normal workflow
 
 If a user asks you to "use ai-board" in a project, you can follow this compact
@@ -109,8 +117,11 @@ prompt:
 ```text
 Use ai-board as the planning source for this project. Run ai-board onboard
 --init-if-missing first. If onboarding says the project is empty or lightweight,
-ask whether to plan first or write handoff docs from the current files. If it is
-an existing project, ask whether to do a handoff summary before scheduling work.
+stop and ask the user to confirm the project goal, audience, first-version
+scope, and whether current files are authoritative. Do not infer project
+direction from directory names, file names, or small evidence fragments. If it
+is an existing project, ask whether to do a handoff summary before scheduling
+work.
 Then run ai-board agents list and ai-board locks. If a non-expired active task
 belongs to another agent, do not edit its scope.
 Run ai-board next to see non-conflicting candidates and stale generated-board
