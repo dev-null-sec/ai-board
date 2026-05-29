@@ -36,18 +36,31 @@ details are needed.
 ```bash
 ai-board --help
 ai-board onboard --init-if-missing
-ai-board agents list
-ai-board locks
 ai-board next
 ai-board status
+```
+
+New projects start in solo mode: `multi_agent_enabled=false` in
+`.ai-board/config.json`. In solo mode, keep the normal board lifecycle, but do
+not require agents to watch inbox notices, coordinate active locks, or resolve
+multi-agent conflicts before every ordinary change.
+
+Enable multi-agent coordination only when the project actually has parallel AI
+sessions:
+
+```bash
+ai-board config set multi_agent_enabled true
+ai-board agents list
+ai-board locks
 ai-board conflicts --fail-on-conflict
 ```
 
-Before editing files, read the active owner and scope locks. If an active task
-is owned by another agent and its lock is not expired, do not edit that scope.
-Wait for the owner, choose non-overlapping scheduled work, or coordinate an
-explicit takeover after the lease expires. Use `ai-board next` to ask the CLI
-for non-conflicting candidates before choosing work.
+When multi-agent mode is enabled, read the active owner and scope locks before
+editing files. If an active task is owned by another agent and its lock is not
+expired, do not edit that scope. Wait for the owner, choose non-overlapping
+scheduled work, or coordinate an explicit takeover after the lease expires. Use
+`ai-board next` to ask the CLI for non-conflicting candidates before choosing
+work.
 
 If `ai-board` is not installed, install it as a user-level CLI tool. Do not
 silently install it into the current project virtual environment.
@@ -122,10 +135,12 @@ scope, and whether current files are authoritative. Do not infer project
 direction from directory names, file names, or small evidence fragments. If it
 is an existing project, ask whether to do a handoff summary before scheduling
 work.
-Then run ai-board agents list and ai-board locks. If a non-expired active task
-belongs to another agent, do not edit its scope.
-Run ai-board next to see non-conflicting candidates and stale generated-board
-warnings before choosing a task.
+Run ai-board next to see candidate work and stale generated-board warnings
+before choosing a task.
+If this project uses parallel AI sessions, first enable multi-agent mode with
+ai-board config set multi_agent_enabled true, then run ai-board agents list and
+ai-board locks. If a non-expired active task belongs to another agent, do not
+edit its scope.
 Only edit files after a task is scheduled and started with an honest, narrow
 --scope.
 Complete tasks with verification and leftovers, then archive them.
@@ -145,8 +160,16 @@ tasks, cannot point back to the same task, and simple cycles are rejected.
 Project defaults live in `.ai-board/config.json`, but agents should update them
 through `ai-board config` instead of hand-editing the file. For example, use
 `ai-board config set language en-US` for English projects. The same command can
-set `default_lane`, `default_agent_kind`, `default_lease_minutes`, and doctor
-thresholds with validation.
+set `multi_agent_enabled`, `default_lane`, `default_agent_kind`,
+`default_lease_minutes`, `git_integration`, and doctor thresholds with
+validation.
+
+Git integration is git-first but not silent. New projects default to
+`git_integration=suggest`: if the project is not a git work tree, onboarding and
+doctor recommend initializing git before coding, but they do not run `git init`
+for you. Use `ai-board config set git_integration required` when a project must
+have git before AI edits, or `ai-board config set git_integration off` for
+temporary throwaway work.
 
 Schedule work before coding:
 
@@ -154,9 +177,10 @@ Schedule work before coding:
 ai-board schedule T-0001
 ```
 
-Claim an agent identity before editing files, then start a scheduled task with
-that identity. If another Codex session is already using `codex-00`, the next
-claim will return `codex-01`.
+In solo mode, start a scheduled task with a stable agent name. For parallel AI
+sessions, claim an agent identity before editing files, then start the task
+with that identity. If another Codex session is already using `codex-00`, the
+next claim will return `codex-01`.
 
 ```bash
 ai-board agents claim --kind codex
@@ -183,21 +207,22 @@ Some paths are shared verification resources, such as `tests`,
 chain of tasks. After releasing shared verification scope, run `ai-board next`
 and handle tasks waiting for full verification before starting fresh work.
 
-When `ai-board next` shows active locks, do not treat that as "nothing can be
-done". First look for `available` candidates, then add or schedule a
-non-overlapping docs/evaluation task if that is useful. For `needs-scope`
-candidates, declare a narrow scope and rerun `next`; for blocked candidates,
-coordinate with the owner or wait with a recorded reason. Pause only after this
-check shows no safe work remains.
+When multi-agent mode is enabled and `ai-board next` shows active locks, do not
+treat that as "nothing can be done". First look for `available` candidates,
+then add or schedule a non-overlapping docs/evaluation task if that is useful.
+For `needs-scope` candidates, declare a narrow scope and rerun `next`; for
+blocked candidates, coordinate with the owner or wait with a recorded reason.
+Pause only after this check shows no safe work remains.
 
 `agents claim` reserves a reusable identity with a 240-minute lease by default.
 `start` binds that identity to the task, gives the scope lock the same default
-lease, and blocks overlapping non-expired active task scopes. `--scope` is
-required: use specific files or small subdirectories instead of broad roots
-such as `src`, `docs`, `tests`, or `.`. Use `--lease-minutes 0` for no expiry.
-`start` also blocks unfinished dependencies unless `--force` is used. Use
-`--force` only when the overlap or dependency bypass is intentional and you
-have coordinated with the other owner.
+lease, and records the write scope. When multi-agent mode is enabled, `start`
+also blocks overlapping non-expired active task scopes. `--scope` is required:
+use specific files or small subdirectories instead of broad roots such as
+`src`, `docs`, `tests`, or `.`. Use `--lease-minutes 0` for no expiry. `start`
+always blocks unfinished dependencies unless `--force` is used. Use `--force`
+only when the dependency bypass is intentional; in multi-agent mode, also use it
+only after coordinating the overlap with the other owner.
 
 If an agent crashes or a scope is no longer needed, release it without
 completing the active task:
@@ -230,9 +255,9 @@ reason instead of creating a duplicate task:
 ai-board reopen T-0001 --reason "验收发现回归，需要补修"
 ```
 
-For lightweight cross-agent notices, use `tell` and `inbox`. Notices are not
-real-time chat and do not change task state; always trust board locks and task
-status over message text.
+For lightweight cross-agent notices in multi-agent mode, use `tell` and
+`inbox`. Notices are not real-time chat and do not change task state; always
+trust board locks and task status over message text.
 
 ```bash
 ai-board tell --from codex-00 --to codex-01 --type wait --task T-0001 "waiting for tests/test_cli.py"
@@ -287,7 +312,17 @@ Generated files:
 
 ## Conflict checks
 
-Active tasks can declare overlapping scopes. Check before parallel work:
+Multi-agent conflict checks are project-level opt-in. New projects default to
+`multi_agent_enabled=false`, so solo work is not interrupted by notice prompts,
+active-lock advice, or automatic scope-conflict blocking. Turn it on per
+project before real parallel work:
+
+```bash
+ai-board config set multi_agent_enabled true
+```
+
+Active tasks can declare overlapping scopes. After enabling multi-agent mode,
+check before parallel work:
 
 ```bash
 ai-board locks
@@ -312,15 +347,18 @@ ai-board history T-0001
 ## Agent rules of thumb
 
 - Read the project rules before coding.
+- Check git status before editing when `git_integration` is `suggest` or `required`; do not silently initialize git or commit pre-existing user changes.
 - Add new work to the inbox unless it is already part of the active task.
 - Start only scheduled tasks.
-- Claim an agent identity such as `codex-00` before starting work; do not reuse a busy non-expired identity.
-- Keep using the exact claimed identity across start/tell/inbox/complete/archive; trust board events and message logs over natural-language self-descriptions.
-- Treat active owner and scope locks as a hard gate before coding.
+- Solo mode is the default. Enable multi-agent mode per project with `ai-board config set multi_agent_enabled true` only when parallel AI sessions are actually needed.
+- In solo mode, use a stable agent name and normal task lifecycle without mandatory notice cleanup or active-lock coordination.
+- In multi-agent mode, claim an agent identity such as `codex-00` before starting work; do not reuse a busy non-expired identity.
+- In multi-agent mode, keep using the exact claimed identity across start/tell/inbox/complete/archive; trust board events and message logs over natural-language self-descriptions.
+- In multi-agent mode, treat active owner and scope locks as a hard gate before coding.
 - Use `ai-board next` when active work exists or the Markdown board may be stale.
-- When blocked by active locks, keep looking for `available` work or split out non-overlapping docs/evaluation work before pausing.
-- When receiving notices, verify them against board state, act or reply, then ack/resolve explicitly.
-- Treat a non-zero `inbox --fail-on-unresolved` as a failed handoff until notices are resolved or a blocker reply is sent.
+- In multi-agent mode, when blocked by active locks, keep looking for `available` work or split out non-overlapping docs/evaluation work before pausing.
+- In multi-agent mode, when receiving notices, verify them against board state, act or reply, then ack/resolve explicitly.
+- In multi-agent mode, treat a non-zero `inbox --fail-on-unresolved` as a failed handoff until notices are resolved or a blocker reply is sent.
 - Declare both write scope and verification scope before relying on test results.
 - Release shared verification scope quickly, then prioritize tasks waiting for full verification.
 - Keep scope narrow and honest: prefer concrete files or small subdirectories, not broad roots like `src`, `docs`, `tests`, or `.`.

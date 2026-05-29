@@ -69,6 +69,8 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "init", "--project-name", "Demo"]), 0)
             config_file = root / ".ai-board" / "config.json"
             config = json.loads(config_file.read_text(encoding="utf-8"))
+            self.assertFalse(config["multi_agent_enabled"])
+            self.assertEqual(config["git_integration"], "suggest")
             self.assertEqual(config["doctor_broad_scopes"], [".", "src", "docs", "tests"])
             self.assertIn("tests/test_cli.py", config["shared_verification_scopes"])
             self.assertEqual(config["shared_scope_warning_minutes"], 30)
@@ -128,6 +130,8 @@ class CliTests(unittest.TestCase):
             with redirect_stdout(list_output):
                 self.assertEqual(main(["--root", str(root), "config", "list"]), 0)
             self.assertIn("language: zh-CN", list_output.getvalue())
+            self.assertIn("multi_agent_enabled: false", list_output.getvalue())
+            self.assertIn("git_integration: suggest", list_output.getvalue())
             self.assertIn("default_lease_minutes: 240", list_output.getvalue())
 
             self.assertEqual(main(["--root", str(root), "add", "Config rendered task"]), 0)
@@ -147,6 +151,16 @@ class CliTests(unittest.TestCase):
             self.assertEqual(load_config(root)["doctor_broad_scopes"], [".", "src/app"])
             self.assertTrue(any(event["action"] == "config.set" and event["data"]["key"] == "doctor_broad_scopes" for event in read_events(root)))
 
+            self.assertEqual(main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"]), 0)
+            self.assertTrue(load_config(root)["multi_agent_enabled"])
+            self.assertEqual(main(["--root", str(root), "config", "set", "multi_agent_enabled", "off"]), 0)
+            self.assertFalse(load_config(root)["multi_agent_enabled"])
+
+            self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "required"]), 0)
+            self.assertEqual(load_config(root)["git_integration"], "required")
+            self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "OFF"]), 0)
+            self.assertEqual(load_config(root)["git_integration"], "off")
+
     def test_config_command_rejects_unknown_or_invalid_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -155,6 +169,11 @@ class CliTests(unittest.TestCase):
             self.assertIn("Unknown config key", self.assert_cli_error(["--root", str(root), "config", "get", "missing"]))
             self.assertIn("Unknown config key", self.assert_cli_error(["--root", str(root), "config", "set", "missing", "value"]))
             self.assertIn("must be a number", self.assert_cli_error(["--root", str(root), "config", "set", "default_lease_minutes", "soon"]))
+            self.assertIn("must be true or false", self.assert_cli_error(["--root", str(root), "config", "set", "multi_agent_enabled", "maybe"]))
+            self.assertIn(
+                "git_integration must be suggest, required, or off",
+                self.assert_cli_error(["--root", str(root), "config", "set", "git_integration", "always"]),
+            )
             self.assertIn("language must be zh-CN or en-US", self.assert_cli_error(["--root", str(root), "config", "set", "language", "fr-FR"]))
             self.assertEqual(load_config(root)["language"], "zh-CN")
 
@@ -220,6 +239,17 @@ class CliTests(unittest.TestCase):
             self.assertIn("project_kind: existing", existing_output.getvalue())
             self.assertIn("pyproject.toml", existing_output.getvalue())
 
+    def test_onboard_recommends_git_without_initializing_it(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing", "--project-name", "Git Demo"]), 0)
+            text = output.getvalue()
+            self.assertIn("Git is not initialized for this project", text)
+            self.assertIn("ai-board will not do this silently", text)
+            self.assertFalse((root / ".git").exists())
+
     def test_scan_project_files_prunes_ignored_directories(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -244,6 +274,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Build API"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -258,10 +289,26 @@ class CliTests(unittest.TestCase):
             self.assertIn("scope=src/api.py", text)
             self.assertIn("if you are not codex-00, do not edit this scope", text)
 
+    def test_onboard_hides_multi_agent_lock_notice_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Solo Demo"])
+            main(["--root", str(root), "add", "Build API"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "solo", "--scope", "src/api.py"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "onboard", "--init-if-missing"]), 0)
+            text = output.getvalue()
+            self.assertNotIn("Active task scope locks:", text)
+            self.assertNotIn("do not edit this scope", text)
+
     def test_onboard_lock_notice_can_use_chinese_language(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir, self.cli_lang("zh-CN"):
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Build API"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -447,6 +494,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Build API", "--priority", "P0", "--lane", "平台开发"])
@@ -494,6 +542,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Build API", "--priority", "P0"])
             main(["--root", str(root), "add", "Write docs", "--priority", "P1"])
@@ -523,6 +572,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Core change", "--priority", "P0"])
             main(["--root", str(root), "add", "Followup core fix", "--priority", "P1"])
@@ -550,6 +600,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Change CLI", "--priority", "P0"])
             main(["--root", str(root), "add", "Version check", "--priority", "P1", "--verify-scope", "tests/test_cli.py"])
@@ -591,6 +642,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Locked task"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -649,6 +701,51 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(main(["--root", str(root), "locks"]), 0)
             self.assertIn("T-0001 codex-00 lock=active", locks_output.getvalue())
 
+    def test_multi_agent_disabled_hides_notice_prompts_and_scope_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Solo Demo"])
+            main(["--root", str(root), "add", "Task A", "--acceptance", "checked"])
+            main(["--root", str(root), "add", "Task B", "--acceptance", "checked"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "solo", "--scope", "src/app.py"])
+            main(["--root", str(root), "tell", "--from", "other", "--to", "solo", "--type", "request", "--task", "T-0001", "please confirm"])
+
+            next_output = io.StringIO()
+            with redirect_stdout(next_output):
+                self.assertEqual(main(["--root", str(root), "next", "--agent", "solo"]), 0)
+            next_text = next_output.getvalue()
+            self.assertNotIn("Notices for solo:", next_text)
+            self.assertNotIn("Next action advice:", next_text)
+
+            self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "solo-2", "--scope", "src/app.py"]), 0)
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("scope conflicts: ok", doctor_output.getvalue())
+
+    def test_multi_agent_enabled_restores_notice_prompts_and_scope_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A", "--acceptance", "checked"])
+            main(["--root", str(root), "add", "Task B", "--acceptance", "checked"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex-00", "--scope", "src/app.py"])
+            main(["--root", str(root), "tell", "--from", "codex-01", "--to", "codex-00", "--type", "request", "--task", "T-0001", "please confirm"])
+
+            next_output = io.StringIO()
+            with redirect_stdout(next_output):
+                self.assertEqual(main(["--root", str(root), "next", "--agent", "codex-00"]), 0)
+            next_text = next_output.getvalue()
+            self.assertIn("Notices for codex-00:", next_text)
+            self.assertIn("Next action advice:", next_text)
+
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "codex-01", "--scope", "src/app.py"], "Scope is locked")
+
     def test_inbox_can_fail_when_unresolved_notices_exist(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -676,6 +773,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "agents", "claim", "--kind", "codex"])
             main(["--root", str(root), "add", "Notice task"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -812,6 +910,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "add", "Task A"])
             main(["--root", str(root), "add", "Task B"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -885,6 +984,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             main(["--root", str(root), "add", "Task A"])
             main(["--root", str(root), "add", "Task B"])
             main(["--root", str(root), "schedule", "T-0001"])
@@ -1369,10 +1469,33 @@ class CliTests(unittest.TestCase):
             self.assertIn("generated doc stale", output.getvalue())
             self.assertIn("ai-board render", output.getvalue())
 
+    def test_doctor_git_integration_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.assertEqual(main(["--root", str(root), "init"]), 0)
+
+            suggest_output = io.StringIO()
+            with redirect_stdout(suggest_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("git: recommended, not initialized", suggest_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "required"]), 0)
+            required_output = io.StringIO()
+            with redirect_stdout(required_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("git is required but this project is not initialized", required_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "off"]), 0)
+            off_output = io.StringIO()
+            with redirect_stdout(off_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("git: skipped", off_output.getvalue())
+
     def test_doctor_reports_active_task_and_agent_issues(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             self.assertEqual(main(["--root", str(root), "init"]), 0)
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             board = load_board(root)
             board["tasks"].append(
                 {
@@ -1500,6 +1623,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             self.assertEqual(main(["--root", str(root), "init"]), 0)
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             board = load_board(root)
             board["tasks"].append(
                 {
@@ -1541,6 +1665,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             self.assertEqual(main(["--root", str(root), "init"]), 0)
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
             board = load_board(root)
             board["tasks"].append(
                 {

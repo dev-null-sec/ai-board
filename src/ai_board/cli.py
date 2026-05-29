@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -169,10 +170,69 @@ def config_value(args: argparse.Namespace, key: str) -> Any:
     return load_config(root_path(args))[key]
 
 
+def multi_agent_enabled(args: argparse.Namespace) -> bool:
+    return bool(config_value(args, "multi_agent_enabled"))
+
+
+def detect_git_state(root: Path) -> tuple[str, str]:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except FileNotFoundError:
+        return ("missing", "")
+    except subprocess.TimeoutExpired:
+        return ("error", "git command timed out")
+    if result.returncode == 0:
+        return ("ok", (result.stdout or "").strip())
+    message = (result.stderr or result.stdout or "").strip()
+    return ("none", message)
+
+
+def git_onboard_notice(args: argparse.Namespace, root: Path) -> str:
+    mode = str(config_value(args, "git_integration"))
+    if mode == "off":
+        return ""
+    state, detail = detect_git_state(root)
+    if state == "ok":
+        return ""
+    if state == "missing":
+        return text(
+            args,
+            "\nGit is not available. Install git before AI-managed development if you want rollback checkpoints.",
+            "\n当前环境找不到 git。若希望 AI 开发可随时回滚，请先安装 git。",
+        )
+    if mode == "required":
+        return text(
+            args,
+            "\nGit is required for this project but is not initialized. Before coding, confirm the project root, run `git init`, add a .gitignore, and make an initial commit. ai-board will not do this silently.",
+            "\n当前项目要求使用 git，但尚未初始化。编码前请先确认项目根目录，运行 `git init`，补充 .gitignore，并创建初始提交。ai-board 不会静默执行这些操作。",
+        )
+    suffix = f" ({detail})" if detail else ""
+    return text(
+        args,
+        f"\nGit is not initialized for this project{suffix}. Recommended before coding: confirm the project root, run `git init`, add a .gitignore, and make an initial commit. ai-board will not do this silently.",
+        f"\n当前项目尚未初始化 git{suffix}。建议编码前先确认项目根目录，运行 `git init`，补充 .gitignore，并创建初始提交。ai-board 不会静默执行这些操作。",
+    )
+
+
 def parse_config_value(key: str, value: str) -> Any:
     defaults = default_config()
     if key not in defaults:
         raise BoardError(f"Unknown config key: {key}")
+    if isinstance(defaults[key], bool):
+        normalized = value.strip().lower()
+        if normalized in ("1", "true", "yes", "on", "enabled"):
+            return True
+        if normalized in ("0", "false", "no", "off", "disabled"):
+            return False
+        raise BoardError(f"Config key {key} must be true or false.")
     if isinstance(defaults[key], int):
         try:
             return int(value)
@@ -182,10 +242,15 @@ def parse_config_value(key: str, value: str) -> Any:
         if not value.strip():
             return []
         return [item.strip() for item in value.split(",") if item.strip()]
+    if key == "git_integration":
+        return value.strip().lower()
     return value
 
 
 def print_config_value(key: str, value: Any) -> None:
+    if isinstance(value, bool):
+        print(f"{key}: {str(value).lower()}")
+        return
     if isinstance(value, list):
         print(f"{key}: {', '.join(str(item) for item in value)}")
     else:
@@ -199,6 +264,8 @@ def print_notice(message: dict[str, Any]) -> None:
 
 
 def print_agent_notices(args: argparse.Namespace, limit: int = 5) -> None:
+    if not multi_agent_enabled(args):
+        return
     agent = getattr(args, "agent", "") or ""
     if not agent:
         return
@@ -220,6 +287,8 @@ def print_agent_notices(args: argparse.Namespace, limit: int = 5) -> None:
 
 
 def print_unresolved_notice_warning(args: argparse.Namespace, agent: str, limit: int = 3) -> None:
+    if not multi_agent_enabled(args):
+        return
     if not agent:
         return
     notices = messages_for_agent(root_path(args), agent)
@@ -446,6 +515,8 @@ def next_candidate_note(args: argparse.Namespace, task: dict[str, Any], locked_a
 
 
 def print_next_action_advice(args: argparse.Namespace, states: list[str], locked_active: list[dict[str, Any]]) -> None:
+    if not multi_agent_enabled(args):
+        return
     if not locked_active:
         return
     print("")
@@ -500,9 +571,13 @@ def cmd_onboard(args: argparse.Namespace) -> int:
     root = root_path(args)
     result = onboard_project(root, args.project_name, args.init_if_missing)
     print(format_onboard_result(result))
-    notice = format_onboard_lock_notice(load_board(root), args)
-    if notice:
-        print(notice)
+    git_notice = git_onboard_notice(args, root)
+    if git_notice:
+        print(git_notice)
+    if multi_agent_enabled(args):
+        notice = format_onboard_lock_notice(load_board(root), args)
+        if notice:
+            print(notice)
     return 0
 
 
@@ -525,7 +600,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     root = root_path(args)
     ensure_task_is_not_active_for_command(root, args.task_id, "start", args)
     lease_minutes = args.lease_minutes if args.lease_minutes is not None else int(config_value(args, "default_lease_minutes"))
-    task = start_task(root, args.task_id, args.agent, args.scope, args.force, lease_minutes)
+    task = start_task(root, args.task_id, args.agent, args.scope, args.force, lease_minutes, enforce_scope_conflicts=multi_agent_enabled(args))
     print_task(task)
     return 0
 
@@ -667,6 +742,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     root = root_path(args)
     board = load_board(root)
     active = [task for task in board["tasks"] if task["status"] == "active" and task.get("scope")]
+    multi_agent = multi_agent_enabled(args)
     print(text(args, "Current active locks:", "当前 active 锁："))
     if active:
         for task in active:
@@ -707,7 +783,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     if not candidates:
         print(text(args, "- no scheduled or inbox tasks", "- 没有 scheduled 或 inbox 任务"))
         return 0
-    locked_active = [task for task in active if not lock_is_expired(task)]
+    locked_active = [task for task in active if not lock_is_expired(task)] if multi_agent else []
     candidate_states: list[str] = []
     for task in candidates:
         state, note = next_candidate_note(args, task, locked_active)
@@ -733,6 +809,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     paths = Paths(root)
     issues: list[str] = []
     config = load_config(root)
+    git_mode = str(config["git_integration"])
+    multi_agent = bool(config["multi_agent_enabled"])
     now = datetime.now(timezone.utc)
     stale_active_delta = timedelta(hours=int(config["doctor_stale_active_hours"]))
     lease_warning_delta = timedelta(minutes=int(config["doctor_lease_warning_minutes"]))
@@ -754,6 +832,35 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(text(args, f"board lock: active {metadata}", f"board 锁：占用中 {metadata}"))
     else:
         print(text(args, "board lock: ok", "board 锁：正常"))
+
+    if git_mode == "off":
+        print(text(args, "git: skipped", "git：已跳过"))
+    else:
+        git_state, git_detail = detect_git_state(root)
+        if git_state == "ok":
+            print(text(args, "git: ok", "git：正常"))
+        elif git_mode == "required":
+            if git_state == "missing":
+                issues.append(text(args, "git is required but the git command was not found", "当前项目要求使用 git，但找不到 git 命令"))
+            else:
+                suffix = f": {git_detail}" if git_detail else ""
+                issues.append(
+                    text(
+                        args,
+                        f"git is required but this project is not initialized as a git work tree{suffix}; run git init only after confirming the project root",
+                        f"当前项目要求使用 git，但这里不是 git 工作区{suffix}；确认项目根目录后再运行 git init",
+                    )
+                )
+        elif git_state == "missing":
+            print(text(args, "git: recommended, but git command was not found", "git：建议使用，但当前找不到 git 命令"))
+        else:
+            print(
+                text(
+                    args,
+                    "git: recommended, not initialized; confirm the project root before running git init",
+                    "git：建议使用，但尚未初始化；运行 git init 前请先确认项目根目录",
+                )
+            )
 
     board: dict[str, Any] | None = None
     try:
@@ -828,7 +935,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 )
             owner = task.get("owner_agent") or ""
             agent = agents.get(owner)
-            if owner and agent is None:
+            if multi_agent and owner and agent is None:
                 issues.append(
                     text(
                         args,
@@ -836,7 +943,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         f"active 任务 {task_id} 的 owner {owner} 未注册；请运行 ai-board agents claim 或修复 agents",
                     )
                 )
-            elif agent is not None and agent.get("task_id") not in ("", task_id):
+            elif multi_agent and agent is not None and agent.get("task_id") not in ("", task_id):
                 issues.append(
                     text(
                         args,
@@ -844,7 +951,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         f"agent {owner} 指向 {agent.get('task_id')}，但 active 任务是 {task_id}；请释放或重新认领身份",
                     )
                 )
-            elif agent is not None and agent_state(agent) == "expired":
+            elif multi_agent and agent is not None and agent_state(agent) == "expired":
                 issues.append(
                     text(
                         args,
@@ -852,7 +959,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         f"agent {owner} 租约已过期；请运行 ai-board agents claim 或 ai-board renew {task_id} --agent {owner}",
                     )
                 )
-            elif agent is not None:
+            elif multi_agent and agent is not None:
                 lease_expires_at = parse_iso_datetime(str(agent.get("lease_expires_at") or ""))
                 if lease_expires_at is not None and lease_expires_at <= now + lease_warning_delta:
                     issues.append(
@@ -864,7 +971,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                     )
 
         conflicts = find_conflicts(board)
-        if conflicts:
+        if multi_agent and conflicts:
             for left, right, scope in conflicts:
                 issues.append(
                     text(

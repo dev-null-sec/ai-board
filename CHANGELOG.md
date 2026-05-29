@@ -2,6 +2,31 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.0 - 2026-05-29
+
+首个正式版本。这个版本把前几个 alpha 中验证过的 AI 原生项目接手、任务看板、事件日志、doctor 自检、可选多 agent 协作和发布流程合并成一个不带预发布后缀的版本。
+
+### 新增
+
+- 新增项目级 `multi_agent_enabled` 开关：新项目默认关闭多 agent 协作提示和 scope 冲突强拦截；需要并行 AI 开发时通过 `ai-board config set multi_agent_enabled true` 单独开启。
+- 新增项目级 `git_integration` 配置：默认 `suggest`，onboard / doctor 会建议无 git 项目先初始化以便回滚，但不会静默运行 `git init` 或自动提交用户已有改动；可切到 `required` 或 `off`。
+- `doctor` 增加 git 集成状态检查：`suggest` 只提示不失败，`required` 会在无 git 时失败，`off` 跳过。
+
+### 调整
+
+- README / README_en 改为正式版 `v0.1.0` 口径，不再把当前版本称为 alpha。
+- `ai-board skills get core` 明确 solo 默认、多 agent opt-in，以及 git-first 但不静默初始化的工作方式。
+- 保留 alpha 阶段已经验证的能力：onboard 方向门禁、JSON 真相源、Markdown 渲染、事件日志、notice inbox、scope lock、共享验证资源、Claude 多进程实测流程和发布 workflow。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.0-alpha.4 - 2026-05-18
 
 第四个 alpha 版本，重点修正新项目接手门禁和 agent skill 安装口径，避免 AI 根据目录名或少量文件自顾自写方向规划。

@@ -244,6 +244,13 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("Install the agent skill according to that agent's skill rules", text)
         self.assertIn("unless that agent already has this", text)
         self.assertIn("skill installed", text)
+        self.assertIn("New projects start in solo mode: `multi_agent_enabled=false`", text)
+        self.assertIn("ai-board config set multi_agent_enabled true", text)
+        self.assertIn("Solo mode is the default", text)
+        self.assertIn("When multi-agent mode is enabled", text)
+        self.assertIn("git_integration=suggest", text)
+        self.assertIn("do not run `git init`", text)
+        self.assertIn("do not silently initialize git", text)
         self.assertNotIn("If an agent skill is needed", text)
 
     def test_readme_install_prompt_requires_skill_unless_present(self) -> None:
@@ -257,3 +264,49 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("Install the agent skill according to that agent's skill rules", english)
         self.assertIn("unless that agent already has this skill installed", english)
         self.assertNotIn("If an agent skill is needed", english)
+
+    def test_readme_guides_human_agent_collaboration_with_prompts(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("## 人和 AI 怎么配合", chinese)
+        self.assertIn("用 ai-board 接手这个项目", chinese)
+        self.assertIn("先 onboard；信息不够就问我", chinese)
+        self.assertIn("把这个需求进 ai-board", chinese)
+        self.assertIn("别直接开改", chinese)
+        self.assertIn("看 ai-board：现在做什么？下一步做什么？", chinese)
+        self.assertIn("命令细节留给 agent", chinese)
+
+        self.assertIn("## How Humans And AI Work Together", english)
+        self.assertIn("Use ai-board to take over this project", english)
+        self.assertIn("If key context is missing, ask me", english)
+        self.assertIn("Put this request into ai-board", english)
+        self.assertIn("schedule it before coding", english)
+        self.assertIn("Check ai-board: what is active", english)
+        self.assertIn("The agent can use `status`, `next`, `show`, and `doctor` behind the scenes", english)
+
+    def test_readme_documents_multi_agent_opt_in_default_off(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("项目级可选开关，默认关闭", chinese)
+        self.assertIn("ai-board config set multi_agent_enabled true", chinese)
+        self.assertIn("单 agent 开发时", chinese)
+        self.assertIn("处理 inbox", chinese)
+
+        self.assertIn("Project-level opt-in, off by default", english)
+        self.assertIn("ai-board config set multi_agent_enabled true", english)
+        self.assertIn("In solo-agent work", english)
+        self.assertIn("active-scope conflicts", english)
+
+    def test_readme_documents_git_first_without_silent_init(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("默认 `git_integration=suggest`", chinese)
+        self.assertIn("不会静默初始化 git", chinese)
+        self.assertIn("git-first 提示和 required 门禁", chinese)
+
+        self.assertIn("Default `git_integration=suggest`", english)
+        self.assertIn("does not silently initialize git", english)
+        self.assertIn("Git-first hints and required gate", english)

@@ -1,6 +1,23 @@
 {
   "language": "zh-CN",
+  "multi_agent_enabled": false,
+  "git_integration": "suggest",
   "default_lane": "默认",
   "default_agent_kind": "agent",
-  "default_lease_minutes": 240
+  "default_lease_minutes": 240,
+  "doctor_stale_active_hours": 48,
+  "doctor_lease_warning_minutes": 30,
+  "doctor_broad_scopes": [
+    ".",
+    "src",
+    "docs",
+    "tests"
+  ],
+  "shared_verification_scopes": [
+    "tests",
+    "tests/test_cli.py",
+    "src/ai_board/cli.py",
+    "src/ai_board/operations.py"
+  ],
+  "shared_scope_warning_minutes": 30
 }

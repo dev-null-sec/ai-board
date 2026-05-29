@@ -390,7 +390,7 @@ def schedule_task(root: Path, task_id: str) -> dict[str, Any]:
         return task
 
 
-def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bool = False, lease_minutes: int = DEFAULT_LEASE_MINUTES) -> dict[str, Any]:
+def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bool = False, lease_minutes: int = DEFAULT_LEASE_MINUTES, enforce_scope_conflicts: bool = True) -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
@@ -401,7 +401,7 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
             raise BoardError("Task scope is required. Start with specific files or small subdirectories, for example --scope src/app.py README.md.")
         ensure_dependencies_complete(board, task, force)
         conflicts = find_scope_conflicts(board, task, task_scope)
-        if conflicts and not force:
+        if enforce_scope_conflicts and conflicts and not force:
             lines = [f"{left['id']} ({left.get('owner_agent')}) conflicts on {scope_text}" for left, scope_text in conflicts]
             raise ScopeConflictError("Scope is locked by active task(s):\n" + "\n".join(lines))
         assign_agent_to_task(board, agent, task_id, lease_minutes)
@@ -414,7 +414,13 @@ def start_task(root: Path, task_id: str, agent: str, scope: list[str], force: bo
         task["started_at"] = now_iso()
         task["updated_at"] = now_iso()
         persist(root, board)
-        record_event(root, "task.start", task, agent, {"status": "active", "scope": task_scope, "lease_expires_at": task["lease_expires_at"], "force": force})
+        record_event(
+            root,
+            "task.start",
+            task,
+            agent,
+            {"status": "active", "scope": task_scope, "lease_expires_at": task["lease_expires_at"], "force": force, "enforce_scope_conflicts": enforce_scope_conflicts},
+        )
         return task
 
 

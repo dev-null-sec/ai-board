@@ -4,10 +4,61 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 92,
+  "next_id": 95,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-18T04:06:17+00:00",
-  "tasks": [],
+  "updated_at": "2026-05-29T11:15:01+00:00",
+  "tasks": [
+    {
+      "id": "T-0094",
+      "title": "发布 v0.1.0 正式版",
+      "description": "",
+      "priority": "P0",
+      "status": "active",
+      "lane": "发布",
+      "source": "用户要求：可以发布正式版，不再使用 alpha",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        ".github",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "版本号从 0.1.0 alpha 调整为正式 v0.1.0",
+        "README、README_en、CHANGELOG 和包版本口径一致",
+        "发布前测试、ruff、doctor、conflicts、构建和包检查通过",
+        "提交、打 v0.1.0 tag 并推送到 GitHub 触发发布流程"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-05-29T11:14:39+00:00",
+      "updated_at": "2026-05-29T11:15:01+00:00",
+      "lock_owner": "codex-00",
+      "lease_expires_at": "2026-05-29T15:15:01+00:00",
+      "locked_at": "2026-05-29T11:15:01+00:00",
+      "started_at": "2026-05-29T11:15:01+00:00"
+    }
+  ],
   "archive": [
     {
       "id": "T-0001",
@@ -3285,19 +3336,123 @@
       "started_at": "2026-05-18T04:01:06+00:00",
       "completed_at": "2026-05-18T04:06:17+00:00",
       "archived_at": "2026-05-18T04:06:17+00:00"
+    },
+    {
+      "id": "T-0092",
+      "title": "新增项目级多 agent 协作开关并默认关闭",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "协作流程",
+      "source": "用户反馈：单 agent 开发不应天天看消息和管冲突",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "新项目默认关闭多 agent 协作能力，配置为项目级并可通过 ai-board config 单独管理",
+        "关闭时单 agent 常规流程不再要求处理 inbox notice、next 的 agent 消息提醒或多 agent 协作动作建议",
+        "开启后保留现有多 agent notice、scope lock、conflicts 和 inbox 收口能力",
+        "README、core guide、当前状态和测试覆盖默认关闭与开启后的差异"
+      ],
+      "verification": "已实现项目级 multi_agent_enabled 配置，默认 false；默认关闭时隐藏 onboard/next/complete/archive 的多 agent 协作提醒，start 不再强拦重叠 active scope，doctor 不再把 agent lease/scope conflict 当作默认问题；开启后恢复 notice、scope lock、conflicts、inbox 收口能力。验证通过：uv run python -m unittest discover -s tests；uv run --with ruff ruff check .；uv run ai-board doctor --fail-on-issue；uv run ai-board conflicts --fail-on-conflict。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-29T07:10:32+00:00",
+      "updated_at": "2026-05-29T07:33:00+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-29T07:10:54+00:00",
+      "started_at": "2026-05-29T07:10:54+00:00",
+      "completed_at": "2026-05-29T07:32:37+00:00",
+      "archived_at": "2026-05-29T07:33:00+00:00"
+    },
+    {
+      "id": "T-0093",
+      "title": "新增 git-first 开发管理提示",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "协作流程",
+      "source": "用户建议：默认使用 git 管理 AI 开发，便于随时回滚",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/skill_guides.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "新增项目级 git 集成配置，默认 suggest，可设置 required/off",
+        "onboard 对无 git 项目给出初始化建议但不静默 git init",
+        "doctor 在 suggest 下只提示不失败，在 required 下无 git 会失败，在 off 下跳过",
+        "README、core guide、当前状态和测试覆盖 git-first 行为"
+      ],
+      "verification": "已新增 git_integration 项目级配置，默认 suggest；onboard 在无 git 项目中建议初始化但不静默 git init；doctor 支持 suggest/required/off，suggest 仅提示不失败，required 无 git 会失败，off 跳过。README、README_en、core guide、当前状态和测试已同步。验证通过：uv run python -m unittest discover -s tests；uv run --with ruff ruff check .；uv run ai-board doctor --fail-on-issue；uv run ai-board conflicts --fail-on-conflict。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-29T11:04:13+00:00",
+      "updated_at": "2026-05-29T11:12:59+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-29T11:04:41+00:00",
+      "started_at": "2026-05-29T11:04:41+00:00",
+      "completed_at": "2026-05-29T11:12:46+00:00",
+      "archived_at": "2026-05-29T11:12:59+00:00"
     }
   ],
   "agents": [
     {
       "id": "codex-00",
       "kind": "codex",
-      "status": "idle",
-      "task_id": "",
-      "lease_expires_at": "",
+      "status": "busy",
+      "task_id": "T-0094",
+      "lease_expires_at": "2026-05-29T15:15:01+00:00",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-18T04:06:17+00:00",
+      "updated_at": "2026-05-29T11:15:01+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-18T04:06:17+00:00"
+      "released_at": "2026-05-29T11:12:46+00:00"
     },
     {
       "id": "codex-01",
