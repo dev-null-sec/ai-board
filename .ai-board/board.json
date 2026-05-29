@@ -6,59 +6,8 @@
   },
   "next_id": 95,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-29T11:15:01+00:00",
-  "tasks": [
-    {
-      "id": "T-0094",
-      "title": "发布 v0.1.0 正式版",
-      "description": "",
-      "priority": "P0",
-      "status": "active",
-      "lane": "发布",
-      "source": "用户要求：可以发布正式版，不再使用 alpha",
-      "owner_agent": "codex-00",
-      "scope": [
-        ".ai-board/board.json",
-        ".ai-board/events.jsonl",
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs/归档计划看板.md",
-        "docs/当前状态.md",
-        "docs/计划看板.md",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "tests/test_cli.py",
-        "tests/test_skills_and_i18n.py"
-      ],
-      "verify_scope": [
-        ".github",
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "tests"
-      ],
-      "depends_on": [],
-      "acceptance": [
-        "版本号从 0.1.0 alpha 调整为正式 v0.1.0",
-        "README、README_en、CHANGELOG 和包版本口径一致",
-        "发布前测试、ruff、doctor、conflicts、构建和包检查通过",
-        "提交、打 v0.1.0 tag 并推送到 GitHub 触发发布流程"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-05-29T11:14:39+00:00",
-      "updated_at": "2026-05-29T11:15:01+00:00",
-      "lock_owner": "codex-00",
-      "lease_expires_at": "2026-05-29T15:15:01+00:00",
-      "locked_at": "2026-05-29T11:15:01+00:00",
-      "started_at": "2026-05-29T11:15:01+00:00"
-    }
-  ],
+  "updated_at": "2026-05-29T11:44:19+00:00",
+  "tasks": [],
   "archive": [
     {
       "id": "T-0001",
@@ -3440,19 +3389,71 @@
       "started_at": "2026-05-29T11:04:41+00:00",
       "completed_at": "2026-05-29T11:12:46+00:00",
       "archived_at": "2026-05-29T11:12:59+00:00"
+    },
+    {
+      "id": "T-0094",
+      "title": "发布 v0.1.0 正式版",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求：可以发布正式版，不再使用 alpha",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        ".github",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "版本号从 0.1.0 alpha 调整为正式 v0.1.0",
+        "README、README_en、CHANGELOG 和包版本口径一致",
+        "发布前测试、ruff、doctor、conflicts、构建和包检查通过",
+        "提交、打 v0.1.0 tag 并推送到 GitHub 触发发布流程"
+      ],
+      "verification": "v0.1.0 正式版发布完成：conflicts、doctor、ruff、unittest 87 项、build、twine check 均通过；main 已推送到 10bf638，tag v0.1.0 已推送；GitHub CI 与 Release workflow 均成功；origin/main shortlog 仅剩 devnu11 <62527393+dev-null-sec@users.noreply.github.com>。",
+      "deferred_verification": "",
+      "leftovers": "GitHub Contributors 页面可能有缓存延迟；远端 main 历史已不含 Hiwonder 提交。",
+      "created_at": "2026-05-29T11:14:39+00:00",
+      "updated_at": "2026-05-29T11:44:19+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-29T11:15:01+00:00",
+      "started_at": "2026-05-29T11:15:01+00:00",
+      "completed_at": "2026-05-29T11:44:19+00:00",
+      "archived_at": "2026-05-29T11:44:19+00:00"
     }
   ],
   "agents": [
     {
       "id": "codex-00",
       "kind": "codex",
-      "status": "busy",
-      "task_id": "T-0094",
-      "lease_expires_at": "2026-05-29T15:15:01+00:00",
+      "status": "idle",
+      "task_id": "",
+      "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-29T11:15:01+00:00",
+      "updated_at": "2026-05-29T11:44:19+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-29T11:12:46+00:00"
+      "released_at": "2026-05-29T11:44:19+00:00"
     },
     {
       "id": "codex-01",
