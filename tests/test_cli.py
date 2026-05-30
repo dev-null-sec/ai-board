@@ -14,7 +14,7 @@ from pathlib import Path
 from ai_board import onboarding, store
 from ai_board.cli import main
 from ai_board.errors import BoardError
-from ai_board.store import load_board, load_config, now_iso, read_events, save_board
+from ai_board.store import find_task, load_board, load_config, now_iso, read_events, save_board
 
 
 class CliTests(unittest.TestCase):
@@ -1032,11 +1032,76 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "unlock", "T-0001", "--agent", "b", "--force"]), 0)
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
             board = load_board(root)
-            self.assertEqual(board["tasks"][0]["scope"], [])
+            self.assertEqual(board["tasks"][0]["scope"], ["src"])
+            self.assertEqual(board["tasks"][0]["lock_owner"], "")
             self.assertEqual(board["tasks"][0]["lease_expires_at"], "")
             events = self.read_events(root)
             self.assertIn("task.renew", [event["action"] for event in events])
             self.assertIn("task.unlock", [event["action"] for event in events])
+
+    def test_unlock_preserves_scope_and_rescope_reacquires_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "docs"])
+            self.assertEqual(main(["--root", str(root), "unlock", "T-0001", "--agent", "a"]), 0)
+            self.assertEqual(main(["--root", str(root), "agents", "release", "a", "--force"]), 0)
+
+            board = load_board(root)
+            self.assertEqual(board["tasks"][0]["scope"], ["docs"])
+            self.assertEqual(board["tasks"][0]["lock_owner"], "")
+
+            self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "docs/guide.md"]), 0)
+            self.assertEqual(
+                main(
+                    [
+                        "--root",
+                        str(root),
+                        "rescope",
+                        "T-0001",
+                        "--agent",
+                        "a",
+                        "--scope",
+                        "src/app.py",
+                        "--verify-scope",
+                        "tests/test_app.py",
+                    ]
+                ),
+                0,
+            )
+
+            board = load_board(root)
+            task = find_task(board, "T-0001")
+            self.assertEqual(task["scope"], ["src/app.py"])
+            self.assertEqual(task["verify_scope"], ["tests/test_app.py"])
+            self.assertEqual(task["lock_owner"], "a")
+            self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
+
+            self.assert_cli_error(["--root", str(root), "rescope", "T-0001", "--agent", "a", "--scope", "docs/guide.md"], "Scope is locked")
+            events = self.read_events(root)
+            self.assertIn("task.rescope", [event["action"] for event in events])
+
+    def test_doctor_no_scope_issue_suggests_rescope(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "src/a.py"])
+            board = load_board(root)
+            task = find_task(board, "T-0001")
+            task["scope"] = []
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("ai-board rescope T-0001 --agent a --scope <paths...>", output.getvalue())
 
     def test_agent_identity_claim_start_and_complete_release(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -251,6 +251,8 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("git_integration=suggest", text)
         self.assertIn("do not run `git init`", text)
         self.assertIn("do not silently initialize git", text)
+        self.assertIn("ai-board rescope T-0001", text)
+        self.assertIn("unlock` keeps the task scope as history", text)
         self.assertNotIn("If an agent skill is needed", text)
 
     def test_readme_install_prompt_requires_skill_unless_present(self) -> None:

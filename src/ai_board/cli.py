@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .errors import BoardError
 from .guardrails import init_guardrail_docs
 from .onboarding import format_onboard_result, onboard_project
@@ -21,9 +22,11 @@ from .operations import (
     find_conflicts,
     list_agents,
     lock_is_expired,
+    locked_active_tasks,
     release_agent,
     renew_task_lock,
     reopen_task,
+    rescope_task,
     schedule_task,
     set_goal,
     set_status,
@@ -358,7 +361,7 @@ def print_agent(agent: dict[str, Any], args: argparse.Namespace | None = None) -
 
 
 def format_onboard_lock_notice(board: dict[str, Any], args: argparse.Namespace) -> str:
-    active_tasks = [task for task in board.get("tasks", []) if task.get("status") == "active" and task.get("scope")]
+    active_tasks = locked_active_tasks(board, include_expired=True)
     if not active_tasks:
         return ""
     lines = ["", text(args, "Active task scope locks:", "当前 active task scope 锁：")]
@@ -612,6 +615,22 @@ def cmd_renew(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_rescope(args: argparse.Namespace) -> int:
+    lease_minutes = args.lease_minutes if args.lease_minutes is not None else int(config_value(args, "default_lease_minutes"))
+    task = rescope_task(
+        root_path(args),
+        args.task_id,
+        args.agent,
+        args.scope,
+        args.verify_scope,
+        args.force,
+        lease_minutes,
+        enforce_scope_conflicts=multi_agent_enabled(args),
+    )
+    print_task(task)
+    return 0
+
+
 def cmd_unlock(args: argparse.Namespace) -> int:
     task = unlock_task(root_path(args), args.task_id, args.agent, args.force)
     print_task(task)
@@ -741,7 +760,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_next(args: argparse.Namespace) -> int:
     root = root_path(args)
     board = load_board(root)
-    active = [task for task in board["tasks"] if task["status"] == "active" and task.get("scope")]
+    active = locked_active_tasks(board, include_expired=True)
     multi_agent = multi_agent_enabled(args)
     print(text(args, "Current active locks:", "当前 active 锁："))
     if active:
@@ -783,7 +802,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     if not candidates:
         print(text(args, "- no scheduled or inbox tasks", "- 没有 scheduled 或 inbox 任务"))
         return 0
-    locked_active = [task for task in active if not lock_is_expired(task)] if multi_agent else []
+    locked_active = locked_active_tasks(board) if multi_agent else []
     candidate_states: list[str] = []
     for task in candidates:
         state, note = next_candidate_note(args, task, locked_active)
@@ -881,6 +900,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             if task["status"] != "active":
                 continue
             task_id = task["id"]
+            owner = task.get("owner_agent") or ""
             if not task.get("owner_agent"):
                 issues.append(
                     text(
@@ -894,8 +914,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 issues.append(
                     text(
                         args,
-                        f"active task {task_id} has no scope; set an honest scope or unlock it",
-                        f"active 任务 {task_id} 没有 scope；请设置真实 scope，或释放锁",
+                        f"active task {task_id} has no scope; run `ai-board rescope {task_id} --agent {owner or '<agent>'} --scope <paths...>` or block/reopen the task after coordination",
+                        f"active 任务 {task_id} 没有 scope；请运行 `ai-board rescope {task_id} --agent {owner or '<agent>'} --scope <paths...>`，或协调后 block/reopen 该任务",
                     )
                 )
             elif any(item in broad_scopes for item in scope):
@@ -925,7 +945,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 )
             locked_at = parse_iso_datetime(str(task.get("locked_at") or task.get("started_at") or ""))
             shared_matches = task_matches_scopes(scope, shared_scopes)
-            if shared_matches and locked_at is not None and now - locked_at >= shared_scope_warning_delta:
+            if task.get("lock_owner") and shared_matches and locked_at is not None and now - locked_at >= shared_scope_warning_delta:
                 issues.append(
                     text(
                         args,
@@ -933,7 +953,6 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         f"active 任务 {task_id} 占用了共享验证 scope（{', '.join(shared_matches)}）；请尽快释放，因为其他任务可能在等待全量验收",
                     )
                 )
-            owner = task.get("owner_agent") or ""
             agent = agents.get(owner)
             if multi_agent and owner and agent is None:
                 issues.append(
@@ -1021,7 +1040,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 def cmd_locks(args: argparse.Namespace) -> int:
     board = load_board(root_path(args))
-    active = [task for task in board["tasks"] if task["status"] == "active" and task.get("scope")]
+    active = locked_active_tasks(board, include_expired=True)
     if not active:
         print(text(args, "no locks", "暂无锁"))
         return 0
@@ -1120,6 +1139,7 @@ def cmd_skills_get(args: argparse.Namespace) -> int:
 def build_parser(argv: list[str] | None = None) -> argparse.ArgumentParser:
     language = language_from_argv(argv)
     parser = LocalizedArgumentParser(prog="ai-board", **parser_kwargs(language))
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--root", default=".", help=help_text(language, "Project root. Defaults to current directory.", "项目根目录。默认当前目录。"))
     parser.add_argument(
         "--lang",
@@ -1137,6 +1157,7 @@ def build_parser(argv: list[str] | None = None) -> argparse.ArgumentParser:
             "schedule": cmd_schedule,
             "start": cmd_start,
             "renew": cmd_renew,
+            "rescope": cmd_rescope,
             "unlock": cmd_unlock,
             "agents_claim": cmd_agents_claim,
             "agents_list": cmd_agents_list,

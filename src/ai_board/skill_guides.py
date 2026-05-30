@@ -224,8 +224,17 @@ always blocks unfinished dependencies unless `--force` is used. Use `--force`
 only when the dependency bypass is intentional; in multi-agent mode, also use it
 only after coordinating the overlap with the other owner.
 
-If an agent crashes or a scope is no longer needed, release it without
-completing the active task:
+If the task boundary changes while it is active, do not run `start` again and
+do not hand-edit `board.json`. Update the active task with `rescope`; this
+records the new write scope and reacquires the lock:
+
+```bash
+ai-board rescope T-0001 --agent codex-00 --scope src/app.py README.md --verify-scope tests/test_app.py
+```
+
+If an agent crashes or a scope is no longer needed, release the lock without
+completing the active task. `unlock` keeps the task scope as history, but clears
+the active lock so other agents are not blocked by that scope:
 
 ```bash
 ai-board unlock T-0001 --agent codex-00
@@ -390,6 +399,7 @@ ai-board agents list
 ai-board agents release AGENT_ID [--force]
 ai-board start TASK_ID --agent NAME [--scope PATH ...] [--force] [--lease-minutes MINUTES]
 ai-board renew TASK_ID --agent NAME [--lease-minutes MINUTES]
+ai-board rescope TASK_ID --agent NAME --scope PATH ... [--verify-scope PATH ...] [--force] [--lease-minutes MINUTES]
 ai-board unlock TASK_ID --agent NAME [--force]
 ai-board complete TASK_ID --verification TEXT [--deferred-verification TEXT] [--leftovers TEXT]
 ai-board archive TASK_ID

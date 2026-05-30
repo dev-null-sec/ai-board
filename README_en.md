@@ -2,7 +2,7 @@
 
 A local planning board for AI agents. It records requests, scheduling, active file scope, verification, and leftovers so an agent taking over a project does not have to guess from chat history alone.
 
-English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0/README.md)
+English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.1/README.md)
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -10,9 +10,9 @@ English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.0/README.m
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.0/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.1/assets/ai-board.png)
 
-Current stable version: `v0.1.0`.
+Current stable version: `v0.1.1`.
 
 ## Why this exists
 

@@ -444,6 +444,58 @@ def renew_task_lock(root: Path, task_id: str, agent: str, lease_minutes: int = D
         return task
 
 
+def rescope_task(
+    root: Path,
+    task_id: str,
+    agent: str,
+    scope: list[str],
+    verify_scope: list[str] | None = None,
+    force: bool = False,
+    lease_minutes: int = DEFAULT_LEASE_MINUTES,
+    enforce_scope_conflicts: bool = True,
+) -> dict[str, Any]:
+    with board_lock(root):
+        board = load_board(root)
+        task = find_task(board, task_id)
+        if task["status"] != "active":
+            raise BoardError("Only active tasks can be rescoped.")
+        owner = task.get("lock_owner") or task.get("owner_agent")
+        if owner and owner != agent and not force:
+            raise BoardError(f"Task is owned by {owner}. Use the owning agent or rescope with --force.")
+        ensure_scope_arguments_are_unambiguous(root, scope)
+        task_scope = normalize_scope(scope)
+        if not task_scope:
+            raise BoardError("Task scope is required. Start with specific files or small subdirectories, for example --scope src/app.py README.md.")
+        normalized_verify_scope: list[str] | None = None
+        if verify_scope is not None:
+            ensure_scope_arguments_are_unambiguous(root, verify_scope)
+            normalized_verify_scope = normalize_scope(verify_scope)
+        conflicts = find_scope_conflicts(board, task, task_scope)
+        if enforce_scope_conflicts and conflicts and not force:
+            lines = [f"{left['id']} ({left.get('owner_agent')}) conflicts on {scope_text}" for left, scope_text in conflicts]
+            raise ScopeConflictError("Scope is locked by active task(s):\n" + "\n".join(lines))
+        assign_agent_to_task(board, agent, task_id, lease_minutes)
+        task["owner_agent"] = agent
+        task["scope"] = task_scope
+        if normalized_verify_scope is not None:
+            task["verify_scope"] = normalized_verify_scope
+        task["lock_owner"] = agent
+        task["locked_at"] = now_iso()
+        task["lease_expires_at"] = lease_expires_at(lease_minutes)
+        task["updated_at"] = now_iso()
+        persist(root, board)
+        event_data: dict[str, Any] = {
+            "scope": task_scope,
+            "lease_expires_at": task["lease_expires_at"],
+            "force": force,
+            "enforce_scope_conflicts": enforce_scope_conflicts,
+        }
+        if normalized_verify_scope is not None:
+            event_data["verify_scope"] = normalized_verify_scope
+        record_event(root, "task.rescope", task, agent, event_data)
+        return task
+
+
 def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
@@ -453,13 +505,12 @@ def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> di
         owner = task.get("lock_owner") or task.get("owner_agent")
         if owner and owner != agent and not force:
             raise BoardError(f"Task lock is owned by {owner}. Use --force to unlock it anyway.")
-        task["scope"] = []
         task["lock_owner"] = ""
         task["lease_expires_at"] = ""
         task["unlocked_at"] = now_iso()
         task["updated_at"] = now_iso()
         persist(root, board)
-        record_event(root, "task.unlock", task, agent, {"force": force})
+        record_event(root, "task.unlock", task, agent, {"force": force, "scope": task.get("scope", [])})
         return task
 
 
@@ -536,7 +587,7 @@ def locked_active_tasks(board: dict[str, Any], include_expired: bool = False) ->
     return [
         task
         for task in active_tasks(board)
-        if task.get("scope") and (include_expired or not lock_is_expired(task))
+        if task.get("scope") and task.get("lock_owner") and (include_expired or not lock_is_expired(task))
     ]
 
 

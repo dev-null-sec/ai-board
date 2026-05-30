@@ -2,6 +2,32 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.1 - 2026-05-30
+
+这个版本主要修正 active 任务中途调整 scope 时的协作体验，避免 agent 为了释放锁被迫手改 `.ai-board/board.json`。
+
+### 新增
+
+- 新增 `ai-board rescope TASK --agent AGENT --scope ...`：active 任务中途需要缩小、扩大或恢复 scope 时，可以通过 CLI 更新范围并重新加锁。
+- `rescope` 支持同步更新 `--verify-scope`，用于把写入范围和验收范围一起说清楚。
+- 新增 `-v` / `--version`，可直接输出当前 CLI 版本。
+
+### 调整
+
+- `unlock` 不再清空任务 scope，只释放 `lock_owner` 和租约；scope 继续作为任务历史保留。
+- 冲突检测、`locks`、`next` 和 onboard lock notice 只把带有效 `lock_owner` 的 active task 视为占用锁；已 unlock 的 active task 不再挡住其他任务。
+- `doctor` 在发现 active task 没有 scope 时，会提示可执行的 `rescope` 修复命令。
+- `ai-board skills get core` 已补充 rescope / unlock 的协作说明，减少 agent 手改 JSON 的概率。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.0 - 2026-05-29
 
 首个正式版本。这个版本把前几个 alpha 中验证过的 AI 原生项目接手、任务看板、事件日志、doctor 自检、可选多 agent 协作和发布流程合并成一个不带预发布后缀的版本。

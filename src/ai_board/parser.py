@@ -134,6 +134,28 @@ def register_subcommands(parser: argparse.ArgumentParser, language: str, handler
     )
     renew.set_defaults(func=handlers["renew"])
 
+    rescope = sub.add_parser(
+        "rescope",
+        help=help_text(language, "Update an active task scope and reacquire its lock.", "更新 active 任务 scope 并重新加锁。"),
+        epilog=help_text(
+            language,
+            "Example:\n  ai-board rescope T-0001 --agent codex-00 --scope src/app.py README.md --verify-scope tests/test_app.py",
+            "示例:\n  ai-board rescope T-0001 --agent codex-00 --scope src/app.py README.md --verify-scope tests/test_app.py",
+        ),
+        **parser_kwargs(language),
+    )
+    rescope.add_argument("task_id")
+    rescope.add_argument("--agent", required=True)
+    rescope.add_argument("--scope", nargs="*", required=True)
+    rescope.add_argument("--verify-scope", nargs="*", default=None)
+    rescope.add_argument(
+        "--force", action="store_true", help=help_text(language, "Rescope even when another agent owns the task or scope overlaps.", "即使任务属于另一个 agent 或 scope 重叠也更新。")
+    )
+    rescope.add_argument(
+        "--lease-minutes", type=int, default=None, help=help_text(language, "Lock lease in minutes. Use 0 for no expiry.", "锁租约分钟数。0 表示不过期。")
+    )
+    rescope.set_defaults(func=handlers["rescope"])
+
     unlock = sub.add_parser(
         "unlock",
         help=help_text(language, "Release an active task scope lock without completing the task.", "释放 active 任务的 scope 锁，但不完成任务。"),
