@@ -2,7 +2,7 @@
 
 给 AI agent 用的本地计划看板。它把需求、排期、正在改的文件范围、验收结果和遗留问题记录下来，让 AI 接手项目时不用只靠聊天记录猜。
 
-[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.1/README_en.md) | 中文
+[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.11/README_en.md) | 中文
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -10,9 +10,9 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.1/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.11/assets/ai-board.png)
 
-当前正式版本：`v0.1.1`。
+当前正式版本：`v0.1.11`。
 
 ## 为什么做这个
 

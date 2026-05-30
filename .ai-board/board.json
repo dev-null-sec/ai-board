@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 99,
+  "next_id": 104,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-30T03:39:16+00:00",
+  "updated_at": "2026-05-30T10:21:55+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -35,6 +35,57 @@
       "updated_at": "2026-05-30T02:58:03+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
+    },
+    {
+      "id": "T-0103",
+      "title": "发布 v0.1.11",
+      "description": "",
+      "priority": "P0",
+      "status": "active",
+      "lane": "发布",
+      "source": "用户要求：发布0.1.11",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py",
+        "tests/test_version.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "pyproject.toml",
+        "src",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "版本号、README 和 CHANGELOG 同步为 v0.1.11",
+        "发版前 ruff、unit test、doctor、conflicts、build、twine check 全部通过",
+        "以 dev-null-sec 身份推送 main、tag 和 GitHub Release/PyPI 发布流程"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-05-30T10:19:36+00:00",
+      "updated_at": "2026-05-30T10:21:55+00:00",
+      "lock_owner": "codex",
+      "lease_expires_at": "2026-05-30T14:21:55+00:00",
+      "locked_at": "2026-05-30T10:21:55+00:00",
+      "started_at": "2026-05-30T10:20:45+00:00"
     }
   ],
   "archive": [
@@ -3604,6 +3655,157 @@
       "started_at": "2026-05-30T03:20:06+00:00",
       "completed_at": "2026-05-30T03:39:16+00:00",
       "archived_at": "2026-05-30T03:39:16+00:00"
+    },
+    {
+      "id": "T-0099",
+      "title": "修复根 scope 与子路径冲突漏检",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "协作机制",
+      "source": "外部 AI 测评反馈",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "根 scope 与任意子路径判定重叠",
+        "多 agent 模式下 scope . 会阻止 src 等子路径并发 start",
+        "conflicts/next/doctor 不再漏报根 scope 冲突"
+      ],
+      "verification": "已补根 scope 回归测试并通过全量验证：ruff check 全部通过；unittest discover 94 tests OK；doctor --fail-on-issue OK；conflicts --fail-on-conflict OK。",
+      "deferred_verification": "",
+      "leftovers": "未发布新版本；如需给用户获取该修复，需要另行排期发版。",
+      "created_at": "2026-05-30T07:01:57+00:00",
+      "updated_at": "2026-05-30T07:07:13+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T07:05:07+00:00",
+      "started_at": "2026-05-30T07:02:34+00:00",
+      "completed_at": "2026-05-30T07:07:04+00:00",
+      "archived_at": "2026-05-30T07:07:13+00:00"
+    },
+    {
+      "id": "T-0100",
+      "title": "补协作防撞安全回归测试",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "协作机制",
+      "source": "用户要求：补一轮安全性测试",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "覆盖根 scope 变体、前缀陷阱和路径规范化冲突",
+        "覆盖 start/rescope/unlock/expired/force 在多 agent 下的冲突行为",
+        "覆盖 verify_scope、next、doctor 与单 agent 默认关闭差异"
+      ],
+      "verification": "已补协作防撞安全回归测试并通过全量验证：新增覆盖根 scope 变体、start/rescope 防撞、force 后 conflicts/doctor 报告、过期根锁、solo 模式显式冲突揭示、next 对候选/验证范围提示；ruff check . 通过；unittest discover -s tests 共 100 tests OK；doctor --fail-on-issue OK；conflicts --fail-on-conflict OK。",
+      "deferred_verification": "",
+      "leftovers": "未发现新的实现漏洞；本轮只补测试和状态记录，未发版。",
+      "created_at": "2026-05-30T07:11:59+00:00",
+      "updated_at": "2026-05-30T07:22:46+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T07:13:41+00:00",
+      "started_at": "2026-05-30T07:13:41+00:00",
+      "completed_at": "2026-05-30T07:22:35+00:00",
+      "archived_at": "2026-05-30T07:22:46+00:00"
+    },
+    {
+      "id": "T-0101",
+      "title": "补 blocked 任务归档和重开 CLI 路径",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "协作机制",
+      "source": "用户反馈：AI 仍被迫手改 blocked 任务",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "blocked 任务可通过 archive 归档清理",
+        "blocked 任务可通过 reopen --reason 回到 scheduled",
+        "blocked 任务仍不能直接 complete 绕过验收"
+      ],
+      "verification": "已实现 blocked 任务 CLI 出口并通过验证：blocked 可 archive 归档、可 reopen --reason 回到 scheduled；blocked 仍不能直接 complete。定向测试通过；ruff check . 通过；unittest discover -s tests 共 101 tests OK；doctor --fail-on-issue OK；conflicts --fail-on-conflict OK。",
+      "deferred_verification": "",
+      "leftovers": "未放开 blocked -> complete，建议保持当前设计，避免绕过重新启动和验收。未发版。",
+      "created_at": "2026-05-30T08:47:56+00:00",
+      "updated_at": "2026-05-30T08:51:03+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T08:49:04+00:00",
+      "started_at": "2026-05-30T08:49:04+00:00",
+      "completed_at": "2026-05-30T08:50:56+00:00",
+      "archived_at": "2026-05-30T08:51:03+00:00"
+    },
+    {
+      "id": "T-0102",
+      "title": "强化 blocked 过期归档 AI 规则提示",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "协作机制",
+      "source": "用户要求：改给 AI 看的规则",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "compact prompt 明确 stale blocked 可 archive",
+        "rules of thumb 明确 blocked 继续处理用 reopen",
+        "skills guide 测试覆盖该提醒"
+      ],
+      "verification": "已将 stale blocked 清理规则前移到 ai-board skills get core 的 compact prompt 和 Agent rules of thumb：过期或不再处理的 blocked 任务直接 archive，需要继续处理则 reopen --reason 后再启动验收。已补 guide 测试断言。验证：定向测试通过；ruff check . 通过；unittest discover -s tests 共 101 tests OK；doctor/conflicts 均通过。",
+      "deferred_verification": "",
+      "leftovers": "未发版。",
+      "created_at": "2026-05-30T09:35:32+00:00",
+      "updated_at": "2026-05-30T09:37:10+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T09:35:54+00:00",
+      "started_at": "2026-05-30T09:35:54+00:00",
+      "completed_at": "2026-05-30T09:37:03+00:00",
+      "archived_at": "2026-05-30T09:37:10+00:00"
     }
   ],
   "agents": [
@@ -3628,6 +3830,17 @@
       "updated_at": "2026-05-15T08:08:49+00:00",
       "claimed_at": "2026-05-15T03:18:00+00:00",
       "released_at": "2026-05-15T08:08:49+00:00"
+    },
+    {
+      "id": "codex",
+      "kind": "codex",
+      "status": "busy",
+      "task_id": "T-0103",
+      "lease_expires_at": "2026-05-30T14:21:55+00:00",
+      "created_at": "2026-05-30T07:02:34+00:00",
+      "updated_at": "2026-05-30T10:21:55+00:00",
+      "claimed_at": "2026-05-30T07:02:34+00:00",
+      "released_at": "2026-05-30T09:37:03+00:00"
     }
   ]
 }

@@ -253,6 +253,9 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("do not silently initialize git", text)
         self.assertIn("ai-board rescope T-0001", text)
         self.assertIn("unlock` keeps the task scope as history", text)
+        self.assertIn("If a blocked task is stale or no longer needed", text)
+        self.assertIn("ai-board archive TASK_ID", text)
+        self.assertIn("ai-board reopen TASK_ID --reason TEXT", text)
         self.assertNotIn("If an agent skill is needed", text)
 
     def test_readme_install_prompt_requires_skill_unless_present(self) -> None:

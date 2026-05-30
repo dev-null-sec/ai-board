@@ -28,6 +28,7 @@ from .operations import (
     reopen_task,
     rescope_task,
     schedule_task,
+    scopes_overlap,
     set_goal,
     set_status,
     start_task,
@@ -460,11 +461,7 @@ def priority_rank(task: dict[str, Any]) -> int:
 
 
 def scopes_overlap_for_next(left: str, right: str) -> bool:
-    if left == right:
-        return True
-    left_prefix = f"{left.rstrip('/')}/"
-    right_prefix = f"{right.rstrip('/')}/"
-    return left.startswith(right_prefix) or right.startswith(left_prefix)
+    return scopes_overlap(left, right)
 
 
 def task_scopes_overlap_active(scopes: list[str], active_tasks: list[dict[str, Any]]) -> bool:

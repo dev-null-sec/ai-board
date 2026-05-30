@@ -2,6 +2,35 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.11 - 2026-05-30
+
+这个版本主要修补真实多 agent 使用中暴露出的协作防撞和任务收口缺口，让 agent 更少被迫手改 `.ai-board/board.json`。
+
+### 修复
+
+- 修复根 scope `.` 与子路径不被判定为冲突的问题。现在 `.` 会作为整个项目处理，与 `src`、`docs`、具体文件等任意子路径重叠。
+- `next` 复用核心 scope 冲突判断，避免候选任务判断和 `start` / `conflicts` 出现两套结果。
+- blocked 任务现在可以通过 CLI 正常收口：过期或不再处理的 blocked 任务可直接 `archive`，需要继续处理的 blocked 任务可 `reopen --reason` 回到 scheduled。
+
+### 调整
+
+- `ai-board skills get core` 已把 stale blocked 清理规则提前到 compact prompt 和 rules of thumb：不要手改 `board.json`，该归档就 `archive`，要继续就 `reopen --reason`。
+- 保持 blocked 任务不能直接 `complete`，避免跳过重新启动和验收。
+
+### 测试
+
+- 补充协作防撞安全回归：根 scope 变体规范化、根锁阻塞 start/rescope、force 后由 `conflicts` / `doctor` 报告、过期根锁释放阻塞、solo 模式显式冲突揭示、`next` 对候选和验证范围的提示。
+- 补充 blocked 生命周期测试和 AI guide 规则测试。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --python 3.12 --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.1 - 2026-05-30
 
 这个版本主要修正 active 任务中途调整 scope 时的协作体验，避免 agent 为了释放锁被迫手改 `.ai-board/board.json`。

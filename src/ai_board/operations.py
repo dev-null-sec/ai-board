@@ -26,7 +26,7 @@ DEFAULT_LEASE_MINUTES = 240
 DEFAULT_AGENT_KIND = "agent"
 ALLOWED_STATUS_TRANSITIONS = {
     "inbox": {"scheduled", "blocked"},
-    "blocked": {"scheduled"},
+    "blocked": {"scheduled", "archived"},
     "scheduled": {"active", "blocked"},
     "active": {"done", "blocked"},
     "done": {"archived"},
@@ -556,8 +556,8 @@ def reopen_task(root: Path, task_id: str, reason: str) -> dict[str, Any]:
         board = load_board(root)
         task = find_task(board, task_id)
         previous_status = task["status"]
-        if previous_status not in ("done", "archived"):
-            raise BoardError(f"Cannot reopen task {task['id']} from {previous_status}. Only done or archived tasks can be reopened.")
+        if previous_status not in ("blocked", "done", "archived"):
+            raise BoardError(f"Cannot reopen task {task['id']} from {previous_status}. Only blocked, done, or archived tasks can be reopened.")
         if task in board["archive"]:
             board["archive"] = [item for item in board["archive"] if item["id"] != task["id"]]
             board["tasks"].append(task)
@@ -593,6 +593,8 @@ def locked_active_tasks(board: dict[str, Any], include_expired: bool = False) ->
 
 def scopes_overlap(left: str, right: str) -> bool:
     if left == right:
+        return True
+    if left == "." or right == ".":
         return True
     left_prefix = f"{left.rstrip('/')}/"
     right_prefix = f"{right.rstrip('/')}/"

@@ -14,6 +14,7 @@ from pathlib import Path
 from ai_board import onboarding, store
 from ai_board.cli import main
 from ai_board.errors import BoardError
+from ai_board.operations import scopes_overlap
 from ai_board.store import find_task, load_board, load_config, now_iso, read_events, save_board
 
 
@@ -882,6 +883,27 @@ class CliTests(unittest.TestCase):
             main(["--root", str(root), "schedule", "T-0001"])
             self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification", "checked"], "from scheduled to done")
 
+    def test_blocked_tasks_can_be_archived_or_reopened_without_hand_editing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Stale blocked task"])
+            main(["--root", str(root), "add", "Retry blocked task"])
+            main(["--root", str(root), "block", "T-0001"])
+            main(["--root", str(root), "block", "T-0002"])
+
+            self.assertEqual(main(["--root", str(root), "archive", "T-0001"]), 0)
+            board = load_board(root)
+            self.assertFalse(any(task["id"] == "T-0001" for task in board["tasks"]))
+            archived = next(task for task in board["archive"] if task["id"] == "T-0001")
+            self.assertEqual(archived["status"], "archived")
+
+            self.assertEqual(main(["--root", str(root), "reopen", "T-0002", "--reason", "Blocker resolved"]), 0)
+            reopened = find_task(load_board(root), "T-0002")
+            self.assertEqual(reopened["status"], "scheduled")
+            self.assertEqual(reopened["reopen_reason"], "Blocker resolved")
+            self.assert_cli_error(["--root", str(root), "complete", "T-0002", "--verification", "checked"], "from scheduled to done")
+
     def test_block_follows_state_machine_and_releases_active_agent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -922,6 +944,156 @@ class CliTests(unittest.TestCase):
             self.assertEqual(main(["--root", str(root), "conflicts"]), 0)
             self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
             self.assertEqual(main(["--root", str(root), "locks"]), 0)
+
+    def test_root_scope_overlaps_every_project_path(self) -> None:
+        self.assertTrue(scopes_overlap(".", "src"))
+        self.assertTrue(scopes_overlap("src", "."))
+        self.assertTrue(scopes_overlap(".", "README.md"))
+        self.assertTrue(scopes_overlap(".", "."))
+        self.assertFalse(scopes_overlap("src/api", "src/apix"))
+
+    def test_root_scope_variants_are_normalized_before_conflict_check(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "./", ".//"])
+
+            board = load_board(root)
+            self.assertEqual(find_task(board, "T-0001")["scope"], ["."])
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "README.md"], "Scope is locked")
+
+    def test_root_scope_blocks_subpath_start_and_reports_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "."])
+
+            self.assert_cli_error(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src"], "Scope is locked")
+            main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src", "--force"])
+
+            conflicts_output = io.StringIO()
+            with redirect_stdout(conflicts_output):
+                self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
+            self.assertIn(". <-> src", conflicts_output.getvalue())
+
+    def test_next_treats_root_scope_as_blocking_subpath_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Whole repo", "--priority", "P0"])
+            main(["--root", str(root), "add", "Source change", "--priority", "P1"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "."])
+            board = load_board(root)
+            board["tasks"][1]["scope"] = ["src"]
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            self.assertIn("T-0002 [scheduled] P1 Source change - blocked-by-active-lock", output.getvalue())
+
+    def test_next_warns_when_root_lock_blocks_verify_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Team Demo"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Whole repo", "--priority", "P0"])
+            main(["--root", str(root), "add", "Verify source", "--priority", "P1", "--verify-scope", "src"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "."])
+            board = load_board(root)
+            board["tasks"][1]["scope"] = ["README.md"]
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            text = output.getvalue()
+            self.assertIn("T-0002 [scheduled] P1 Verify source - blocked-by-active-lock", text)
+            self.assertIn("T-0001 . <-> src", text)
+
+    def test_force_overlap_is_reported_by_conflicts_and_doctor(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A", "--acceptance", "checked"])
+            main(["--root", str(root), "add", "Task B", "--acceptance", "checked"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "."])
+            main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src", "--force"])
+
+            conflicts_output = io.StringIO()
+            with redirect_stdout(conflicts_output):
+                self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
+            self.assertIn("on . <-> src", conflicts_output.getvalue())
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("scope conflict: T-0001 and T-0002 overlap on . <-> src", doctor_output.getvalue())
+
+    def test_conflicts_can_reveal_solo_mode_overlap_without_blocking_start(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "solo-a", "--scope", "."])
+            self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "solo-b", "--scope", "src"]), 0)
+
+            conflicts_output = io.StringIO()
+            with redirect_stdout(conflicts_output):
+                self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 1)
+            self.assertIn("T-0001 (solo-a) conflicts with T-0002 (solo-b) on . <-> src", conflicts_output.getvalue())
+
+    def test_rescope_to_root_is_blocked_by_existing_subpath_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", "docs"])
+            main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src/app.py"])
+
+            self.assert_cli_error(["--root", str(root), "rescope", "T-0001", "--agent", "a", "--scope", "."], "Scope is locked")
+
+    def test_expired_root_lock_does_not_block_subpath_start(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "config", "set", "multi_agent_enabled", "true"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "a", "--scope", ".", "--lease-minutes", "1"])
+            board = load_board(root)
+            find_task(board, "T-0001")["lease_expires_at"] = (datetime.now(timezone.utc) - timedelta(minutes=1)).replace(microsecond=0).isoformat()
+            save_board(root, board)
+
+            self.assertEqual(main(["--root", str(root), "start", "T-0002", "--agent", "b", "--scope", "src"]), 0)
+            self.assertEqual(main(["--root", str(root), "conflicts", "--fail-on-conflict"]), 0)
 
     def test_start_rejects_empty_scope(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

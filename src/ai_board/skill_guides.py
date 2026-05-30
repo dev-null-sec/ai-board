@@ -144,6 +144,9 @@ edit its scope.
 Only edit files after a task is scheduled and started with an honest, narrow
 --scope.
 Complete tasks with verification and leftovers, then archive them.
+If a blocked task is stale or no longer needed, archive it with `ai-board
+archive TASK_ID` instead of editing `board.json`; if it should continue, reopen
+it with `ai-board reopen TASK_ID --reason TEXT`, then start and verify it.
 ```
 
 New requests go to the inbox first:
@@ -372,6 +375,7 @@ ai-board history T-0001
 - Release shared verification scope quickly, then prioritize tasks waiting for full verification.
 - Keep scope narrow and honest: prefer concrete files or small subdirectories, not broad roots like `src`, `docs`, `tests`, or `.`.
 - Complete tasks only after verification.
+- Archive stale or no-longer-needed blocked tasks with `ai-board archive TASK_ID`; reopen blocked tasks with `ai-board reopen TASK_ID --reason TEXT` before continuing work.
 - Write verification and leftovers as human-readable summaries. Do not leave archive records as raw command strings only.
 - Archive completed tasks so the current board stays short.
 """
@@ -422,10 +426,13 @@ ai-board skills get core [--full]
 ```text
 inbox -> scheduled -> active -> done -> archived
 blocked -> scheduled
+blocked -> archived
 ```
 
-`archive` is separate on purpose: it forces a verified done task to leave the
-current board and become history.
+`archive` is separate on purpose: verified done tasks leave the current board
+as history, and stale blocked tasks can be archived instead of hand-editing
+`board.json`. If a blocked task should continue, use `reopen --reason` to move
+it back to scheduled before starting and completing it.
 
 ## Storage contract
 
