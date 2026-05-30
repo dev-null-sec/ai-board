@@ -6,7 +6,7 @@
   },
   "next_id": 99,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-30T03:20:06+00:00",
+  "updated_at": "2026-05-30T03:39:16+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -35,61 +35,6 @@
       "updated_at": "2026-05-30T02:58:03+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
-    },
-    {
-      "id": "T-0098",
-      "title": "发布 v0.1.1",
-      "description": "",
-      "priority": "P0",
-      "status": "active",
-      "lane": "发布",
-      "source": "用户要求：发新版 0.1.1",
-      "owner_agent": "codex-00",
-      "scope": [
-        ".ai-board/board.json",
-        ".ai-board/events.jsonl",
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs/归档计划看板.md",
-        "docs/当前状态.md",
-        "docs/计划看板.md",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "src/ai_board/cli.py",
-        "src/ai_board/operations.py",
-        "src/ai_board/parser.py",
-        "src/ai_board/skill_guides.py",
-        "tests/test_cli.py",
-        "tests/test_skills_and_i18n.py",
-        "tests/test_version.py"
-      ],
-      "verify_scope": [
-        ".github",
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs",
-        "pyproject.toml",
-        "src/ai_board",
-        "tests"
-      ],
-      "depends_on": [],
-      "acceptance": [
-        "版本号更新为 0.1.1",
-        "CHANGELOG、README、README_en 发布口径一致",
-        "发布前测试、ruff、doctor、conflicts、build、twine check 通过",
-        "提交、打 v0.1.1 tag、推送并创建 GitHub Release"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-05-30T03:20:06+00:00",
-      "updated_at": "2026-05-30T03:20:06+00:00",
-      "lock_owner": "codex-00",
-      "lease_expires_at": "2026-05-30T07:20:06+00:00",
-      "locked_at": "2026-05-30T03:20:06+00:00",
-      "started_at": "2026-05-30T03:20:06+00:00"
     }
   ],
   "archive": [
@@ -3602,19 +3547,76 @@
       "started_at": "2026-05-30T02:58:16+00:00",
       "completed_at": "2026-05-30T03:09:27+00:00",
       "archived_at": "2026-05-30T03:09:27+00:00"
+    },
+    {
+      "id": "T-0098",
+      "title": "发布 v0.1.1",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求：发新版 0.1.1",
+      "owner_agent": "codex-00",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/parser.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py",
+        "tests/test_version.py"
+      ],
+      "verify_scope": [
+        ".github",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "pyproject.toml",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "版本号更新为 0.1.1",
+        "CHANGELOG、README、README_en 发布口径一致",
+        "发布前测试、ruff、doctor、conflicts、build、twine check 通过",
+        "提交、打 v0.1.1 tag、推送并创建 GitHub Release"
+      ],
+      "verification": "v0.1.1 发布完成：版本号、README/README_en、CHANGELOG 已同步；conflicts、doctor、ruff、完整 unittest 91 项、Python 3.12 build、twine check 均通过；main 已推送到 75d3267，tag v0.1.1 已推送；GitHub CI 与 Release workflow 均成功；GitHub Release 已由 dev-null-sec 创建；PyPI JSON 已确认 0.1.1 可见。",
+      "deferred_verification": "",
+      "leftovers": "pip index versions 曾短暂只显示 0.1.0，PyPI JSON 已显示 0.1.1，判断为索引缓存延迟。",
+      "created_at": "2026-05-30T03:20:06+00:00",
+      "updated_at": "2026-05-30T03:39:16+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T03:20:06+00:00",
+      "started_at": "2026-05-30T03:20:06+00:00",
+      "completed_at": "2026-05-30T03:39:16+00:00",
+      "archived_at": "2026-05-30T03:39:16+00:00"
     }
   ],
   "agents": [
     {
       "id": "codex-00",
       "kind": "codex",
-      "status": "busy",
-      "task_id": "T-0098",
-      "lease_expires_at": "2026-05-30T07:20:06+00:00",
+      "status": "idle",
+      "task_id": "",
+      "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-30T03:20:06+00:00",
+      "updated_at": "2026-05-30T03:39:16+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-30T03:09:27+00:00"
+      "released_at": "2026-05-30T03:39:16+00:00"
     },
     {
       "id": "codex-01",
