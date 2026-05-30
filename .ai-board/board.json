@@ -6,7 +6,7 @@
   },
   "next_id": 104,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-30T10:21:55+00:00",
+  "updated_at": "2026-05-30T10:32:37+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -35,57 +35,6 @@
       "updated_at": "2026-05-30T02:58:03+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
-    },
-    {
-      "id": "T-0103",
-      "title": "发布 v0.1.11",
-      "description": "",
-      "priority": "P0",
-      "status": "active",
-      "lane": "发布",
-      "source": "用户要求：发布0.1.11",
-      "owner_agent": "codex",
-      "scope": [
-        ".ai-board/board.json",
-        ".ai-board/events.jsonl",
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs/归档计划看板.md",
-        "docs/当前状态.md",
-        "docs/计划看板.md",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "src/ai_board/cli.py",
-        "src/ai_board/operations.py",
-        "src/ai_board/skill_guides.py",
-        "tests/test_cli.py",
-        "tests/test_skills_and_i18n.py",
-        "tests/test_version.py"
-      ],
-      "verify_scope": [
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "pyproject.toml",
-        "src",
-        "tests"
-      ],
-      "depends_on": [],
-      "acceptance": [
-        "版本号、README 和 CHANGELOG 同步为 v0.1.11",
-        "发版前 ruff、unit test、doctor、conflicts、build、twine check 全部通过",
-        "以 dev-null-sec 身份推送 main、tag 和 GitHub Release/PyPI 发布流程"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-05-30T10:19:36+00:00",
-      "updated_at": "2026-05-30T10:21:55+00:00",
-      "lock_owner": "codex",
-      "lease_expires_at": "2026-05-30T14:21:55+00:00",
-      "locked_at": "2026-05-30T10:21:55+00:00",
-      "started_at": "2026-05-30T10:20:45+00:00"
     }
   ],
   "archive": [
@@ -3806,6 +3755,59 @@
       "started_at": "2026-05-30T09:35:54+00:00",
       "completed_at": "2026-05-30T09:37:03+00:00",
       "archived_at": "2026-05-30T09:37:10+00:00"
+    },
+    {
+      "id": "T-0103",
+      "title": "发布 v0.1.11",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求：发布0.1.11",
+      "owner_agent": "codex",
+      "scope": [
+        ".ai-board/board.json",
+        ".ai-board/events.jsonl",
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/归档计划看板.md",
+        "docs/当前状态.md",
+        "docs/计划看板.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/skill_guides.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py",
+        "tests/test_version.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "pyproject.toml",
+        "src",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "版本号、README 和 CHANGELOG 同步为 v0.1.11",
+        "发版前 ruff、unit test、doctor、conflicts、build、twine check 全部通过",
+        "以 dev-null-sec 身份推送 main、tag 和 GitHub Release/PyPI 发布流程"
+      ],
+      "verification": "v0.1.11 已发布：release commit e1d13f2 已推送 main；tag v0.1.11 已推送；GitHub Actions Release run 26681520983 成功；PyPI 最新版本确认为 0.1.11；GitHub Release 已创建，作者 dev-null-sec，非草稿、非预发布，URL: https://github.com/dev-null-sec/ai-board/releases/tag/v0.1.11。发布前验证已通过：conflicts、doctor、ruff、101 条单元测试、Python 3.12 build、twine check、-v/--version。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-05-30T10:19:36+00:00",
+      "updated_at": "2026-05-30T10:32:37+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-05-30T10:21:55+00:00",
+      "started_at": "2026-05-30T10:20:45+00:00",
+      "completed_at": "2026-05-30T10:32:16+00:00",
+      "archived_at": "2026-05-30T10:32:37+00:00"
     }
   ],
   "agents": [
@@ -3834,13 +3836,13 @@
     {
       "id": "codex",
       "kind": "codex",
-      "status": "busy",
-      "task_id": "T-0103",
-      "lease_expires_at": "2026-05-30T14:21:55+00:00",
+      "status": "idle",
+      "task_id": "",
+      "lease_expires_at": "",
       "created_at": "2026-05-30T07:02:34+00:00",
-      "updated_at": "2026-05-30T10:21:55+00:00",
+      "updated_at": "2026-05-30T10:32:16+00:00",
       "claimed_at": "2026-05-30T07:02:34+00:00",
-      "released_at": "2026-05-30T09:37:03+00:00"
+      "released_at": "2026-05-30T10:32:16+00:00"
     }
   ]
 }
