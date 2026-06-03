@@ -18,11 +18,9 @@ Version `v0.1.20`.
 
 If you think `ai-board` is "Trello for the terminal" or "a todo list for AI agents," you're looking at the surface and missing the point.
 
-What it actually does is deeper: **it defines a governance paradigm for vibe coding.**
+What it actually does is deeper: **it addresses a blind spot in vibe coding that most AI dev tools ignore — who governs the boundaries when AI is writing the code.**
 
-What's a governance paradigm? It's the realization that when AI starts writing your codebase, there are things you can't just "trust the AI to handle." You need rules. You need guardrails. You need deterministic enforcement — because "the AI should know better" is not a strategy.
-
-`ai-board` is that enforcement layer. It doesn't write code. It manages direction, locks scope, records verification, and prevents boundary violations. It is to AI-driven development what CI, code review, and project management are to human teams — but redesigned for a workflow where the primary coder is not human.
+AI tools help you write faster and better. But nobody's asking what happens to the project after all that AI-written code lands. `ai-board` fills that gap: rules, guardrails, and a set of constraints that let AI check whether it should actually be editing that file right now. It doesn't write code. It manages direction, locks scope, records verification, and prevents boundary violations.
 
 ## The core problem of vibe coding
 
@@ -44,7 +42,7 @@ The root cause isn't bad AI. **The root cause is that AI-driven development lack
 
 Happens constantly: someone opens an empty directory, says "build me something," and AI sees a folder called `api-server` — so it starts planning routes, middleware, a database. It never asked: REST or GraphQL? Go or Python? Is this a weekend prototype or a production service?
 
-`ai-board onboard` blocks this impulse. It scans the project — empty, lightweight new project, or existing codebase — and **forces the AI to ask the human about direction before writing a single line.** Guessing project direction from a folder name is the most dangerous thing AI can do at the beginning, and `onboard` closes that door.
+`ai-board onboard` blocks this impulse. It scans the project — empty, lightweight new project, or existing codebase — and **steers the AI toward asking the human about direction before writing a single line.** Guessing project direction from a folder name is the most dangerous thing AI can do at the start. `onboard` guards this entry point.
 
 ### 2. Every code change must belong to a task
 
@@ -52,7 +50,7 @@ The phrase "while you're at it" kills more AI projects than bugs do. User says "
 
 `ai-board` requires every change to live under a task. A task has scope (which files it touches), acceptance criteria (how you know it's done), and verification (what was actually tested). New requests go into the inbox. They get scheduled. They get started with explicit scope. They get completed with verification. They get archived.
 
-This isn't bureaucracy. It creates a rule: **the AI cannot touch anything outside the current task's scope.** "Fix this while you're at it" and genuine emergencies both go through the board. The difference is priority and documentation, not whether they bypass governance.
+This isn't bureaucracy. It establishes a project-level rule: **every change should belong to a task with declared scope.** The CLI can't physically stop an AI from editing a file — it doesn't work at that layer — but the combination of AGENTS.md rules and `doctor` checks makes off-scope changes discoverable and traceable.
 
 ### 3. Multiple agents must not step on each other
 
