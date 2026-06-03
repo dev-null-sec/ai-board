@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
   },
-  "next_id": 104,
+  "next_id": 110,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-05-30T10:32:37+00:00",
+  "updated_at": "2026-06-03T05:15:35+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -35,6 +35,81 @@
       "updated_at": "2026-05-30T02:58:03+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
+    },
+    {
+      "id": "T-0107",
+      "title": "评估 take 与 complete --archive 快捷命令",
+      "description": "评估是否新增 take(schedule+start) 与 complete --archive 原子化收口，重点检查审计清晰度、notice 收口、git 记录和竞态影响。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "CLI 体验",
+      "source": "用户反馈：中小任务命令链路偏长",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/parser.py",
+        "tests/test_cli.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "形成是否实现 take 的结论和理由",
+        "形成是否实现 complete --archive 的结论和理由",
+        "如果实现，补充生命周期和回归测试；如果暂缓，记录替代流程"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T04:17:35+00:00",
+      "updated_at": "2026-06-03T04:17:35+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0109",
+      "title": "发布 v0.1.20",
+      "description": "发布包含 guide 瘦身、next/doctor 复核提醒、scope 副作用说明的 v0.1.20。",
+      "priority": "P0",
+      "status": "active",
+      "lane": "发布",
+      "source": "用户确认：0.1.2 低于 0.1.11，改发 0.1.20",
+      "owner_agent": "codex",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "同步 pyproject.toml、src/ai_board/__init__.py、CHANGELOG.md、README.md、README_en.md 的 0.1.20 口径",
+        "运行完整 unittest、ruff、ai-board doctor、ai-board conflicts，并构建 wheel/sdist、twine check",
+        "提交、打 v0.1.20 tag、推送 main 和 tag，确认 GitHub Actions 发布成功",
+        "确认 PyPI 可见 0.1.20，且发布者/仓库口径为 dev-null-sec/devnull"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T05:15:19+00:00",
+      "updated_at": "2026-06-03T05:15:35+00:00",
+      "lock_owner": "codex",
+      "lease_expires_at": "2026-06-03T09:15:35+00:00",
+      "locked_at": "2026-06-03T05:15:35+00:00",
+      "started_at": "2026-06-03T05:15:35+00:00"
     }
   ],
   "archive": [
@@ -3808,6 +3883,166 @@
       "started_at": "2026-05-30T10:20:45+00:00",
       "completed_at": "2026-05-30T10:32:16+00:00",
       "archived_at": "2026-05-30T10:32:37+00:00"
+    },
+    {
+      "id": "T-0105",
+      "title": "让 next/doctor 主动提示过期需求和 git 接手检查",
+      "description": "评估并实现 next/doctor 在合适场景下输出可执行提醒：过期或不再需要的 blocked 可 archive，需要继续则 reopen；git_integration=suggest 时把 git 检查变成接手动作提醒。",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "CLI 体验",
+      "source": "用户反馈：AI 容易漏看过期需求和 git 管理建议",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "src/ai_board/cli.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "next 或 doctor 能在相关场景给出 blocked archive/reopen 的可执行建议",
+        "git_integration=suggest 时输出不静默 git init 的开发前检查建议",
+        "提示不影响 solo 小任务正常推进，不制造硬阻塞"
+      ],
+      "verification": "已补 next/doctor 主动提醒：非 git 项目会显示编码前 git 检查；blocked 任务会提示结合当前项目方向复核，不按时间久远自动归档；相关 unittest 通过。",
+      "deferred_verification": "",
+      "leftovers": "T-0104 将继续把同一口径前置到默认 core guide。",
+      "created_at": "2026-06-03T04:17:35+00:00",
+      "updated_at": "2026-06-03T04:31:19+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-03T04:18:41+00:00",
+      "started_at": "2026-06-03T04:18:41+00:00",
+      "completed_at": "2026-06-03T04:31:10+00:00",
+      "archived_at": "2026-06-03T04:31:19+00:00"
+    },
+    {
+      "id": "T-0104",
+      "title": "瘦身 AI core guide 并前置接手动作清单",
+      "description": "将默认 core guide 改成接手项目的短流程，把详细规则下沉到 --full，突出 git、过期 blocked、生成 Markdown 源关系和 narrow scope。",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "AI 指南",
+      "source": "用户反馈：core guide 过长导致关键规则不自然",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "ai-board skills get core 默认输出明显短于当前版本",
+        "默认输出包含第一屏接手动作清单：onboard、git 检查、next、不要手改生成 Markdown、处理过期 blocked、schedule/start、verify/complete/archive",
+        "详细命令和 notice 规则仍可通过 ai-board skills get core --full 查看"
+      ],
+      "verification": "已将 ai-board skills get core 默认输出从长说明书瘦身为约 82 行接手检查单；--full 保留详细工作流和命令参考；已补 blocked 复核、项目方向变化复核、git 检查、生成 Markdown 源关系和 narrow scope 关键动作；完整 unittest 103 个通过，ruff 通过，doctor/conflicts 通过。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-03T04:17:15+00:00",
+      "updated_at": "2026-06-03T04:36:17+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-03T04:31:39+00:00",
+      "started_at": "2026-06-03T04:31:39+00:00",
+      "completed_at": "2026-06-03T04:36:10+00:00",
+      "archived_at": "2026-06-03T04:36:17+00:00"
+    },
+    {
+      "id": "T-0106",
+      "title": "明确 ai-board 系统副作用不属于业务 scope",
+      "description": "在 core guide、README 或命令提示中说明：.ai-board/board.json、events/messages 和生成看板是 CLI 写操作副作用；任务 scope 主要描述业务修改范围，手动编辑 board/docs 才需要特别说明。",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "协作机制",
+      "source": "用户反馈：任务 scope 与 board/docs 自动写入边界容易混淆",
+      "owner_agent": "codex",
+      "scope": [
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "README.md",
+        "README_en.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "AI 指南明确区分业务 write scope 与 ai-board 自身写入副作用",
+        "文案能解释为什么 complete/archive/render 会改生成文档但不要求每次纳入任务 scope"
+      ],
+      "verification": "已在 core guide、README.md、README_en.md 明确 task scope 是业务修改范围；ai-board 自动写入 board JSON、事件/消息日志和生成看板属于系统记账副作用，不需要每次纳入业务 scope。已补测试；unittest 104 个通过，ruff、doctor、conflicts 均通过。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-03T04:17:35+00:00",
+      "updated_at": "2026-06-03T04:40:31+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-03T04:37:44+00:00",
+      "started_at": "2026-06-03T04:37:44+00:00",
+      "completed_at": "2026-06-03T04:40:17+00:00",
+      "archived_at": "2026-06-03T04:40:31+00:00"
+    },
+    {
+      "id": "T-0108",
+      "title": "发布 v0.1.2",
+      "description": "基于本轮 guide 瘦身、next/doctor 提醒和 scope 副作用说明，准备正式发布 v0.1.2。",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求：完成非评估需求后开始排期发布 0.1.2",
+      "owner_agent": "codex",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "发版前确认工作区只包含本次应发布改动，保留无关 tmp 不纳入提交",
+        "同步 pyproject.toml、src/ai_board/__init__.py、CHANGELOG.md、README.md、README_en.md 的版本和发布说明口径",
+        "运行完整 unittest、ruff、ai-board doctor、ai-board conflicts，并构建 wheel/sdist",
+        "用 devnull 身份发布，确保 GitHub tag/release 与 PyPI 版本一致"
+      ],
+      "verification": "发布前检查发现 0.1.2 低于已发布的 0.1.11，用户确认改发 0.1.20；本任务不再按 0.1.2 执行，改由新的 v0.1.20 发布任务承接。",
+      "deferred_verification": "",
+      "leftovers": "新建 v0.1.20 发布任务继续发版。",
+      "created_at": "2026-06-03T04:40:44+00:00",
+      "updated_at": "2026-06-03T05:15:03+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-03T05:13:13+00:00",
+      "started_at": "2026-06-03T05:13:13+00:00",
+      "completed_at": "2026-06-03T05:14:48+00:00",
+      "archived_at": "2026-06-03T05:15:03+00:00"
     }
   ],
   "agents": [
@@ -3836,13 +4071,13 @@
     {
       "id": "codex",
       "kind": "codex",
-      "status": "idle",
-      "task_id": "",
-      "lease_expires_at": "",
+      "status": "busy",
+      "task_id": "T-0109",
+      "lease_expires_at": "2026-06-03T09:15:35+00:00",
       "created_at": "2026-05-30T07:02:34+00:00",
-      "updated_at": "2026-05-30T10:32:16+00:00",
+      "updated_at": "2026-06-03T05:15:35+00:00",
       "claimed_at": "2026-05-30T07:02:34+00:00",
-      "released_at": "2026-05-30T10:32:16+00:00"
+      "released_at": "2026-06-03T05:14:48+00:00"
     }
   ]
 }

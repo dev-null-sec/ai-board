@@ -226,6 +226,64 @@ def git_onboard_notice(args: argparse.Namespace, root: Path) -> str:
     )
 
 
+def git_action_hint(args: argparse.Namespace, root: Path, git_mode: str, *, include_ok: bool = False) -> str:
+    if git_mode == "off":
+        return ""
+    state, detail = detect_git_state(root)
+    if state == "ok":
+        return text(args, "git: ok", "git：正常") if include_ok else ""
+    if state == "missing":
+        return text(
+            args,
+            "git: recommended, but git command was not found; install git if you want rollback checkpoints before AI edits",
+            "git：建议使用，但当前找不到 git 命令；如果希望 AI 修改可回滚，请先安装 git",
+        )
+    if git_mode == "required":
+        suffix = f": {detail}" if detail else ""
+        return text(
+            args,
+            f"git: required but not initialized{suffix}; confirm the project root, then run git init, add .gitignore, and make an initial commit",
+            f"git：当前项目要求使用，但尚未初始化{suffix}；请先确认项目根目录，再运行 git init、补充 .gitignore 并创建初始提交",
+        )
+    suffix = f" ({detail})" if detail else ""
+    return text(
+        args,
+        f"git: recommended before coding{suffix}; confirm the project root, then run git init, add .gitignore, and make an initial commit. ai-board will not do this silently.",
+        f"git：建议编码前启用{suffix}；请先确认项目根目录，再运行 git init、补充 .gitignore 并创建初始提交。ai-board 不会静默执行。",
+    )
+
+
+def print_board_review_advice(args: argparse.Namespace, board: dict[str, Any]) -> None:
+    blocked_tasks = [task for task in board["tasks"] if task["status"] == "blocked"]
+    if not blocked_tasks:
+        return
+    print("")
+    print(text(args, "Blocked task review:", "阻塞任务复核："))
+    print(
+        text(
+            args,
+            "- Do not archive by age alone. Check whether each task is obsolete, superseded, already satisfied, or no longer fits the current project direction.",
+            "- 不要只按时间久远就归档。先确认任务是否已废弃、被替代、已经满足，或不再符合当前项目方向。",
+        )
+    )
+    print(
+        text(
+            args,
+            "- If the project direction changed recently, review inbox/scheduled/blocked tasks before starting fresh work.",
+            "- 如果项目方向刚发生变化，先复核需求池、下一批和阻塞任务，再开始新的开发。",
+        )
+    )
+    for task in sorted(blocked_tasks, key=lambda item: (priority_rank(item), str(item.get("id", "")))):
+        task_id = str(task.get("id", ""))
+        print(
+            text(
+                args,
+                f"- {task_id} {task.get('title', '')}: archive only after confirming it is no longer needed; otherwise run `ai-board reopen {task_id} --reason TEXT`, then reschedule/start it.",
+                f"- {task_id} {task.get('title', '')}：确认不再需要后再 archive；如果仍要做，运行 `ai-board reopen {task_id} --reason TEXT`，再重新排期/start。",
+            )
+        )
+
+
 def parse_config_value(key: str, value: str) -> Any:
     defaults = default_config()
     if key not in defaults:
@@ -757,8 +815,9 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_next(args: argparse.Namespace) -> int:
     root = root_path(args)
     board = load_board(root)
+    config = load_config(root)
     active = locked_active_tasks(board, include_expired=True)
-    multi_agent = multi_agent_enabled(args)
+    multi_agent = bool(config["multi_agent_enabled"])
     print(text(args, "Current active locks:", "当前 active 锁："))
     if active:
         for task in active:
@@ -776,6 +835,12 @@ def cmd_next(args: argparse.Namespace) -> int:
     else:
         print(text(args, "- none", "- 无"))
 
+    git_hint = git_action_hint(args, root, str(config["git_integration"]))
+    if git_hint:
+        print("")
+        print(text(args, "Project readiness:", "项目接手检查："))
+        print(f"- {git_hint}")
+
     stale_messages = docs_stale_messages(root, board, args)
     if stale_messages:
         print("")
@@ -791,6 +856,7 @@ def cmd_next(args: argparse.Namespace) -> int:
             print(f"- {task['id']} [{task['status']}] {task['title']} - {task.get('deferred_verification')}")
 
     print_agent_notices(args)
+    print_board_review_advice(args, board)
 
     candidates = [task for task in board["tasks"] if task["status"] in ("scheduled", "inbox")]
     candidates.sort(key=lambda task: (candidate_status_rank(task), priority_rank(task), str(task.get("id", ""))))
@@ -854,7 +920,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     else:
         git_state, git_detail = detect_git_state(root)
         if git_state == "ok":
-            print(text(args, "git: ok", "git：正常"))
+            print(git_action_hint(args, root, git_mode, include_ok=True))
         elif git_mode == "required":
             if git_state == "missing":
                 issues.append(text(args, "git is required but the git command was not found", "当前项目要求使用 git，但找不到 git 命令"))
@@ -868,15 +934,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                     )
                 )
         elif git_state == "missing":
-            print(text(args, "git: recommended, but git command was not found", "git：建议使用，但当前找不到 git 命令"))
+            print(git_action_hint(args, root, git_mode))
         else:
-            print(
-                text(
-                    args,
-                    "git: recommended, not initialized; confirm the project root before running git init",
-                    "git：建议使用，但尚未初始化；运行 git init 前请先确认项目根目录",
-                )
-            )
+            print(git_action_hint(args, root, git_mode))
 
     board: dict[str, Any] | None = None
     try:
@@ -892,6 +952,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     if board is not None:
         print(text(args, "board schema: ok", "board 结构：正常"))
+        print_board_review_advice(args, board)
         agents = {agent["id"]: agent for agent in board.get("agents", [])}
         for task in board["tasks"]:
             if task["status"] != "active":

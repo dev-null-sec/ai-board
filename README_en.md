@@ -2,7 +2,7 @@
 
 A local planning board for AI agents. It records requests, scheduling, active file scope, verification, and leftovers so an agent taking over a project does not have to guess from chat history alone.
 
-English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.11/README.md)
+English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.20/README.md)
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -10,9 +10,9 @@ English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.11/README.
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.11/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
 
-Current stable version: `v0.1.11`.
+Current stable version: `v0.1.20`.
 
 ## Why this exists
 
@@ -115,6 +115,8 @@ The agent can use `status`, `next`, `show`, and `doctor` behind the scenes. The 
 | Agent notices | `.ai-board/messages.jsonl` |
 
 `board.json` is the write source. Markdown is generated for reading. Task status, dependencies, scope, and verification need stable structured fields; Markdown is easier to read but too easy to accidentally reshape.
+
+Task `scope` describes the user-facing work for that task. CLI writes to `.ai-board/board.json`, event/message logs, and generated boards are ai-board bookkeeping side effects; do not add them to every task scope unless the task itself is manually changing those files.
 
 ## Defaults
 

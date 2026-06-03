@@ -621,6 +621,45 @@ class CliTests(unittest.TestCase):
             self.assertIn("verify scope waits on active lock", text)
             self.assertIn("T-0001 tests/test_cli.py <-> tests/test_cli.py", text)
 
+    def test_next_surfaces_git_precoding_check_without_initializing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Git Next Demo"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            text = output.getvalue()
+            self.assertIn("Project readiness:", text)
+            self.assertIn("git: recommended before coding", text)
+            self.assertIn("add .gitignore, and make an initial commit", text)
+            self.assertIn("ai-board will not do this silently", text)
+            self.assertFalse((root / ".git").exists())
+
+    def test_next_and_doctor_review_blocked_tasks_without_age_based_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init", "--project-name", "Blocked Demo"])
+            main(["--root", str(root), "add", "Still important blocked work"])
+            main(["--root", str(root), "block", "T-0001"])
+
+            next_output = io.StringIO()
+            with redirect_stdout(next_output):
+                self.assertEqual(main(["--root", str(root), "next"]), 0)
+            next_text = next_output.getvalue()
+            self.assertIn("Blocked task review:", next_text)
+            self.assertIn("Do not archive by age alone", next_text)
+            self.assertIn("current project direction", next_text)
+            self.assertIn("ai-board reopen T-0001 --reason TEXT", next_text)
+
+            doctor_output = io.StringIO()
+            with redirect_stdout(doctor_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            doctor_text = doctor_output.getvalue()
+            self.assertIn("Blocked task review:", doctor_text)
+            self.assertIn("archive only after confirming it is no longer needed", doctor_text)
+            self.assertIn("doctor: ok", doctor_text)
+
     def test_next_prioritizes_tasks_waiting_for_full_verification(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1714,7 +1753,8 @@ class CliTests(unittest.TestCase):
             suggest_output = io.StringIO()
             with redirect_stdout(suggest_output):
                 self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
-            self.assertIn("git: recommended, not initialized", suggest_output.getvalue())
+            self.assertIn("git: recommended before coding", suggest_output.getvalue())
+            self.assertIn("ai-board will not do this silently", suggest_output.getvalue())
 
             self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "required"]), 0)
             required_output = io.StringIO()

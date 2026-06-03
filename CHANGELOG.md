@@ -2,6 +2,32 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.1.20 - 2026-06-03
+
+这个版本根据真实使用反馈，重点收窄 AI 默认接手提示，并把容易漏读的项目治理规则前置到 CLI 输出里。
+
+### 调整
+
+- `ai-board skills get core` 默认输出改为约 80 行的接手检查单：优先提醒 onboarding、git 检查、`next`、生成 Markdown 源关系、blocked 复核、排期/start、验收/归档等第一屏动作。
+- 详细工作流、notice 响应协议和命令参考继续保留在 `ai-board skills get core --full`，避免默认提示词过长导致 agent 忽略关键动作。
+- `next` 和 `doctor` 在非 git 项目中会给出编码前 git 检查建议：确认项目根、初始化 git、补 `.gitignore`、创建初始提交，但仍不静默执行 `git init`。
+- `next` 和 `doctor` 发现 blocked 任务时会提示先复核，而不是按时间久远自动归档；只有确认需求废弃、被替代、已满足或不再符合当前方向后才 archive，仍需继续则 reopen 后重新排期。
+- 当项目方向发生变化时，默认 guide 会提醒先复核 inbox、scheduled 和 blocked 任务，再启动新的实现任务。
+- AI 指南和 README 已明确 task `scope` 描述业务修改范围；`.ai-board/board.json`、事件/消息日志和生成看板的自动更新属于 ai-board 自身记账副作用，不需要每次写进业务 scope。
+
+### 测试
+
+- 补充默认 guide 瘦身、`--full` 细节保留、blocked 复核、git 接手提醒、scope 副作用说明的回归测试。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --python 3.12 --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.11 - 2026-05-30
 
 这个版本主要修补真实多 agent 使用中暴露出的协作防撞和任务收口缺口，让 agent 更少被迫手改 `.ai-board/board.json`。

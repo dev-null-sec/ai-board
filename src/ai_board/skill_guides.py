@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .errors import BoardError
 
-CORE_GUIDE = """---
+DETAILED_GUIDE = """---
 name: core
 description: Core ai-board usage guide. Read this before changing a project board.
 ---
@@ -313,6 +313,11 @@ Markdown views after saving `.ai-board/board.json`. Use manual render only as a
 repair step after changing config, pulling updates, or seeing a stale generated
 doc warning:
 
+Task `--scope` describes the user's work scope. The board JSON, event/message
+logs, and generated Markdown updates are ai-board's own bookkeeping side
+effects; do not add them to every task scope unless you are manually editing
+those files as the task itself.
+
 ```bash
 ai-board render
 ```
@@ -381,7 +386,118 @@ ai-board history T-0001
 """
 
 
-FULL_GUIDE = CORE_GUIDE + """
+CORE_GUIDE = """---
+name: core
+description: Short ai-board handoff checklist. Read this before changing a project board.
+---
+
+# ai-board core
+
+`ai-board` keeps `.ai-board/board.json` as the only write source and renders
+Markdown views into `docs/`.
+
+## First 60 Seconds
+
+Run these before choosing work:
+
+```bash
+ai-board onboard --init-if-missing
+ai-board next
+ai-board status
+```
+
+Then apply the onboarding result:
+
+1. If the project is empty or lightweight, stop and ask the user to confirm the
+   goal, audience, first-version scope, and whether current files are
+   authoritative. Directory names, file names, and small evidence fragments are
+   only hypotheses. Do not write final roadmap language or start coding from
+   guessed direction.
+2. Check git before editing when `git_integration=suggest` or `required`.
+   ai-board may recommend `git init`, `.gitignore`, and an initial commit, but
+   it does not run `git init` for you. Do not silently initialize git or commit
+   pre-existing user changes.
+3. Treat generated board Markdown as a reading view. Do not hand-edit
+   `docs/计划看板.md` or `docs/归档计划看板.md`; use CLI commands and `ai-board render`.
+4. Review blocked tasks honestly. Do not archive by age alone. Archive only
+   after confirming the task is obsolete, superseded, already satisfied, or no
+   longer fits the current project direction; then run `ai-board archive TASK_ID`.
+   If it should continue, run `ai-board reopen TASK_ID --reason TEXT`, then
+   schedule/start it.
+5. If the project direction changed, review inbox, scheduled, and blocked work
+   before starting a fresh implementation task.
+
+## Install Prompt
+
+When a user gives you the package name, GitHub URL, `/ai-board`, or says "use
+ai-board", install or find the CLI and enter onboarding:
+
+```text
+Install ai-board as a user-level CLI, preferably from PyPI with
+pipx install ai-board. If pipx is not available, use uv tool install ai-board.
+Install the agent skill according to that agent's skill rules by copying
+skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into
+the target agent's skill/skills directory, unless that agent already has this
+skill installed. After installation, run ai-board onboard --init-if-missing.
+Follow the onboarding output. Use ai-board skills get core --full only when
+command details are needed.
+```
+
+## Normal Task Flow
+
+New work goes to the inbox unless it is already part of the active task:
+
+```bash
+ai-board add "Short task title" --priority P1 --acceptance "验收标准"
+ai-board schedule T-0001
+ai-board start T-0001 --agent codex --scope src/app.py README.md
+```
+
+Use an honest, narrow `--scope`: concrete files or small subdirectories, not
+broad roots such as `src`, `docs`, `tests`, or `.`. If an active task boundary
+changes, use `ai-board rescope T-0001 --agent codex --scope <paths...>` instead
+of running `start` again or editing `board.json`. If a lock is no longer needed,
+`unlock` keeps the task scope as history while releasing the active lock.
+
+Complete only after verification, write leftovers for humans, then archive:
+
+```bash
+ai-board complete T-0001 --verification "tests passed" --leftovers "无"
+ai-board archive T-0001
+```
+
+## Solo vs Multi-Agent
+
+Solo mode is the default: `multi_agent_enabled=false`. In solo mode, use a
+stable agent name and the normal lifecycle without mandatory notice cleanup.
+
+Enable multi-agent coordination only when parallel AI sessions are actually
+needed:
+
+```bash
+ai-board config set multi_agent_enabled true
+ai-board agents claim --kind codex
+ai-board locks
+ai-board conflicts --fail-on-conflict
+```
+
+When multi-agent mode is enabled, active owner and scope locks are a hard gate.
+Use the exact claimed identity across `start`, `tell`, `inbox`, `complete`, and
+`archive`. If notices exist, verify them against board state before acting, then
+ack/resolve them explicitly.
+
+## Source Contract
+
+- Source of truth: `.ai-board/board.json`.
+- Generated views: `docs/计划看板.md`, `docs/归档计划看板.md`.
+- Task `--scope` is for user work. ai-board bookkeeping writes to board JSON,
+  logs, and generated docs are system side effects, not extra business scope.
+- If Markdown and JSON disagree, trust JSON and run `ai-board render`.
+- For command details, run `ai-board skills get core --full`.
+"""
+
+
+FULL_GUIDE = CORE_GUIDE + "\n\n## Detailed workflow\n\n" + DETAILED_GUIDE.partition("# ai-board core\n\n")[2] + """
 
 ## Command reference
 

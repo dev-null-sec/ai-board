@@ -2,7 +2,7 @@
 
 给 AI agent 用的本地计划看板。它把需求、排期、正在改的文件范围、验收结果和遗留问题记录下来，让 AI 接手项目时不用只靠聊天记录猜。
 
-[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.11/README_en.md) | 中文
+[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.20/README_en.md) | 中文
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -10,9 +10,9 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.11/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
 
-当前正式版本：`v0.1.11`。
+当前正式版本：`v0.1.20`。
 
 ## 为什么做这个
 
@@ -115,6 +115,8 @@ AI 背后会用 `status`、`next`、`show`、`doctor` 这些命令读状态。�
 | agent notice | `.ai-board/messages.jsonl` |
 
 `board.json` 是唯一写入源，Markdown 只是生成视图。任务状态、依赖、scope、验收这些字段需要被程序读取、排序和校验，放在 JSON 里更稳；Markdown 留给人读。
+
+任务 `scope` 描述的是本轮业务修改范围。CLI 写操作自动更新 `.ai-board/board.json`、事件/消息日志和生成看板，这是 ai-board 自己的记账副作用；除非任务本身就是修改这些文件，否则不用把它们每次都写进 scope。
 
 ## 几个默认选择
 

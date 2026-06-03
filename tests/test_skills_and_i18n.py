@@ -173,14 +173,17 @@ class SkillsAndI18nTests(unittest.TestCase):
         with redirect_stdout(core_output):
             self.assertEqual(main(["skills", "get", "core"]), 0)
         core_text = core_output.getvalue()
-        self.assertIn("inbox --agent codex-01 --fail-on-unresolved", core_text)
-        self.assertIn("If it returns non-zero, do not finish", core_text)
-        self.assertIn("failed handoff", core_text)
+        self.assertIn("First 60 Seconds", core_text)
+        self.assertIn("ai-board skills get core --full", core_text)
 
         full_output = io.StringIO()
         with redirect_stdout(full_output):
             self.assertEqual(main(["skills", "get", "core", "--full"]), 0)
-        self.assertIn("[--fail-on-unresolved]", full_output.getvalue())
+        full_text = full_output.getvalue()
+        self.assertIn("[--fail-on-unresolved]", full_text)
+        self.assertIn("inbox --agent codex-01 --fail-on-unresolved", full_text)
+        self.assertIn("If it returns non-zero, do not finish", full_text)
+        self.assertIn("failed handoff", full_text)
 
     def test_key_help_output_includes_examples(self) -> None:
         for command in ("add", "start", "show", "skills"):
@@ -236,26 +239,45 @@ class SkillsAndI18nTests(unittest.TestCase):
         with redirect_stdout(output):
             self.assertEqual(main(["skills", "get", "core"]), 0)
         text = output.getvalue()
+        full_output = io.StringIO()
+        with redirect_stdout(full_output):
+            self.assertEqual(main(["skills", "get", "core", "--full"]), 0)
+        full_text = full_output.getvalue()
+
+        self.assertLess(len(text.splitlines()), 120)
+        self.assertGreater(len(full_text.splitlines()), len(text.splitlines()) * 3)
+        self.assertIn("First 60 Seconds", text)
+        self.assertIn("ai-board onboard --init-if-missing", text)
+        self.assertIn("ai-board next", text)
         self.assertIn("honest, narrow", text)
         self.assertIn("broad roots", text)
-        self.assertIn("hard direction gate", text)
-        self.assertIn("Directory names, file names, and small evidence fragments are only hypotheses", text)
+        self.assertIn("Directory names, file names", text)
+        self.assertIn("small evidence fragments are", text)
         self.assertIn("Do not write final roadmap language", text)
         self.assertIn("Install the agent skill according to that agent's skill rules", text)
         self.assertIn("unless that agent already has this", text)
         self.assertIn("skill installed", text)
-        self.assertIn("New projects start in solo mode: `multi_agent_enabled=false`", text)
+        self.assertIn("Solo mode is the default: `multi_agent_enabled=false`", text)
         self.assertIn("ai-board config set multi_agent_enabled true", text)
         self.assertIn("Solo mode is the default", text)
         self.assertIn("When multi-agent mode is enabled", text)
         self.assertIn("git_integration=suggest", text)
-        self.assertIn("do not run `git init`", text)
-        self.assertIn("do not silently initialize git", text)
+        self.assertIn("it does not run `git init` for you", text)
+        self.assertIn("Do not silently initialize git", text)
         self.assertIn("ai-board rescope T-0001", text)
         self.assertIn("unlock` keeps the task scope as history", text)
-        self.assertIn("If a blocked task is stale or no longer needed", text)
+        self.assertIn("Do not archive by age alone", text)
+        self.assertIn("If the project direction changed", text)
         self.assertIn("ai-board archive TASK_ID", text)
         self.assertIn("ai-board reopen TASK_ID --reason TEXT", text)
+        self.assertIn("Do not hand-edit", text)
+        self.assertIn("docs/计划看板.md", text)
+        self.assertIn("ai-board bookkeeping writes", text)
+        self.assertIn("not extra business scope", text)
+        self.assertIn("ai-board skills get core --full", text)
+        self.assertIn("When you receive a notice", full_text)
+        self.assertIn("do not add them to every task scope", full_text)
+        self.assertIn("Command reference", full_text)
         self.assertNotIn("If an agent skill is needed", text)
 
     def test_readme_install_prompt_requires_skill_unless_present(self) -> None:
@@ -315,3 +337,15 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("Default `git_integration=suggest`", english)
         self.assertIn("does not silently initialize git", english)
         self.assertIn("Git-first hints and required gate", english)
+
+    def test_readme_explains_board_side_effects_are_not_business_scope(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("任务 `scope` 描述的是本轮业务修改范围", chinese)
+        self.assertIn("ai-board 自己的记账副作用", chinese)
+        self.assertIn("不用把它们每次都写进 scope", chinese)
+
+        self.assertIn("Task `scope` describes the user-facing work", english)
+        self.assertIn("bookkeeping side effects", english)
+        self.assertIn("do not add them to every task scope", english)
