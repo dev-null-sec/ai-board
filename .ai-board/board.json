@@ -2,11 +2,11 @@
   "schema_version": 1,
   "project": {
     "name": "ai-board",
-    "current_goal": "交付 ai-board 的自举最小闭环：CLI、JSON 唯一真相源、Markdown 渲染、示例项目、测试和归档都由 ai-board 自己驱动。"
+    "current_goal": "1.0 路线聚焦本地 AI 项目治理层；0.2 先交付 git scope gate，把 scope 约束下沉到提交关口"
   },
-  "next_id": 110,
+  "next_id": 115,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-03T06:07:24+00:00",
+  "updated_at": "2026-06-03T10:40:58+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -63,6 +63,155 @@
       "leftovers": "",
       "created_at": "2026-06-03T04:17:35+00:00",
       "updated_at": "2026-06-03T04:17:35+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0110",
+      "title": "设计 0.2 git scope gate 规格",
+      "description": "明确 scope_gate 配置、staged diff 比对、系统记账副作用、无 active task、单 agent / 多 agent、错误提示和绕过策略。",
+      "priority": "P0",
+      "status": "scheduled",
+      "lane": "信任闭环",
+      "source": "用户确认 1.0 大方向：本地 AI 治理层，0.2 聚焦提交关口",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 docs/项目路线/0.2-git-scope-gate.md 规格文档",
+        "明确 scope_gate=off/suggest/required 的行为",
+        "列出 staged diff、rename/delete、.ai-board 与生成 Markdown 的处理规则",
+        "给出 0.2 实现任务拆分和测试矩阵"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T10:39:21+00:00",
+      "updated_at": "2026-06-03T10:40:37+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0111",
+      "title": "实现 staged diff 与 task scope gate 核心检查",
+      "description": "新增可复用的 gate 检查逻辑，对 git staged files 与当前 active task scope 做路径覆盖校验，输出可读违规原因。",
+      "priority": "P0",
+      "status": "scheduled",
+      "lane": "信任闭环",
+      "source": "0.2 git scope gate 排期",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [
+        "T-0110"
+      ],
+      "acceptance": [
+        "能读取 git staged diff 中的新增、修改、删除、重命名路径",
+        "能判断改动文件是否被 active task scope 覆盖",
+        "能区分业务 scope 与 ai-board 记账副作用",
+        "单元测试覆盖无 active task、越界文件、合法 scope、根 scope、rename/delete"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T10:39:30+00:00",
+      "updated_at": "2026-06-03T10:40:42+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0112",
+      "title": "实现 git hook 安装与 scope gate 命令",
+      "description": "提供 CLI 入口安装/检查/移除 pre-commit hook，并提供 hook 可调用的 gate 命令；默认不静默改用户 git hook。",
+      "priority": "P0",
+      "status": "scheduled",
+      "lane": "信任闭环",
+      "source": "0.2 git scope gate 排期",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [
+        "T-0110"
+      ],
+      "acceptance": [
+        "提供 hook install/status/uninstall 或等价命令",
+        "hook 调用 ai-board gate 时能按 scope_gate=suggest/required 返回正确退出码",
+        "不会覆盖用户已有 hook，存在冲突时给出人工合并提示",
+        "doctor 能提示 required 模式下 hook 未安装或不可用"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T10:39:38+00:00",
+      "updated_at": "2026-06-03T10:40:49+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0113",
+      "title": "补齐 0.2 scope gate 文档、AI 指南与回归验收",
+      "description": "把 scope gate 的定位、配置、限制、安装方式和失败处理写进 README / README_en / CLI guide / changelog，并准备 0.2 发布验收。",
+      "priority": "P1",
+      "status": "scheduled",
+      "lane": "发布治理",
+      "source": "0.2 git scope gate 排期",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [
+        "T-0111",
+        "T-0112"
+      ],
+      "acceptance": [
+        "README 和 README_en 用克制口径说明 scope gate 是 git 提交关口，不是运行时文件拦截",
+        "ai-board skills get core 能提示 0.2 gate 的启用、检查和失败处理",
+        "CHANGELOG 加入 0.2 待发布说明",
+        "本地全量测试、ruff、doctor、conflicts 通过"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T10:39:48+00:00",
+      "updated_at": "2026-06-03T10:40:58+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0114",
+      "title": "评估 0.3 verification evidence 方案",
+      "description": "0.2 之后评估 verify 命令、自动命令证据、manual verification 标记和 complete 引用验证记录的设计，不并入 0.2 实现。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "信任闭环",
+      "source": "1.0 路线规划：0.2 后补验收证据闭环",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 verify / complete 关系设计",
+        "明确自动验证与手工验证的证据强度差异",
+        "决定是否在 0.3 实现 verification evidence"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-03T10:40:26+00:00",
+      "updated_at": "2026-06-03T10:40:26+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
     }
