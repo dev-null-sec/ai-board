@@ -6,7 +6,7 @@
   },
   "next_id": 110,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-03T05:15:35+00:00",
+  "updated_at": "2026-06-03T06:07:24+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -65,51 +65,6 @@
       "updated_at": "2026-06-03T04:17:35+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
-    },
-    {
-      "id": "T-0109",
-      "title": "发布 v0.1.20",
-      "description": "发布包含 guide 瘦身、next/doctor 复核提醒、scope 副作用说明的 v0.1.20。",
-      "priority": "P0",
-      "status": "active",
-      "lane": "发布",
-      "source": "用户确认：0.1.2 低于 0.1.11，改发 0.1.20",
-      "owner_agent": "codex",
-      "scope": [
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs/当前状态.md",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "tests/test_cli.py",
-        "tests/test_skills_and_i18n.py"
-      ],
-      "verify_scope": [
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs/当前状态.md",
-        "pyproject.toml",
-        "src/ai_board/__init__.py",
-        "tests"
-      ],
-      "depends_on": [],
-      "acceptance": [
-        "同步 pyproject.toml、src/ai_board/__init__.py、CHANGELOG.md、README.md、README_en.md 的 0.1.20 口径",
-        "运行完整 unittest、ruff、ai-board doctor、ai-board conflicts，并构建 wheel/sdist、twine check",
-        "提交、打 v0.1.20 tag、推送 main 和 tag，确认 GitHub Actions 发布成功",
-        "确认 PyPI 可见 0.1.20，且发布者/仓库口径为 dev-null-sec/devnull"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-03T05:15:19+00:00",
-      "updated_at": "2026-06-03T05:15:35+00:00",
-      "lock_owner": "codex",
-      "lease_expires_at": "2026-06-03T09:15:35+00:00",
-      "locked_at": "2026-06-03T05:15:35+00:00",
-      "started_at": "2026-06-03T05:15:35+00:00"
     }
   ],
   "archive": [
@@ -4043,6 +3998,53 @@
       "started_at": "2026-06-03T05:13:13+00:00",
       "completed_at": "2026-06-03T05:14:48+00:00",
       "archived_at": "2026-06-03T05:15:03+00:00"
+    },
+    {
+      "id": "T-0109",
+      "title": "发布 v0.1.20",
+      "description": "发布包含 guide 瘦身、next/doctor 复核提醒、scope 副作用说明的 v0.1.20。",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户确认：0.1.2 低于 0.1.11，改发 0.1.20",
+      "owner_agent": "codex",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests/test_cli.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py",
+        "tests"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "同步 pyproject.toml、src/ai_board/__init__.py、CHANGELOG.md、README.md、README_en.md 的 0.1.20 口径",
+        "运行完整 unittest、ruff、ai-board doctor、ai-board conflicts，并构建 wheel/sdist、twine check",
+        "提交、打 v0.1.20 tag、推送 main 和 tag，确认 GitHub Actions 发布成功",
+        "确认 PyPI 可见 0.1.20，且发布者/仓库口径为 dev-null-sec/devnull"
+      ],
+      "verification": "v0.1.20 已发布：release commit fc31574 已推送 main；tag v0.1.20 已推送；GitHub Actions Release run 26866873179 成功并发布到 PyPI；CI run 26866873485 成功；PyPI JSON 确认 latest version 为 0.1.20；GitHub Release 已创建，作者 dev-null-sec，非草稿、非预发布，URL: https://github.com/dev-null-sec/ai-board/releases/tag/v0.1.20。发布前验证已通过：conflicts、doctor、ruff、104 条单元测试、Python 3.12 build、twine check。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-03T05:15:19+00:00",
+      "updated_at": "2026-06-03T06:07:24+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-03T05:15:35+00:00",
+      "started_at": "2026-06-03T05:15:35+00:00",
+      "completed_at": "2026-06-03T06:07:15+00:00",
+      "archived_at": "2026-06-03T06:07:24+00:00"
     }
   ],
   "agents": [
@@ -4071,13 +4073,13 @@
     {
       "id": "codex",
       "kind": "codex",
-      "status": "busy",
-      "task_id": "T-0109",
-      "lease_expires_at": "2026-06-03T09:15:35+00:00",
+      "status": "idle",
+      "task_id": "",
+      "lease_expires_at": "",
       "created_at": "2026-05-30T07:02:34+00:00",
-      "updated_at": "2026-06-03T05:15:35+00:00",
+      "updated_at": "2026-06-03T06:07:15+00:00",
       "claimed_at": "2026-05-30T07:02:34+00:00",
-      "released_at": "2026-06-03T05:14:48+00:00"
+      "released_at": "2026-06-03T06:07:15+00:00"
     }
   ]
 }
