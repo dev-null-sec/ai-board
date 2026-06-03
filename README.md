@@ -1,8 +1,8 @@
 # ai-board
 
-给 AI agent 用的本地计划看板。它把需求、排期、正在改的文件范围、验收结果和遗留问题记录下来，让 AI 接手项目时不用只靠聊天记录猜。
+用 AI 写代码不难。难的是写到第十轮对话、第三个 agent 接手时，项目不变成一坨屎山。
 
-[English](https://github.com/dev-null-sec/ai-board/blob/v0.1.20/README_en.md) | 中文
+[English](./README_en.md) | 中文
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -12,205 +12,170 @@
 
 ![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
 
-当前正式版本：`v0.1.20`。
+当前版本：`v0.1.20`。
 
-## 为什么做这个
+## 这不是一个看板工具
 
-AI 写代码时，很多混乱不是代码本身造成的，而是项目状态没有一个稳定地方保存。
+如果你以为 `ai-board` 就是一个"命令行的 Trello"或者"给 AI 用的 todo list"，那你被它的外表骗了。
 
-一个需求刚说完，AI 可能立刻开改；又插进来一个 bug，它也继续改。几轮之后，原来的计划在哪里、当前任务算不算做完、哪些文件已经被另一个会话碰过，就很容易散在聊天记录里。
+它做的事比任务管理深得多：**它给 vibe coding 定了一套治理范式。**
 
-`ai-board` 只处理这类项目事实：需求进不进看板、排到哪一批、谁在做、scope 是哪些文件、验收跑了什么、还有什么没收尾。聊天继续负责讨论细节，看板负责留下可恢复的状态。
+什么叫治理范式？就是当 AI 开始替你写代码时，有些事你不该全靠"信任 AI 自己会把控"——你应该有规则、有护栏、有机器的强制执行，让项目不会因为 AI 的一句"顺手改一下"而慢慢滑向混乱。
 
-它不是 Jira，也不是 Web 项目管理系统。现在就是一个本地 CLI，一个 `.ai-board/board.json`，再生成两份 Markdown 看板给人和 AI 读。
+`ai-board` 就是这套护栏。它不替 AI 写代码，它替 AI **管方向、锁范围、记验收、防越界**。
 
-## 最短路径
+## vibe coding 的核心问题
 
-一般不需要人手动敲一串命令，直接把这段给 AI：
+用 AI 开发的人都会经历同一个曲线：
 
-```text
-请安装 ai-board 并接手当前项目：
-1. 优先用 pipx install ai-board 安装用户级 CLI。
-2. 如果 pipx 不可用，再用 uv tool install ai-board。
-3. 安装后运行 ai-board onboard --init-if-missing。
-4. 按该 agent 的 skill 安装方式，把 https://github.com/dev-null-sec/ai-board.git 里的 skills/ai-board/SKILL.md 放到对应 agent 的 skills 目录；除非该 agent 已经安装过这个 skill。
-```
+第一周：太爽了。说一句话，AI 就把功能写好了。
 
-自己安装时：
+第二周：开始有点乱。AI 顺手重构了不相干的文件，上次聊天的方案记不清了，同一个需求改了三个版本不知道哪个是最新的。
+
+第三周：不敢改了。项目里东一块西一块的 AI 痕迹，有些是"当时觉得需要但后来发现不需要的"，有些是"顺手加上去的"，你不敢删因为不确定删了会坏什么。
+
+根本原因不是 AI 不行。**根本原因是 AI 开发缺了一套外部治理机制。** 人类开发有 code review、有 CI、有项目管理工具、有团队沟通。AI 开发呢？全靠聊天记录。
+
+`ai-board` 解决的就是这个：**把人做项目管理的那套约束，适配到 AI 驱动的开发流程里。** 但它不是把 Jira 搬进终端。它重新设计了治理模型——因为 AI 开发需要的约束和人类开发不一样。
+
+## 这套治理范式的几个原则
+
+### 原则一：AI 不能自行推断项目方向
+
+一个很常见的场景：用户开了个空目录，说"帮我做个东西"。AI 一看目录名是 `api-server`，就开始规划路由、中间件、数据库。但它没问过用户：你要 REST 还是 GraphQL？用 Go 还是 Python？是不是只是一个周末项目？
+
+`ai-board onboard` 做的事情就是拦住这个冲动。它扫描项目——空项目、轻量新项目、已有项目——然后**强制 AI 先问用户方向**，再排期，再编码。空项目猜方向是最危险的，`onboard` 直接堵死了这条路。
+
+### 原则二：每个代码变更必须有归属
+
+"顺手改一下"是 AI 开发里最危险的一句话。用户说了句"这个变量名不对"，AI 改了变量名，顺便优化了函数签名，重构了调用链，还加了个缓存层。三周后，没人知道那个缓存是计划内的还是顺手产物。
+
+`ai-board` 要求每个变更挂在任务下面。任务有 scope（改哪些文件）、有验收标准（怎么算做完）、有验证结果（实际跑了什么）。需求进"需求池"，排期到"下一批"，start 到"正在进行"，complete 写验收，archive 归档。
+
+这不仅是为了记录。它创造了一条规则：**AI 不能对非当前任务范围内的东西动手。** 用户随口说的"顺便修一下"和真正的紧急插队，都要先写入看板。
+
+### 原则三：多 agent 不能互踩
+
+大项目可能需要同时开多个 AI 会话并行推进。但两个 agent 同时改同一个文件就是灾难。
+
+`ai-board` 的 scope 锁机制解决这个：agent start 任务时声明文件级 scope，别的 agent 再 start 时如果 scope 重叠就会被拦住。锁有过期机制，agent 可以续租，释放后别人才能碰。这不是分布式一致性锁，但在 AI 开发的颗粒度上够用了——至少不会两个 agent 对着同一个 `handler.py` 各改各的。
+
+单 agent 开发时不强制这些检查，不会天天让你处理 notice 和 scope 冲突。这个渐进式设计是刻意的——一个人用的时候不想背团队的包袱。
+
+### 原则四：验收不是"看起来对了"
+
+AI 说"完成了"，它真的完成了吗？验收标准写了吗？验证跑了吗？遗留问题记了吗？
+
+`ai-board` 的 complete 命令要求填写：验证结果（你跑什么了）、遗留问题（还有什么没收尾）、延后验收（哪些全量验证现在跑不了）。`doctor` 命令会检查：active 任务有没有 scope？验收标准写了没有？锁是不是过期了？看板生成的 Markdown 和 JSON 源头是不是一致？git 有没有初始化？
+
+这些检查不是在挑刺。它们是在补 AI 开发最容易塌的那块：**完成的定义太模糊。**
+
+## 怎么用
+
+### 人怎么用
+
+你不是在敲命令。你是在对 AI 说话。`ai-board` 的 UI 不是终端，是自然语言。
+
+第一次用，给 AI 这一段：
+
+> 用 ai-board 接手这个项目。
+
+AI 会自己装 CLI、跑 onboard、判断项目状态、问你方向问题。空项目不会直接写代码，会先让你确认目标。
+
+日常开发，给 AI 这一段：
+
+> 把这个需求进 ai-board。如果不属于当前任务就排期。
+
+AI 会判断该不该插队、加到需求池还是直接排期、scope 写什么、验收标准怎么定。
+
+想看进度：
+
+> ai-board 现在什么状态？下一步做什么？
+
+AI 调用 `status`、`next`、`show`，把结果翻译成人话。
+
+**你不是在操作 CLI。你是在指挥 AI。CLI 是 AI 手里的工具，不是你的。**
+
+### AI 怎么用（供 Claude/Codex 等 agent 参考）
+
+安装：
 
 ```powershell
 pipx install ai-board
 ```
 
-没有 `pipx` 但有 `uv`：
+接手项目：
 
 ```powershell
-uv tool install ai-board
+ai-board onboard --init-if-missing
 ```
 
-想试 GitHub 上的当前源码版：
+这会扫描项目、初始化看板、生成护栏文档（AGENTS.md、开发规范、当前状态等），并输出项目类型判断。
+
+日常流程：
 
 ```powershell
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
+ai-board add "添加用户认证" --priority P0 --acceptance "登录接口返回 JWT" --acceptance "未登录请求返回 401"
+ai-board schedule <task-id>
+ai-board start <task-id> --agent claude --scope src/auth src/middleware
+# ... 干活 ...
+ai-board complete <task-id> --verification "单元测试全绿，手动测了登录和过期"
+ai-board archive <task-id>
 ```
 
-## 人和 AI 怎么配合
-
-`ai-board` 更适合这样用：人说清楚意图，AI 负责安装、接手、排期、启动任务、记录验收和归档。人不用记命令，提示词也不该写成长规则；短、准、能触发流程就够。
-
-### 第一次接手
-
-给 AI 这段提示词：
-
-```text
-用 ai-board 接手这个项目。
-先 onboard；信息不够就问我，不要猜方向或直接编码。
-```
-
-这句话会让 AI 自己处理安装、初始化和读取内置指南。空项目先问目标、用户和第一版范围；已有项目先整理状态，再把后续开发放进看板。
-
-### 提新需求
-
-平时不要让 AI 直接“顺手改一下”。更稳的说法是：
-
-```text
-把这个需求进 ai-board。
-判断它是否属于当前任务；不属于就排期，别直接开改。
-```
-
-需要立刻处理时，可以说得更明确：
-
-```text
-这个问题优先处理。
-先写入 ai-board 并说明插队原因，再 start、声明 scope、修改和验收。
-```
-
-### 多 agent 开发
-
-默认是单 agent 轻量模式。如果确实要同时开两个 AI 会话，先让其中一个会话启用多 agent：
-
-```text
-开启 ai-board 多 agent 协作。
-每个会话先 claim 身份；改前查 scope，收到 notice 先收口。
-```
-
-### 看进度
-
-问 AI 就行：
-
-```text
-看 ai-board：现在做什么？下一步做什么？
-```
-
-AI 背后会用 `status`、`next`、`show`、`doctor` 这些命令读状态。命令细节留给 agent，人的工作是确认方向、优先级和验收口径。
-
-## 它保存哪些东西
-
-| 内容 | 放在哪里 |
-| --- | --- |
-| 任务、状态、负责人、scope、验收结果 | `.ai-board/board.json` |
-| 当前看板 | `docs/计划看板.md` |
-| 归档看板 | `docs/归档计划看板.md` |
-| 操作历史 | `.ai-board/events.jsonl` |
-| agent notice | `.ai-board/messages.jsonl` |
-
-`board.json` 是唯一写入源，Markdown 只是生成视图。任务状态、依赖、scope、验收这些字段需要被程序读取、排序和校验，放在 JSON 里更稳；Markdown 留给人读。
-
-任务 `scope` 描述的是本轮业务修改范围。CLI 写操作自动更新 `.ai-board/board.json`、事件/消息日志和生成看板，这是 ai-board 自己的记账副作用；除非任务本身就是修改这些文件，否则不用把它们每次都写进 scope。
-
-## 几个默认选择
-
-| 设计 | 当前做法 |
-| --- | --- |
-| 单 agent 开发 | 默认轻量，不强制处理多 agent notice 和 scope 冲突。 |
-| 多 agent 协作 | 项目级可选开关，默认关闭。需要并行开发时开启。 |
-| git | 默认 `git_integration=suggest`，没有 git 时提示初始化，但不会静默 `git init`。 |
-| 看板语言 | 默认中文，可改成 `en-US`。 |
-| scope | 记录文件或小目录，不做语义级代码冲突判断。 |
-
-多 agent 开启方式：
+多 agent 协作时先开启：
 
 ```powershell
 ai-board config set multi_agent_enabled true
 ```
 
-开启后，重叠 scope 会被拦住，`next --agent` 会显示 notice，`complete` / `archive` 会提醒未收口消息。单 agent 开发时，它不会强制你天天看 notice、处理 inbox 或被 active scope 冲突拦住。
+然后每个 agent 先 `claim` 身份，`start` 时声明 scope，`next` 会提示 scope 冲突和被阻塞的候选任务。
 
-git 强制模式：
+## 它和常见东西的区别
 
-```powershell
-ai-board config set git_integration required
+**和 Jira / Linear / Trello 的区别：** 那些是给人用的项目管理工具，核心是团队协作和可视化。`ai-board` 是给 AI agent 用的治理层，核心是方向确认、scope 锁、验收闭环和护栏规则生成。它的操作者是 AI，不是人。
+
+**和 git 的关系：** `ai-board` 不替代 git，它依赖 git。默认配置下它会提醒你初始化 git、建议编码前提交、可以用 `git_integration=required` 强制要求。它的定位是"让 AI 在每次改动前都有可回滚点"，git 是回滚机制的底座。
+
+**和 CLAUDE.md / AGENTS.md 的关系：** `ai-board init` 会生成 AGENTS.md 和 docs/ 下的护栏文档。这些文件告诉 AI：编码前先读计划看板，新需求先进需求池，最多同时做 1-2 个任务。没有这些规则，AI 会倾向于"听到什么就立刻改什么"——这对于多人项目和长期项目是灾难。
+
+**和"一个超长 system prompt"的区别：** 有些人试图把规则全塞进 system prompt 里。问题在于 prompt 会被裁剪、遗忘、不同 agent 之间不共享。`ai-board` 把治理规则放在项目的文件系统里，agent 进入项目时读取，互不依赖各自的 prompt 配置。规则和项目绑定，不和 agent 绑定。
+
+## 它保存什么
+
+| 数据 | 文件 | 角色 |
+| --- | --- | --- |
+| 任务、状态、scope、锁、验收 | `.ai-board/board.json` | 唯一真相源 |
+| 操作历史 | `.ai-board/events.jsonl` | 可审计的变更日志 |
+| agent 间消息 | `.ai-board/messages.jsonl` | 多 agent notice |
+| 当前看板（人类可读） | `docs/计划看板.md` | 生成视图，不手改 |
+| 归档看板 | `docs/归档计划看板.md` | 生成视图 |
+| 护栏文档 | `AGENTS.md`、`docs/开发规范.md` 等 | AI 行为约束 |
+
+JSON 是机器读的，Markdown 是人读的。写入永远走 CLI，保证 JSON → Markdown 的生成不会散架。
+
+## 项目结构
+
+```text
+src/ai_board/          CLI 核心（cli / operations / store / render / guardrails / onboarding / parser / skill_guides）
+skills/ai-board/       给 Codex 等 agent 的 discovery skill
+tests/                 测试
+docs/                  这个项目自己的计划和状态
+examples/demo-project/ 示例项目
 ```
-
-临时实验目录可以关闭 git 检查：
-
-```powershell
-ai-board config set git_integration off
-```
-
-## 常见问题
-
-<details>
-<summary><strong>为什么不用 Markdown 直接管理任务？</strong></summary>
-
-Markdown 很适合读，不适合当结构化状态源。任务状态、负责人、scope、依赖、验收结果这些字段需要稳定读写。格式一旦被人或 AI 改散，工具就很难判断哪些是内容，哪些是结构。
-
-所以 `ai-board` 用 JSON 存状态，再生成 Markdown 看板。
-
-</details>
-
-<details>
-<summary><strong>Markdown 看板可以手动改吗？</strong></summary>
-
-不建议。下一次 CLI 写操作或 `ai-board render` 会重新生成 Markdown，手改内容可能被覆盖。改任务状态、负责人、scope、验收结果时走 CLI。
-
-</details>
-
-<details>
-<summary><strong>为什么不自动 git init？</strong></summary>
-
-AI 开发最好有可回滚点，但项目根目录、父级仓库、临时目录、大文件、密钥和已有未完成改动都可能需要确认。`ai-board` 会提醒，不会静默初始化 git，也不会自动提交用户已有改动。
-
-</details>
-
-<details>
-<summary><strong>多 agent 防冲突能防到什么程度？</strong></summary>
-
-只能防路径重叠。比如一个任务锁了 `src/api`，另一个任务要改 `src/api/handler.py`，开启多 agent 后会被拦住。
-
-它不理解两个不同文件之间的业务耦合，也不是跨机器强锁。真正并行开发时，scope 还是要写窄，任务边界也要写清楚。
-
-</details>
-
-<details>
-<summary><strong>只能给 Codex 用吗？</strong></summary>
-
-不是。仓库里带了 Codex 可读的 skill stub，但 CLI 本身只是普通命令行工具。Claude、其他 agent，或者人手动敲命令都能用。关键是让 agent 先读 `ai-board skills get core`，按当前版本的规则操作。
-
-</details>
 
 ## 当前边界
 
 | 已支持 | 暂不做 |
 | --- | --- |
-| 本地 CLI | Web 登录 |
-| JSON 真相源 | 云同步 |
+| 本地 CLI，JSON 真相源 | Web 登录、云同步 |
 | Markdown 生成视图 | 手写 Markdown 当数据库 |
+| 单 agent 默认模式 | 强制多 agent 流程 |
+| 可选多 agent scope 防撞 | 语义级代码冲突检测、跨机器锁 |
 | 事件日志和 `history` | 完整审计系统 |
-| `doctor` 项目自检 | 语义级代码冲突判断 |
-| git-first 提示和 required 门禁 | 静默初始化 git 或自动提交 |
-| 可选多 agent 路径级 scope 防撞 | 跨机器协作锁 |
-| 轻量 agent notice | 实时聊天系统 |
-
-## 项目结构
-
-```text
-src/ai_board/          CLI 核心
-skills/ai-board/       给 AI agent 的 discovery skill
-tests/                 测试
-docs/                  这个项目自己的计划和状态文档
-examples/demo-project/ 示例项目
-```
+| `doctor` 项目自检 | 自动修复 |
+| git 提示和 required 门禁 | 静默 `git init` / `git commit` |
+| AGENTS.md 护栏生成 | 自动执行护栏规则 |
 
 ## 开发
 
@@ -224,15 +189,6 @@ uv run --with ruff ruff check .
 
 ```powershell
 uv tool install --editable .
-```
-
-发布前检查：
-
-```powershell
-uv run ai-board conflicts --fail-on-conflict
-uv run ai-board doctor --fail-on-issue
-uv run --with build python -m build
-uv run --with twine twine check dist/*
 ```
 
 ## License

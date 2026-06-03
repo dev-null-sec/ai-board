@@ -1,8 +1,8 @@
 # ai-board
 
-A local planning board for AI agents. It records requests, scheduling, active file scope, verification, and leftovers so an agent taking over a project does not have to guess from chat history alone.
+Getting AI to write code is easy. Keeping the project coherent after ten sessions and three different agents — that's the hard part.
 
-English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.20/README.md)
+English | [中文](./README.md)
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
@@ -12,205 +12,170 @@ English | [中文](https://github.com/dev-null-sec/ai-board/blob/v0.1.20/README.
 
 ![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
 
-Current stable version: `v0.1.20`.
+Version `v0.1.20`.
 
-## Why this exists
+## This is not a kanban tool
 
-AI-assisted coding often gets messy because project state has no stable place to live.
+If you think `ai-board` is "Trello for the terminal" or "a todo list for AI agents," you're looking at the surface and missing the point.
 
-A request comes in, the agent starts editing. A bug interrupts it, the agent edits again. After a few rounds, the original plan, the current task status, and the files already touched by another session can all be scattered across chat.
+What it actually does is deeper: **it defines a governance paradigm for vibe coding.**
 
-`ai-board` keeps the durable project facts: what was requested, where it is scheduled, who is working on it, which files are in scope, what verification ran, and what remains. Chat can keep handling judgment and discussion; the board keeps recoverable state.
+What's a governance paradigm? It's the realization that when AI starts writing your codebase, there are things you can't just "trust the AI to handle." You need rules. You need guardrails. You need deterministic enforcement — because "the AI should know better" is not a strategy.
 
-This is intentionally local. No web app, no account, no background service. One repository gets one `.ai-board/board.json`, plus generated Markdown boards for humans and agents to read.
+`ai-board` is that enforcement layer. It doesn't write code. It manages direction, locks scope, records verification, and prevents boundary violations. It is to AI-driven development what CI, code review, and project management are to human teams — but redesigned for a workflow where the primary coder is not human.
 
-## Quick Start
+## The core problem of vibe coding
 
-Most of the time, let the agent install and enter the project for you:
+Everyone who builds software with AI goes through the same arc:
 
-```text
-Install ai-board and take over this project:
-1. Prefer pipx install ai-board for a user-level CLI.
-2. If pipx is unavailable, use uv tool install ai-board.
-3. After installation, run ai-board onboard --init-if-missing.
-4. Install the agent skill according to that agent's skill rules by copying skills/ai-board/SKILL.md from https://github.com/dev-null-sec/ai-board.git into the agent's skills directory, unless that agent already has this skill installed.
-```
+Week one: This is incredible. One sentence and the feature is done.
 
-Manual install:
+Week two: Things are getting messy. The AI refactored unrelated files without asking. You can't remember which conversation had the right approach. The same feature has been rewritten three times and you don't know which version is current.
+
+Week three: You're afraid to touch anything. The codebase is littered with AI artifacts — some were "probably needed at the time," others were "added along the way." You can't delete them because you're not sure what breaks.
+
+The root cause isn't bad AI. **The root cause is that AI-driven development lacks external governance.** Human development has code review, CI, project management tools, team communication. AI development has... chat history.
+
+`ai-board` bridges that gap: it adapts the constraints that keep human development safe, redesigned for a workflow where the coder is an AI. It doesn't port Jira to the terminal. It asks: _what governance does AI development actually need, that humans take for granted?_
+
+## The governance principles
+
+### 1. AI must not infer project direction on its own
+
+Happens constantly: someone opens an empty directory, says "build me something," and AI sees a folder called `api-server` — so it starts planning routes, middleware, a database. It never asked: REST or GraphQL? Go or Python? Is this a weekend prototype or a production service?
+
+`ai-board onboard` blocks this impulse. It scans the project — empty, lightweight new project, or existing codebase — and **forces the AI to ask the human about direction before writing a single line.** Guessing project direction from a folder name is the most dangerous thing AI can do at the beginning, and `onboard` closes that door.
+
+### 2. Every code change must belong to a task
+
+The phrase "while you're at it" kills more AI projects than bugs do. User says "that variable name is wrong." The AI fixes the variable, optimizes the function signature, refactors the call chain, and adds a caching layer. Three weeks later, nobody knows if that cache was planned or incidental.
+
+`ai-board` requires every change to live under a task. A task has scope (which files it touches), acceptance criteria (how you know it's done), and verification (what was actually tested). New requests go into the inbox. They get scheduled. They get started with explicit scope. They get completed with verification. They get archived.
+
+This isn't bureaucracy. It creates a rule: **the AI cannot touch anything outside the current task's scope.** "Fix this while you're at it" and genuine emergencies both go through the board. The difference is priority and documentation, not whether they bypass governance.
+
+### 3. Multiple agents must not step on each other
+
+Larger projects sometimes need multiple AI sessions in parallel. But two agents editing the same file simultaneously is a merge conflict waiting to happen.
+
+`ai-board`'s scope locking solves this: when an agent starts a task, it declares file-level scope. If another agent tries to start a task with overlapping scope, it gets blocked. Locks have leases. Agents renew them. When done, the lock releases. This isn't a distributed consistency lock — but at AI-development granularity, it's enough. Two agents won't both edit the same `handler.py` in parallel.
+
+Single-agent mode doesn't enforce any of this. No notices, no conflicts. That's intentional — working alone shouldn't carry team-level overhead.
+
+### 4. "Done" must mean something verifiable
+
+The AI says "completed." Did it? Were acceptance criteria written? Were tests run? Were leftovers documented?
+
+`ai-board complete` requires: verification results (what did you actually run?), leftovers (what's not wrapped up?), and deferred verification (what can't be fully tested right now?). `ai-board doctor` checks: does every active task have scope? Are acceptance criteria filled in? Are any locks expired? Do the generated Markdown boards match the JSON source? Is git initialized?
+
+These aren't nitpicks. They address the weakest link in AI development: **the definition of "done" is far too fuzzy.** The CLI makes it concrete.
+
+## How to use it
+
+### For humans
+
+You're not typing CLI commands. You're talking to an AI. `ai-board`'s interface is natural language.
+
+First time:
+
+> Use ai-board to onboard this project.
+
+The AI installs the CLI, runs onboard, assesses project state, and asks you the right questions. An empty project won't start coding — it'll ask you to confirm direction.
+
+Daily:
+
+> Put this request into ai-board. If it's not part of the current task, schedule it.
+
+The AI decides whether to slot it in, whether to queue it or schedule it directly, what scope to declare, and what acceptance criteria to set.
+
+Checking in:
+
+> What's the status in ai-board? What's next?
+
+The AI runs `status`, `next`, `show` and translates the output into plain language.
+
+**You are not operating a CLI. You are directing an AI. The CLI is the AI's tool, not yours.**
+
+### For AI agents (Claude, Codex, etc.)
+
+Install:
 
 ```powershell
 pipx install ai-board
 ```
 
-If `pipx` is unavailable but `uv` exists:
+Onboard:
 
 ```powershell
-uv tool install ai-board
+ai-board onboard --init-if-missing
 ```
 
-To try the current source version from GitHub:
+This scans the project, initializes the board, generates guardrail docs (AGENTS.md, dev standards, current status, etc.), and outputs a project classification.
+
+Daily workflow:
 
 ```powershell
-pipx install "git+https://github.com/dev-null-sec/ai-board.git"
+ai-board add "Add user auth" --priority P0 --acceptance "Login returns JWT" --acceptance "Unauthenticated returns 401"
+ai-board schedule <task-id>
+ai-board start <task-id> --agent claude --scope src/auth src/middleware
+# ... do the work ...
+ai-board complete <task-id> --verification "All unit tests pass, manually tested login and expiry"
+ai-board archive <task-id>
 ```
 
-## How Humans And AI Work Together
-
-`ai-board` is meant to sit behind the conversation. The human describes intent; the agent installs, onboards, schedules, starts work, records verification, and archives finished tasks. The prompt should be short and precise; the detailed rules live in the tool guide.
-
-### First takeover
-
-Give the agent this prompt:
-
-```text
-Use ai-board to take over this project.
-Run onboarding first. If key context is missing, ask me; do not guess the direction or start coding.
-```
-
-That is enough for the agent to handle installation, initialization, and the built-in guide. Empty projects should start with goal, users, and first-version scope; existing projects should start with current state.
-
-### New requests
-
-Instead of asking the agent to casually "just fix this", route the request through the board:
-
-```text
-Put this request into ai-board.
-Check whether it belongs to the current task; if not, schedule it before coding.
-```
-
-For urgent work:
-
-```text
-This needs priority handling.
-Record why it jumps the queue, then start it, declare scope, change it, and verify it.
-```
-
-### Multi-agent work
-
-Solo-agent mode is the default. When two AI sessions really need to work in parallel, ask one of them to enable multi-agent mode first:
-
-```text
-Enable ai-board multi-agent work.
-Each session claims an identity; check scopes before editing and close notices before finishing.
-```
-
-### Checking progress
-
-Ask the agent in normal language:
-
-```text
-Check ai-board: what is active, and what should happen next?
-```
-
-The agent can use `status`, `next`, `show`, and `doctor` behind the scenes. The human side is mostly about confirming direction, priority, and acceptance.
-
-## What It Stores
-
-| Data | Location |
-| --- | --- |
-| Tasks, status, owner, scope, verification | `.ai-board/board.json` |
-| Current board | `docs/计划看板.md` |
-| Archived board | `docs/归档计划看板.md` |
-| Event history | `.ai-board/events.jsonl` |
-| Agent notices | `.ai-board/messages.jsonl` |
-
-`board.json` is the write source. Markdown is generated for reading. Task status, dependencies, scope, and verification need stable structured fields; Markdown is easier to read but too easy to accidentally reshape.
-
-Task `scope` describes the user-facing work for that task. CLI writes to `.ai-board/board.json`, event/message logs, and generated boards are ai-board bookkeeping side effects; do not add them to every task scope unless the task itself is manually changing those files.
-
-## Defaults
-
-| Design | Current behavior |
-| --- | --- |
-| Solo-agent work | Lightweight by default. No mandatory multi-agent notice cleanup or scope-conflict blocking. |
-| Multi-agent work | Project-level opt-in, off by default. |
-| Git | Default `git_integration=suggest`; missing git is reported, but `git init` is not run silently. |
-| Board language | Chinese by default, configurable to `en-US`. |
-| Scope | Tracks files or small directories. It is not semantic code-conflict detection. |
-
-Enable multi-agent mode:
+For multi-agent collaboration, enable it:
 
 ```powershell
 ai-board config set multi_agent_enabled true
 ```
 
-After that, overlapping scopes are blocked, `next --agent` shows notices, and `complete` / `archive` warn about unresolved messages. In solo-agent work, ai-board does not make every task deal with notices or active-scope conflicts.
+Each agent claims an identity, declares scope on `start`, and `next` flags scope conflicts and blocked candidates.
 
-Require git for a project:
+## How this differs
 
-```powershell
-ai-board config set git_integration required
-```
+**vs. Jira / Linear / Trello:** Those are project management tools for humans — built around team collaboration and visualization. `ai-board` is a governance layer for AI agents — built around direction confirmation, scope locking, verification closure, and guardrail generation. The operator is the AI, not the human.
 
-Disable git checks for throwaway work:
+**vs. git:** `ai-board` doesn't replace git — it depends on it. By default it reminds you to initialize git and suggests commits before coding. `git_integration=required` enforces it. AI should always have a rollback point before making changes. Git is the mechanism; `ai-board` is the policy layer that ensures it exists.
 
-```powershell
-ai-board config set git_integration off
-```
+**vs. CLAUDE.md / AGENTS.md:** `ai-board init` generates AGENTS.md and guardrail docs under `docs/`. These files tell the AI: read the board before coding, new requests go to the inbox first, max 1–2 active tasks. Without these rules, AI defaults to "hear something, immediately change something" — catastrophic for multi-session projects.
 
-## FAQ
+**vs. a long system prompt:** Some people try to cram governance into a system prompt. Prompts get truncated, forgotten, and aren't shared across agents. `ai-board` puts governance rules in the project's filesystem. Rules are bound to the project, not the agent.
 
-<details>
-<summary><strong>Why not manage tasks directly in Markdown?</strong></summary>
+## What it stores
 
-Markdown is good to read, but weak as structured state. Status, owner, scope, dependencies, and verification need reliable reads and writes. If the formatting drifts, the tool can no longer tell structure from prose.
+| Data | File | Role |
+| --- | --- | --- |
+| Tasks, status, scope, locks, verification | `.ai-board/board.json` | Single source of truth |
+| Operation history | `.ai-board/events.jsonl` | Auditable change log |
+| Inter-agent messages | `.ai-board/messages.jsonl` | Multi-agent notices |
+| Current board (human-readable) | `docs/计划看板.md` | Generated view — don't hand-edit |
+| Archive board | `docs/归档计划看板.md` | Generated view |
+| Guardrail docs | `AGENTS.md`, `docs/开发规范.md`, etc. | AI behavioral constraints |
 
-`ai-board` stores state in JSON and renders Markdown boards from it.
+JSON is for machines. Markdown is for humans. Writes always go through the CLI — the JSON → Markdown pipeline never drifts.
 
-</details>
-
-<details>
-<summary><strong>Can I edit the Markdown board by hand?</strong></summary>
-
-Not recommended. The next CLI write or `ai-board render` can overwrite generated Markdown. Use the CLI to change task status, owner, scope, and verification.
-
-</details>
-
-<details>
-<summary><strong>Why doesn't it automatically run git init?</strong></summary>
-
-AI development is much safer with a rollback point, but the project root, parent repositories, temporary folders, large files, secrets, and pre-existing unfinished changes may all need confirmation. `ai-board` reports missing git; it does not silently initialize git or commit user changes.
-
-</details>
-
-<details>
-<summary><strong>How much conflict prevention does multi-agent mode provide?</strong></summary>
-
-It only catches path overlap. If one task locks `src/api`, another task touching `src/api/handler.py` is blocked when multi-agent mode is enabled.
-
-It does not understand business coupling between different files, and it is not a cross-machine lock. Parallel work still needs narrow scopes and clear task boundaries.
-
-</details>
-
-<details>
-<summary><strong>Is this only for Codex?</strong></summary>
-
-No. The repository includes a Codex-friendly skill stub, but the CLI is a normal command-line tool. Claude, other agents, and humans can use it. The important part is that the agent reads `ai-board skills get core` and follows the rules for the installed version.
-
-</details>
-
-## Current Boundaries
-
-| Supported | Not included |
-| --- | --- |
-| Local CLI | Web login |
-| JSON source of truth | Cloud sync |
-| Generated Markdown boards | Hand-written Markdown as the database |
-| Event log and `history` | Full audit platform |
-| `doctor` project checks | Semantic code-conflict detection |
-| Git-first hints and required gate | Silent git initialization or auto-commits |
-| Optional multi-agent path-level scope safety | Cross-machine coordination locks |
-| Lightweight agent notices | Real-time chat system |
-
-## Project Layout
+## Project structure
 
 ```text
-src/ai_board/          CLI core
-skills/ai-board/       Discovery skill for AI agents
+src/ai_board/          CLI core (cli / operations / store / render / guardrails / onboarding / parser / skill_guides)
+skills/ai-board/       Discovery skill for Codex and other agents
 tests/                 Tests
 docs/                  This project's own planning and status docs
 examples/demo-project/ Demo project
 ```
+
+## Boundaries
+
+| Supported | Deliberately excluded |
+| --- | --- |
+| Local CLI, JSON truth source | Web login, cloud sync |
+| Generated Markdown views | Hand-written Markdown as database |
+| Single-agent default mode | Mandatory multi-agent overhead |
+| Optional multi-agent scope collision prevention | Semantic code conflict detection, cross-machine locks |
+| Event log and `history` | Full audit system |
+| `doctor` project self-check | Automatic repair |
+| Git prompting and required gating | Silent `git init` / `git commit` |
+| AGENTS.md guardrail generation | Automatic guardrail enforcement |
 
 ## Development
 
@@ -220,7 +185,7 @@ uv run python -m unittest discover -s tests
 uv run --with ruff ruff check .
 ```
 
-Install the local checkout as the active CLI:
+Install the local working copy:
 
 ```powershell
 uv tool install --editable .
