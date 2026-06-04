@@ -8,7 +8,17 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from ai_board.cli import main
-from ai_board.gate import evaluate_scope_gate, parse_name_status, read_staged_diff_paths, split_business_paths
+from ai_board.gate import (
+    HOOK_MARKER,
+    evaluate_scope_gate,
+    inspect_pre_commit_hook,
+    install_pre_commit_hook,
+    parse_name_status,
+    pre_commit_hook_content,
+    read_staged_diff_paths,
+    split_business_paths,
+    uninstall_pre_commit_hook,
+)
 from ai_board.store import find_task, load_board, save_board
 
 
@@ -126,6 +136,42 @@ class ScopeGateTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "add", "README.md"], capture_output=True, check=True)
 
             self.assertEqual(read_staged_diff_paths(root), ["README.md"])
+
+    def test_managed_pre_commit_hook_content_has_marker_and_command(self) -> None:
+        content = pre_commit_hook_content()
+
+        self.assertIn(HOOK_MARKER, content)
+        self.assertIn("ai-board gate pre-commit", content)
+
+    @unittest.skipIf(shutil.which("git") is None, "git is not available")
+    def test_install_and_uninstall_managed_pre_commit_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            subprocess.run(["git", "-C", str(root), "init"], capture_output=True, check=True)
+
+            missing = inspect_pre_commit_hook(root)
+            self.assertEqual(missing.status, "missing")
+
+            installed = install_pre_commit_hook(root)
+            self.assertEqual(installed.status, "managed")
+            self.assertIsNotNone(installed.path)
+            self.assertIn(HOOK_MARKER, installed.path.read_text(encoding="utf-8"))
+
+            removed = uninstall_pre_commit_hook(root)
+            self.assertEqual(removed.status, "missing")
+
+    @unittest.skipIf(shutil.which("git") is None, "git is not available")
+    def test_install_does_not_overwrite_foreign_pre_commit_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            subprocess.run(["git", "-C", str(root), "init"], capture_output=True, check=True)
+            hook_path = root / ".git" / "hooks" / "pre-commit"
+            hook_path.write_text("#!/bin/sh\necho foreign\n", encoding="utf-8")
+
+            status = install_pre_commit_hook(root)
+
+            self.assertEqual(status.status, "foreign")
+            self.assertEqual(hook_path.read_text(encoding="utf-8"), "#!/bin/sh\necho foreign\n")
 
 
 if __name__ == "__main__":

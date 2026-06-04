@@ -11,6 +11,14 @@ from typing import Any
 
 from . import __version__
 from .errors import BoardError
+from .gate import (
+    HookStatus,
+    evaluate_scope_gate,
+    inspect_pre_commit_hook,
+    install_pre_commit_hook,
+    pre_commit_manual_merge_snippet,
+    uninstall_pre_commit_hook,
+)
 from .guardrails import init_guardrail_docs
 from .onboarding import format_onboard_result, onboard_project
 from .operations import (
@@ -773,6 +781,92 @@ def cmd_config_set(args: argparse.Namespace) -> int:
     return 0
 
 
+def print_scope_gate_result(args: argparse.Namespace) -> int:
+    result = evaluate_scope_gate(root_path(args))
+    print(f"scope gate: {result.mode}")
+    if result.mode == "off":
+        print(text(args, "scope gate is off; staged files were not checked", "scope gate 已关闭；未检查 staged 文件"))
+        return 0
+
+    if result.active_tasks:
+        print(text(args, "active task scopes:", "active 任务 scope："))
+        for task in result.active_tasks:
+            scope = ", ".join(str(item) for item in task.get("scope", []))
+            print(f"- {task.get('id')} owner={task.get('owner_agent')} scope={scope}")
+    else:
+        print(text(args, "active task scopes: none", "active 任务 scope：无"))
+
+    print(text(args, "checked staged paths:", "已检查 staged 路径："))
+    if result.checked_paths:
+        for path in result.checked_paths:
+            print(f"- {path}")
+    else:
+        print(text(args, "- none", "- 无"))
+
+    if result.ignored_paths:
+        print(text(args, "ignored ai-board bookkeeping paths:", "已忽略 ai-board 记账路径："))
+        for path in result.ignored_paths:
+            print(f"- {path}")
+
+    if result.uncovered_paths:
+        label = "issue" if result.mode == "required" else "warning"
+        print(f"{label}: staged paths outside active task scope:")
+        for path in result.uncovered_paths:
+            print(f"- {path}")
+        print("Run: ai-board start TASK_ID --agent AGENT --scope <paths...>")
+        print("or:  ai-board rescope TASK_ID --agent AGENT --scope <paths...>")
+        print("or:  split this commit so each change belongs to an active task")
+    else:
+        print(text(args, "scope gate: ok", "scope gate：正常"))
+    return result.exit_code
+
+
+def cmd_gate_pre_commit(args: argparse.Namespace) -> int:
+    return print_scope_gate_result(args)
+
+
+def format_hook_status(status: HookStatus) -> str:
+    path = f" path={status.path}" if status.path else ""
+    detail = f" detail={status.detail}" if status.detail else ""
+    return f"pre-commit hook: {status.status}{path}{detail}"
+
+
+def cmd_hooks_status(args: argparse.Namespace) -> int:
+    config = load_config(root_path(args))
+    print(f"scope_gate: {config['scope_gate']}")
+    status = inspect_pre_commit_hook(root_path(args))
+    print(format_hook_status(status))
+    if config["scope_gate"] == "required" and status.status != "managed":
+        print("doctor: issue")
+    elif config["scope_gate"] == "off":
+        print("doctor: skipped")
+    else:
+        print("doctor: ok")
+    return 0
+
+
+def cmd_hooks_install(args: argparse.Namespace) -> int:
+    status = install_pre_commit_hook(root_path(args))
+    if status.status == "foreign":
+        print(format_hook_status(status))
+        print("ai-board did not overwrite the existing hook. Add this snippet manually:")
+        print(pre_commit_manual_merge_snippet())
+        return 0
+    print(format_hook_status(status))
+    return 0
+
+
+def cmd_hooks_uninstall(args: argparse.Namespace) -> int:
+    before = inspect_pre_commit_hook(root_path(args))
+    status = uninstall_pre_commit_hook(root_path(args))
+    if before.status == "foreign":
+        print(format_hook_status(status))
+        print("ai-board did not remove the existing non-managed hook.")
+        return 0
+    print(format_hook_status(status))
+    return 0
+
+
 def cmd_tell(args: argparse.Namespace) -> int:
     message = append_message(root_path(args), args.sender, args.to, args.type, args.task_id, args.message)
     print_notice(message)
@@ -937,6 +1031,43 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(git_action_hint(args, root, git_mode))
         else:
             print(git_action_hint(args, root, git_mode))
+
+    scope_gate_mode = str(config["scope_gate"])
+    if scope_gate_mode == "off":
+        print(text(args, "scope gate: skipped", "scope gate：已跳过"))
+    else:
+        hook = inspect_pre_commit_hook(root)
+        if hook.status == "managed":
+            print(text(args, "scope gate hook: managed", "scope gate hook：已托管"))
+        elif scope_gate_mode == "required":
+            if hook.status in ("git-missing", "not-git"):
+                issues.append(
+                    text(
+                        args,
+                        "scope_gate is required but this project cannot use a git pre-commit hook",
+                        "scope_gate 为 required，但当前项目无法使用 git pre-commit hook",
+                    )
+                )
+            elif hook.status == "missing":
+                issues.append(
+                    text(
+                        args,
+                        "scope_gate is required but pre-commit hook is missing; run `ai-board hooks install pre-commit`",
+                        "scope_gate 为 required，但 pre-commit hook 缺失；请运行 `ai-board hooks install pre-commit`",
+                    )
+                )
+            elif hook.status == "foreign":
+                issues.append(
+                    text(
+                        args,
+                        "scope_gate is required but pre-commit hook is not managed by ai-board; run `ai-board hooks install pre-commit` for a merge snippet",
+                        "scope_gate 为 required，但 pre-commit hook 不是 ai-board 托管；请运行 `ai-board hooks install pre-commit` 查看合并片段",
+                    )
+                )
+            else:
+                issues.append(f"scope_gate is required but pre-commit hook status is {hook.status}: {hook.detail}")
+        else:
+            print(f"scope gate hook: {hook.status} (suggest mode; run `ai-board hooks install pre-commit` to enable)")
 
     board: dict[str, Any] | None = None
     try:
@@ -1230,6 +1361,10 @@ def build_parser(argv: list[str] | None = None) -> argparse.ArgumentParser:
             "config_list": cmd_config_list,
             "config_get": cmd_config_get,
             "config_set": cmd_config_set,
+            "gate_pre_commit": cmd_gate_pre_commit,
+            "hooks_install": cmd_hooks_install,
+            "hooks_status": cmd_hooks_status,
+            "hooks_uninstall": cmd_hooks_uninstall,
             "lang": cmd_lang,
             "status": cmd_status,
             "next": cmd_next,

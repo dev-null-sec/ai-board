@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -42,6 +43,15 @@ class CliTests(unittest.TestCase):
         if expected:
             self.assertIn(expected, text)
         return text
+
+    def init_git_repo(self, root: Path) -> None:
+        subprocess.run(["git", "-C", str(root), "init"], capture_output=True, check=True)
+
+    def stage_file(self, root: Path, relative_path: str, content: str = "content\n") -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "add", relative_path], capture_output=True, check=True)
 
     def test_init_creates_guardrail_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -186,6 +196,64 @@ class CliTests(unittest.TestCase):
             )
             self.assertIn("language must be zh-CN or en-US", self.assert_cli_error(["--root", str(root), "config", "set", "language", "fr-FR"]))
             self.assertEqual(load_config(root)["language"], "zh-CN")
+
+    @unittest.skipIf(shutil.which("git") is None, "git is not available")
+    def test_gate_pre_commit_returns_by_scope_gate_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.init_git_repo(root)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Gate Demo"]), 0)
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "required"]), 0)
+            self.stage_file(root, "src/app.py")
+
+            required_output = io.StringIO()
+            with redirect_stdout(required_output):
+                self.assertEqual(main(["--root", str(root), "gate", "pre-commit"]), 1)
+            self.assertIn("issue: staged paths outside active task scope", required_output.getvalue())
+            self.assertIn("src/app.py", required_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "suggest"]), 0)
+            suggest_output = io.StringIO()
+            with redirect_stdout(suggest_output):
+                self.assertEqual(main(["--root", str(root), "gate", "pre-commit"]), 0)
+            self.assertIn("warning: staged paths outside active task scope", suggest_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "off"]), 0)
+            off_output = io.StringIO()
+            with redirect_stdout(off_output):
+                self.assertEqual(main(["--root", str(root), "gate", "pre-commit"]), 0)
+            self.assertIn("scope gate: off", off_output.getvalue())
+
+    @unittest.skipIf(shutil.which("git") is None, "git is not available")
+    def test_hooks_install_status_uninstall_and_foreign_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.init_git_repo(root)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Hook Demo"]), 0)
+
+            missing_output = io.StringIO()
+            with redirect_stdout(missing_output):
+                self.assertEqual(main(["--root", str(root), "hooks", "status"]), 0)
+            self.assertIn("pre-commit hook: missing", missing_output.getvalue())
+
+            install_output = io.StringIO()
+            with redirect_stdout(install_output):
+                self.assertEqual(main(["--root", str(root), "hooks", "install", "pre-commit"]), 0)
+            self.assertIn("pre-commit hook: managed", install_output.getvalue())
+
+            uninstall_output = io.StringIO()
+            with redirect_stdout(uninstall_output):
+                self.assertEqual(main(["--root", str(root), "hooks", "uninstall", "pre-commit"]), 0)
+            self.assertIn("pre-commit hook: missing", uninstall_output.getvalue())
+
+            hook_path = root / ".git" / "hooks" / "pre-commit"
+            hook_path.write_text("#!/bin/sh\necho foreign\n", encoding="utf-8")
+            foreign_output = io.StringIO()
+            with redirect_stdout(foreign_output):
+                self.assertEqual(main(["--root", str(root), "hooks", "install", "pre-commit"]), 0)
+            self.assertIn("pre-commit hook: foreign", foreign_output.getvalue())
+            self.assertIn("did not overwrite", foreign_output.getvalue())
+            self.assertEqual(hook_path.read_text(encoding="utf-8"), "#!/bin/sh\necho foreign\n")
 
     def test_missing_config_keeps_defaults_for_old_projects(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1776,6 +1844,25 @@ class CliTests(unittest.TestCase):
             with redirect_stdout(off_output):
                 self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
             self.assertIn("git: skipped", off_output.getvalue())
+
+    @unittest.skipIf(shutil.which("git") is None, "git is not available")
+    def test_doctor_scope_gate_required_requires_managed_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self.init_git_repo(root)
+            self.assertEqual(main(["--root", str(root), "init", "--project-name", "Gate Doctor"]), 0)
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "required"]), 0)
+
+            missing_output = io.StringIO()
+            with redirect_stdout(missing_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("scope_gate is required but pre-commit hook is missing", missing_output.getvalue())
+
+            self.assertEqual(main(["--root", str(root), "hooks", "install", "pre-commit"]), 0)
+            managed_output = io.StringIO()
+            with redirect_stdout(managed_output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 0)
+            self.assertIn("scope gate hook: managed", managed_output.getvalue())
 
     def test_doctor_reports_active_task_and_agent_issues(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

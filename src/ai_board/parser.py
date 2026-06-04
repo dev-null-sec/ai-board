@@ -299,6 +299,44 @@ def register_subcommands(parser: argparse.ArgumentParser, language: str, handler
     config_set.add_argument("value", help=help_text(language, "Use comma-separated values for list config keys.", "列表配置使用逗号分隔。"))
     config_set.set_defaults(func=handlers["config_set"])
 
+    gate = sub.add_parser("gate", help=help_text(language, "Run scope gate checks.", "运行 scope gate 检查。"), **parser_kwargs(language))
+    gate_sub = gate.add_subparsers(dest="gate_command", required=True)
+
+    gate_pre_commit = gate_sub.add_parser(
+        "pre-commit",
+        help=help_text(language, "Check staged files against active task scope.", "检查 staged 文件是否落在 active 任务 scope 内。"),
+        **parser_kwargs(language),
+    )
+    gate_pre_commit.set_defaults(func=handlers["gate_pre_commit"])
+
+    hooks = sub.add_parser(
+        "hooks",
+        help=help_text(language, "Install or inspect ai-board git hooks.", "安装或检查 ai-board git hook。"),
+        **parser_kwargs(language),
+    )
+    hooks_sub = hooks.add_subparsers(dest="hooks_command", required=True)
+
+    hooks_install = hooks_sub.add_parser(
+        "install",
+        help=help_text(language, "Install an ai-board managed hook.", "安装 ai-board 托管 hook。"),
+        **parser_kwargs(language),
+    )
+    hooks_install.add_argument("hook", choices=("pre-commit",))
+    hooks_install.set_defaults(func=handlers["hooks_install"])
+
+    hooks_status = hooks_sub.add_parser(
+        "status", help=help_text(language, "Print ai-board hook status.", "输出 ai-board hook 状态。"), **parser_kwargs(language)
+    )
+    hooks_status.set_defaults(func=handlers["hooks_status"])
+
+    hooks_uninstall = hooks_sub.add_parser(
+        "uninstall",
+        help=help_text(language, "Remove an ai-board managed hook.", "卸载 ai-board 托管 hook。"),
+        **parser_kwargs(language),
+    )
+    hooks_uninstall.add_argument("hook", choices=("pre-commit",))
+    hooks_uninstall.set_defaults(func=handlers["hooks_uninstall"])
+
     lang = sub.add_parser(
         "lang",
         help=help_text(language, "Print language switch commands.", "输出语言切换命令。"),
