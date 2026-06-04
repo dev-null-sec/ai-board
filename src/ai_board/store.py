@@ -109,6 +109,7 @@ def default_config() -> dict[str, Any]:
         "language": "zh-CN",
         "multi_agent_enabled": False,
         "git_integration": "suggest",
+        "scope_gate": "suggest",
         "default_lane": "默认",
         "default_agent_kind": "agent",
         "default_lease_minutes": 240,
@@ -127,6 +128,8 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
         raise BoardSchemaError("Config file is invalid: multi_agent_enabled must be true or false.")
     if config["git_integration"] not in ("suggest", "required", "off"):
         raise BoardSchemaError("Config file is invalid: git_integration must be suggest, required, or off.")
+    if config["scope_gate"] not in ("suggest", "required", "off"):
+        raise BoardSchemaError("Config file is invalid: scope_gate must be suggest, required, or off.")
     if not isinstance(config["default_lane"], str) or not config["default_lane"].strip():
         raise BoardSchemaError("Config file is invalid: default_lane must be a non-empty string.")
     if not isinstance(config["default_agent_kind"], str) or not config["default_agent_kind"].strip():

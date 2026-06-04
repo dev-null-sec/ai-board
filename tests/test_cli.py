@@ -72,6 +72,7 @@ class CliTests(unittest.TestCase):
             config = json.loads(config_file.read_text(encoding="utf-8"))
             self.assertFalse(config["multi_agent_enabled"])
             self.assertEqual(config["git_integration"], "suggest")
+            self.assertEqual(config["scope_gate"], "suggest")
             self.assertEqual(config["doctor_broad_scopes"], [".", "src", "docs", "tests"])
             self.assertIn("tests/test_cli.py", config["shared_verification_scopes"])
             self.assertEqual(config["shared_scope_warning_minutes"], 30)
@@ -161,6 +162,10 @@ class CliTests(unittest.TestCase):
             self.assertEqual(load_config(root)["git_integration"], "required")
             self.assertEqual(main(["--root", str(root), "config", "set", "git_integration", "OFF"]), 0)
             self.assertEqual(load_config(root)["git_integration"], "off")
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "required"]), 0)
+            self.assertEqual(load_config(root)["scope_gate"], "required")
+            self.assertEqual(main(["--root", str(root), "config", "set", "scope_gate", "OFF"]), 0)
+            self.assertEqual(load_config(root)["scope_gate"], "off")
 
     def test_config_command_rejects_unknown_or_invalid_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -174,6 +179,10 @@ class CliTests(unittest.TestCase):
             self.assertIn(
                 "git_integration must be suggest, required, or off",
                 self.assert_cli_error(["--root", str(root), "config", "set", "git_integration", "always"]),
+            )
+            self.assertIn(
+                "scope_gate must be suggest, required, or off",
+                self.assert_cli_error(["--root", str(root), "config", "set", "scope_gate", "always"]),
             )
             self.assertIn("language must be zh-CN or en-US", self.assert_cli_error(["--root", str(root), "config", "set", "language", "fr-FR"]))
             self.assertEqual(load_config(root)["language"], "zh-CN")

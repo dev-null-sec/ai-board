@@ -304,7 +304,7 @@ def parse_config_value(key: str, value: str) -> Any:
         if not value.strip():
             return []
         return [item.strip() for item in value.split(",") if item.strip()]
-    if key == "git_integration":
+    if key in ("git_integration", "scope_gate"):
         return value.strip().lower()
     return value
 
