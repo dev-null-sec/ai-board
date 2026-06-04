@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "1.0 路线聚焦本地 AI 项目治理层；0.2 先交付 git scope gate，把 scope 约束下沉到提交关口"
   },
-  "next_id": 115,
+  "next_id": 119,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-03T10:40:58+00:00",
+  "updated_at": "2026-06-04T02:13:15+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -63,32 +63,6 @@
       "leftovers": "",
       "created_at": "2026-06-03T04:17:35+00:00",
       "updated_at": "2026-06-03T04:17:35+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0110",
-      "title": "设计 0.2 git scope gate 规格",
-      "description": "明确 scope_gate 配置、staged diff 比对、系统记账副作用、无 active task、单 agent / 多 agent、错误提示和绕过策略。",
-      "priority": "P0",
-      "status": "scheduled",
-      "lane": "信任闭环",
-      "source": "用户确认 1.0 大方向：本地 AI 治理层，0.2 聚焦提交关口",
-      "owner_agent": "",
-      "scope": [],
-      "verify_scope": [],
-      "depends_on": [],
-      "acceptance": [
-        "形成 docs/项目路线/0.2-git-scope-gate.md 规格文档",
-        "明确 scope_gate=off/suggest/required 的行为",
-        "列出 staged diff、rename/delete、.ai-board 与生成 Markdown 的处理规则",
-        "给出 0.2 实现任务拆分和测试矩阵"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-03T10:39:21+00:00",
-      "updated_at": "2026-06-03T10:40:37+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
     },
@@ -212,6 +186,106 @@
       "leftovers": "",
       "created_at": "2026-06-03T10:40:26+00:00",
       "updated_at": "2026-06-03T10:40:26+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0115",
+      "title": "规划 0.4 human review 能力",
+      "description": "评估 review --since / review --from，汇总任务、事件、改动文件、scope 匹配、验证证据和 leftovers。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "1.0 路线",
+      "source": "1.0 迭代路线：人类审计面",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 human review 命令设计",
+        "明确 review 与 history、doctor、git diff 的分工",
+        "给出 0.4 实现范围和测试矩阵"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-04T02:11:25+00:00",
+      "updated_at": "2026-06-04T02:11:25+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0116",
+      "title": "规划 0.5 schema migration 与 schema 文档",
+      "description": "评估 schema 文档、迁移命令、dry-run、迁移前备份和旧 schema 回归测试。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "1.0 路线",
+      "source": "1.0 迭代路线：长期数据可信",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 schema migration 设计",
+        "明确 migrate --dry-run 和备份策略",
+        "列出旧 schema 回归测试范围"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-04T02:11:53+00:00",
+      "updated_at": "2026-06-04T02:11:53+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0117",
+      "title": "规划 0.6 可选多 agent 能力打磨",
+      "description": "评估 current agent、notice 收口和路径级防撞增强，但不扩展为跨机器或实时协作平台。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "1.0 路线",
+      "source": "1.0 迭代路线：多 agent 保持可选",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "明确 0.6 多 agent 可选增强边界",
+        "评估 current agent 是否进入 0.6",
+        "明确不做分布式锁、实时通信和语义级冲突检测"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-04T02:12:08+00:00",
+      "updated_at": "2026-06-04T02:12:08+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0118",
+      "title": "规划 1.0 发布门槛与文档瘦身",
+      "description": "定义 1.0 发布前必须满足的 CLI、schema、scope gate、verification evidence、review、onboard、multi-agent 和 README/skill 口径标准。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "1.0 路线",
+      "source": "1.0 迭代路线：稳定闭环",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 1.0 发布门槛清单",
+        "明确 README、skill、CLI guide 的信息分工",
+        "明确 1.0 不承诺的能力边界"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-04T02:12:23+00:00",
+      "updated_at": "2026-06-04T02:12:23+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
     }
@@ -4194,6 +4268,41 @@
       "started_at": "2026-06-03T05:15:35+00:00",
       "completed_at": "2026-06-03T06:07:15+00:00",
       "archived_at": "2026-06-03T06:07:24+00:00"
+    },
+    {
+      "id": "T-0110",
+      "title": "设计 0.2 git scope gate 规格",
+      "description": "明确 scope_gate 配置、staged diff 比对、系统记账副作用、无 active task、单 agent / 多 agent、错误提示和绕过策略。",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "用户确认 1.0 大方向：本地 AI 治理层，0.2 聚焦提交关口",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/决策记录.md",
+        "docs/当前状态.md",
+        "docs/项目路线/0.2-git-scope-gate.md",
+        "docs/项目路线/1.0-迭代路线.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 docs/项目路线/0.2-git-scope-gate.md 规格文档",
+        "明确 scope_gate=off/suggest/required 的行为",
+        "列出 staged diff、rename/delete、.ai-board 与生成 Markdown 的处理规则",
+        "给出 0.2 实现任务拆分和测试矩阵"
+      ],
+      "verification": "已形成 docs/项目路线/0.2-git-scope-gate.md，覆盖 scope_gate=off/suggest/required、staged diff、rename/delete、ai-board 记账副作用、hook install/status/uninstall、doctor 规则和测试矩阵；同时补充 docs/项目路线/1.0-迭代路线.md，记录 0.2 到 1.0 的版本阶梯和流程教训。",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-03T10:39:21+00:00",
+      "updated_at": "2026-06-04T02:13:15+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-04T02:10:07+00:00",
+      "started_at": "2026-06-04T02:07:37+00:00",
+      "completed_at": "2026-06-04T02:13:00+00:00",
+      "archived_at": "2026-06-04T02:13:15+00:00"
     }
   ],
   "agents": [
@@ -4204,9 +4313,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-05-30T03:39:16+00:00",
+      "updated_at": "2026-06-04T02:13:00+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-05-30T03:39:16+00:00"
+      "released_at": "2026-06-04T02:13:00+00:00"
     },
     {
       "id": "codex-01",
