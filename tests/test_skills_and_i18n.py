@@ -264,6 +264,10 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("git_integration=suggest", text)
         self.assertIn("it does not run `git init` for you", text)
         self.assertIn("Do not silently initialize git", text)
+        self.assertIn("scope_gate", text)
+        self.assertIn("ai-board hooks status", text)
+        self.assertIn("ai-board gate pre-commit", text)
+        self.assertIn("not runtime file blocking", text)
         self.assertIn("ai-board rescope T-0001", text)
         self.assertIn("unlock` keeps the task scope as history", text)
         self.assertIn("Do not archive by age alone", text)
@@ -276,6 +280,9 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("not extra business scope", text)
         self.assertIn("ai-board skills get core --full", text)
         self.assertIn("When you receive a notice", full_text)
+        self.assertIn("scope_gate=required", full_text)
+        self.assertIn("--no-verify", full_text)
+        self.assertIn("ai-board hooks uninstall pre-commit", full_text)
         self.assertIn("do not add them to every task scope", full_text)
         self.assertIn("Command reference", full_text)
         self.assertNotIn("If an agent skill is needed", text)
@@ -357,6 +364,24 @@ class SkillsAndI18nTests(unittest.TestCase):
         self.assertIn("suggests commits before coding", english)
         self.assertIn("git_integration=required", english)
         self.assertIn("Silent `git init` / `git commit`", english)
+
+    def test_readme_documents_scope_gate_as_commit_gate(self) -> None:
+        chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        english = (REPO_ROOT / "README_en.md").read_text(encoding="utf-8")
+
+        self.assertIn("ai-board gate pre-commit", chinese)
+        self.assertIn("scope_gate=required", chinese)
+        self.assertIn("提交关口", chinese)
+        self.assertIn("不是运行时文件拦截", chinese)
+        self.assertIn("--no-verify", chinese)
+        self.assertIn("不会覆盖", chinese)
+
+        self.assertIn("ai-board gate pre-commit", english)
+        self.assertIn("scope_gate=required", english)
+        self.assertIn("commit-time gate", english)
+        self.assertIn("not runtime file interception", english)
+        self.assertIn("--no-verify", english)
+        self.assertIn("does not overwrite", english)
 
     def test_readme_explains_board_side_effects_are_not_business_scope(self) -> None:
         chinese = (REPO_ROOT / "README.md").read_text(encoding="utf-8")

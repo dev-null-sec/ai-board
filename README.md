@@ -52,6 +52,8 @@ AI 开发工具都在帮 AI 写得更快更好。但写完以后项目会不会�
 
 这不仅是为了记录。它建立了一条项目级规则：**AI 的每次改动都应该挂在一个声明了 scope 的任务下面。** CLI 不会在运行时拦截文件写入——它做不到——但 AGENTS.md 里的规则和 `doctor` 的事后检查，让偏离任务范围的改动变得可发现、可追溯。
 
+如果项目启用了 git scope gate，`ai-board` 还可以把这件事推到提交前检查：`ai-board gate pre-commit` 会检查 staged diff 是否落在当前 active 任务的 scope 内。`scope_gate=suggest` 只提醒，`scope_gate=required` 会让 hook 返回非零，阻止这次 commit。它检查的是提交关口，不是运行时文件拦截；标准 Git 仍允许用 `--no-verify` 绕过本地 hook。
+
 ### 原则三：多 agent 不能互踩
 
 大项目可能需要同时开多个 AI 会话并行推进。但两个 agent 同时改同一个文件就是灾难。
@@ -135,6 +137,8 @@ ai-board config set multi_agent_enabled true
 
 **和 git 的关系：** `ai-board` 不替代 git，它依赖 git。默认配置下它会提醒你初始化 git、建议编码前提交、可以用 `git_integration=required` 强制要求。它的定位是"让 AI 在每次改动前都有可回滚点"，git 是回滚机制的底座。
 
+**和 git hook 的关系：** `scope_gate=suggest|required` 可以配合 `ai-board hooks install pre-commit` 使用。hook 只检查 staged 文件是否超出 active task scope；如果你已有自己的 hook，`ai-board` 不会覆盖，只会给出人工合并片段。
+
 **和 CLAUDE.md / AGENTS.md 的关系：** `ai-board init` 会生成 AGENTS.md 和 docs/ 下的护栏文档。这些文件告诉 AI：编码前先读计划看板，新需求先进需求池，最多同时做 1-2 个任务。没有这些规则，AI 会倾向于"听到什么就立刻改什么"——这对于多人项目和长期项目是灾难。
 
 **和"一个超长 system prompt"的区别：** 有些人试图把规则全塞进 system prompt 里。问题在于 prompt 会被裁剪、遗忘、不同 agent 之间不共享。`ai-board` 把治理规则放在项目的文件系统里，agent 进入项目时读取，互不依赖各自的 prompt 配置。规则和项目绑定，不和 agent 绑定。
@@ -172,7 +176,7 @@ examples/demo-project/ 示例项目
 | 可选多 agent scope 防撞 | 语义级代码冲突检测、跨机器锁 |
 | 事件日志和 `history` | 完整审计系统 |
 | `doctor` 项目自检 | 自动修复 |
-| git 提示和 required 门禁 | 静默 `git init` / `git commit` |
+| git 提示、required 门禁、可选 pre-commit scope gate | 静默 `git init` / `git commit`、运行时文件拦截 |
 | AGENTS.md 护栏生成 | 自动执行护栏规则 |
 
 ## 开发

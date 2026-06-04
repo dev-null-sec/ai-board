@@ -2,6 +2,37 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.2.0 - 待发布
+
+这个版本把 scope 约束从 `doctor` 的事后发现推进到 git 提交关口。它仍然不是运行时文件拦截或安全沙箱，而是在 commit 前检查 staged diff 是否落在 active task scope 内。
+
+### 新增
+
+- 新增 `scope_gate=off|suggest|required` 项目配置。默认 `suggest` 只提醒；`required` 会让 gate 在发现越界 staged 文件时返回非零。
+- 新增 `ai-board gate pre-commit`，按 staged diff、active task scope 和 ai-board 记账副作用规则检查本次提交。
+- 新增 `ai-board hooks install pre-commit`、`ai-board hooks status`、`ai-board hooks uninstall pre-commit`。
+- pre-commit hook 使用 ai-board managed marker；遇到用户已有 foreign hook 时不会覆盖，只输出人工合并片段。
+- `doctor` 会检查 `scope_gate=required` 下 hook 是否缺失、非托管或不可用；`suggest` 模式只提醒，不作为失败项。
+
+### 调整
+
+- README、README_en 和 `ai-board skills get core` 会说明 scope gate 是 git 提交关口，不是运行时文件拦截；标准 Git 仍允许通过 `--no-verify` 绕过本地 hook。
+- ai-board 自身记账副作用继续不要求写进业务 task scope；scope gate 只检查业务 staged 文件。
+
+### 测试
+
+- 补充 staged diff scope gate 回归：无 active task、合法 scope、根 scope、前缀陷阱、过期锁、rename/delete、记账副作用和真实 git index。
+- 补充 hook 命令回归：安装、状态、卸载、foreign hook 不覆盖、required 模式 doctor fail / managed hook pass。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --python 3.12 --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.1.20 - 2026-06-03
 
 这个版本根据真实使用反馈，重点收窄 AI 默认接手提示，并把容易漏读的项目治理规则前置到 CLI 输出里。

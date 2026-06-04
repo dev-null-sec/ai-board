@@ -6,7 +6,7 @@
   },
   "next_id": 119,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-04T02:36:24+00:00",
+  "updated_at": "2026-06-04T02:45:12+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -63,42 +63,6 @@
       "leftovers": "",
       "created_at": "2026-06-03T04:17:35+00:00",
       "updated_at": "2026-06-03T04:17:35+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0113",
-      "title": "补齐 0.2 scope gate 文档、AI 指南与回归验收",
-      "description": "把 scope gate 的定位、配置、限制、安装方式和失败处理写进 README / README_en / CLI guide / changelog，并准备 0.2 发布验收。",
-      "priority": "P1",
-      "status": "scheduled",
-      "lane": "发布治理",
-      "source": "0.2 git scope gate 排期",
-      "owner_agent": "",
-      "scope": [],
-      "verify_scope": [
-        "CHANGELOG.md",
-        "README.md",
-        "README_en.md",
-        "docs",
-        "src/ai_board",
-        "tests"
-      ],
-      "depends_on": [
-        "T-0111",
-        "T-0112"
-      ],
-      "acceptance": [
-        "README 和 README_en 用克制口径说明 scope gate 是 git 提交关口，不是运行时文件拦截",
-        "ai-board skills get core 能提示 0.2 gate 的启用、检查和失败处理",
-        "CHANGELOG 加入 0.2 待发布说明",
-        "本地全量测试、ruff、doctor、conflicts 通过"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-03T10:39:48+00:00",
-      "updated_at": "2026-06-03T10:40:58+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
     },
@@ -4325,6 +4289,53 @@
       "started_at": "2026-06-04T02:27:09+00:00",
       "completed_at": "2026-06-04T02:36:15+00:00",
       "archived_at": "2026-06-04T02:36:24+00:00"
+    },
+    {
+      "id": "T-0113",
+      "title": "补齐 0.2 scope gate 文档、AI 指南与回归验收",
+      "description": "把 scope gate 的定位、配置、限制、安装方式和失败处理写进 README / README_en / CLI guide / changelog，并准备 0.2 发布验收。",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "发布治理",
+      "source": "0.2 git scope gate 排期",
+      "owner_agent": "codex-00",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs",
+        "src/ai_board",
+        "tests"
+      ],
+      "depends_on": [
+        "T-0111",
+        "T-0112"
+      ],
+      "acceptance": [
+        "README 和 README_en 用克制口径说明 scope gate 是 git 提交关口，不是运行时文件拦截",
+        "ai-board skills get core 能提示 0.2 gate 的启用、检查和失败处理",
+        "CHANGELOG 加入 0.2 待发布说明",
+        "本地全量测试、ruff、doctor、conflicts 通过"
+      ],
+      "verification": "全量 unittest 121 tests 通过；ruff check 通过；doctor --fail-on-issue 通过；conflicts --fail-on-conflict 通过",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-03T10:39:48+00:00",
+      "updated_at": "2026-06-04T02:45:12+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-04T02:38:43+00:00",
+      "started_at": "2026-06-04T02:38:43+00:00",
+      "completed_at": "2026-06-04T02:44:59+00:00",
+      "archived_at": "2026-06-04T02:45:12+00:00"
     }
   ],
   "agents": [
@@ -4335,9 +4346,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-06-04T02:36:15+00:00",
+      "updated_at": "2026-06-04T02:44:59+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-06-04T02:36:15+00:00"
+      "released_at": "2026-06-04T02:44:59+00:00"
     },
     {
       "id": "codex-01",

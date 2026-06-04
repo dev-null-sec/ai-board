@@ -174,6 +174,15 @@ for you. Use `ai-board config set git_integration required` when a project must
 have git before AI edits, or `ai-board config set git_integration off` for
 temporary throwaway work.
 
+Scope gate is a commit-time check, not a runtime file sandbox. New projects
+default to `scope_gate=suggest`: `ai-board gate pre-commit` checks staged files
+against active task scope and warns without blocking. Use
+`ai-board hooks install pre-commit` to install the managed hook. Set
+`scope_gate=required` only when commits outside active task scope should fail.
+If a foreign pre-commit hook exists, ai-board prints a merge snippet and does
+not overwrite it. Standard Git can still bypass local hooks with `--no-verify`;
+for strict projects, run the same gate in CI or release checks too.
+
 Schedule work before coding:
 
 ```bash
@@ -417,14 +426,16 @@ Then apply the onboarding result:
    ai-board may recommend `git init`, `.gitignore`, and an initial commit, but
    it does not run `git init` for you. Do not silently initialize git or commit
    pre-existing user changes.
-3. Treat generated board Markdown as a reading view. Do not hand-edit
+3. If `scope_gate` is `suggest` or `required`, run `ai-board hooks status` and
+   `ai-board gate pre-commit` when needed. This is not runtime file blocking.
+4. Treat generated board Markdown as a reading view. Do not hand-edit
    `docs/计划看板.md` or `docs/归档计划看板.md`; use CLI commands and `ai-board render`.
-4. Review blocked tasks honestly. Do not archive by age alone. Archive only
+5. Review blocked tasks honestly. Do not archive by age alone. Archive only
    after confirming the task is obsolete, superseded, already satisfied, or no
    longer fits the current project direction; then run `ai-board archive TASK_ID`.
    If it should continue, run `ai-board reopen TASK_ID --reason TEXT`, then
    schedule/start it.
-5. If the project direction changed, review inbox, scheduled, and blocked work
+6. If the project direction changed, review inbox, scheduled, and blocked work
    before starting a fresh implementation task.
 
 ## Install Prompt
@@ -527,6 +538,10 @@ ai-board reopen TASK_ID --reason TEXT
 ai-board block TASK_ID
 ai-board status
 ai-board next [--agent AGENT]
+ai-board gate pre-commit
+ai-board hooks install pre-commit
+ai-board hooks status
+ai-board hooks uninstall pre-commit
 ai-board conflicts [--fail-on-conflict]
 ai-board locks
 ai-board history [TASK_ID]

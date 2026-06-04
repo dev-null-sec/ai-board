@@ -52,6 +52,8 @@ The phrase "while you're at it" kills more AI projects than bugs do. User says "
 
 This isn't bureaucracy. It establishes a project-level rule: **every change should belong to a task with declared scope.** The CLI can't physically stop an AI from editing a file — it doesn't work at that layer — but the combination of AGENTS.md rules and `doctor` checks makes off-scope changes discoverable and traceable.
 
+If a project enables git scope gate, `ai-board` can move that check to the commit boundary: `ai-board gate pre-commit` checks whether staged files are covered by the current active task scope. `scope_gate=suggest` warns only; `scope_gate=required` makes the hook return non-zero and rejects the commit. This is a commit-time gate, not runtime file interception. Standard Git can still bypass local hooks with `--no-verify`.
+
 ### 3. Multiple agents must not step on each other
 
 Larger projects sometimes need multiple AI sessions in parallel. But two agents editing the same file simultaneously is a merge conflict waiting to happen.
@@ -135,6 +137,8 @@ Each agent claims an identity, declares scope on `start`, and `next` flags scope
 
 **vs. git:** `ai-board` doesn't replace git — it depends on it. By default it reminds you to initialize git and suggests commits before coding. `git_integration=required` enforces it. AI should always have a rollback point before making changes. Git is the mechanism; `ai-board` is the policy layer that ensures it exists.
 
+**vs. git hooks:** `scope_gate=suggest|required` can work with `ai-board hooks install pre-commit`. The hook checks staged files against active task scope. If you already have your own hook, `ai-board` does not overwrite it; it prints a manual merge snippet instead.
+
 **vs. CLAUDE.md / AGENTS.md:** `ai-board init` generates AGENTS.md and guardrail docs under `docs/`. These files tell the AI: read the board before coding, new requests go to the inbox first, max 1–2 active tasks. Without these rules, AI defaults to "hear something, immediately change something" — catastrophic for multi-session projects.
 
 **vs. a long system prompt:** Some people try to cram governance into a system prompt. Prompts get truncated, forgotten, and aren't shared across agents. `ai-board` puts governance rules in the project's filesystem. Rules are bound to the project, not the agent.
@@ -172,7 +176,7 @@ examples/demo-project/ Demo project
 | Optional multi-agent scope collision prevention | Semantic code conflict detection, cross-machine locks |
 | Event log and `history` | Full audit system |
 | `doctor` project self-check | Automatic repair |
-| Git prompting and required gating | Silent `git init` / `git commit` |
+| Git prompting, required gating, optional pre-commit scope gate | Silent `git init` / `git commit`, runtime file interception |
 | AGENTS.md guardrail generation | Automatic guardrail enforcement |
 
 ## Development
