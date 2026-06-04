@@ -2,7 +2,7 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
-## v0.2.0 - 待发布
+## v0.2.0 - 2026-06-04
 
 这个版本把 scope 约束从 `doctor` 的事后发现推进到 git 提交关口。它仍然不是运行时文件拦截或安全沙箱，而是在 commit 前检查 staged diff 是否落在 active task scope 内。
 

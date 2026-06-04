@@ -10,9 +10,9 @@ English | [中文](./README.md)
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.2.0/assets/ai-board.png)
 
-Version `v0.1.20`.
+Version `v0.2.0`.
 
 ## This is not a kanban tool
 

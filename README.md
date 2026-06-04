@@ -10,9 +10,9 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.1.20/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.2.0/assets/ai-board.png)
 
-当前版本：`v0.1.20`。
+当前版本：`v0.2.0`。
 
 ## 这不是一个看板工具
 
