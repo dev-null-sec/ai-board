@@ -1,0 +1,3 @@
+run,tool,key_label,model,start_time,end_time,elapsed_seconds,input_tokens,output_tokens,cache_creation_tokens,cache_read_tokens,total_tokens,cost_usd,request_count,manual_interventions,commands_run,changed_files,state_bytes,test_result,notes
+gsd,gsd-pi,key-a,,,,,,,,,,,,,,,,
+ai-board,ai-board,key-b,,,,,,,,,,,,,,,,

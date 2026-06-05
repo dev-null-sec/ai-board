@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "1.0 路线聚焦本地 AI 项目治理层；0.2 先交付 git scope gate，把 scope 约束下沉到提交关口"
   },
-  "next_id": 120,
+  "next_id": 124,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-04T02:50:45+00:00",
+  "updated_at": "2026-06-05T07:18:16+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -188,6 +188,95 @@
       "leftovers": "",
       "created_at": "2026-06-04T02:12:23+00:00",
       "updated_at": "2026-06-04T02:12:23+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0120",
+      "title": "设计并执行 GSD Pi 与 ai-board 轻量性对比评估",
+      "description": "",
+      "priority": "P1",
+      "status": "inbox",
+      "lane": "竞品评估",
+      "source": "用户要求：严谨对比 GSD 和 ai-board，量化 token 消耗和轻量性",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成可复现实验方案，明确 token、时间、文件改动、安装体量和上下文开销指标",
+        "至少在一个临时项目中对 GSD Pi 和 ai-board 跑同类任务并记录证据",
+        "输出评估报告，区分事实数据、推断和不确定项",
+        "根据结果判断是否需要调整 ai-board 迭代路线"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-05T06:49:27+00:00",
+      "updated_at": "2026-06-05T06:49:27+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0122",
+      "title": "执行 GSD Pi vs ai-board 双 key Claude Code 端到端对比测试",
+      "description": "",
+      "priority": "P1",
+      "status": "inbox",
+      "lane": "竞品评估",
+      "source": "T-0120 拆分：真实运行两个 Claude Code 会话，用两个 API key 计量 token/cost",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "docs/项目路线",
+        "tmp/gsd-vs-ai-board"
+      ],
+      "depends_on": [
+        "T-0121"
+      ],
+      "acceptance": [
+        "使用两个独立 API key、两个隔离目录、两个全新 Claude Code 会话完成同一任务",
+        "从 Anthropic 后台或导出数据记录两 key 的 input/output/cache/cost/request 数据",
+        "记录耗时、文件改动、状态文件体量、人工干预次数和最终验收结果",
+        "归档完整报告，说明 ai-board 是否真的更轻量及证据强度"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-05T07:01:26+00:00",
+      "updated_at": "2026-06-05T07:01:26+00:00",
+      "lock_owner": "",
+      "lease_expires_at": ""
+    },
+    {
+      "id": "T-0123",
+      "title": "评估 GSD Pi 对 ai-board 1.0 路线的启发与边界",
+      "description": "",
+      "priority": "P1",
+      "status": "scheduled",
+      "lane": "战略定位",
+      "source": "用户要求：把 GSD Pi 战略校准判断落到看板和文档",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "形成 docs/项目路线 下的 GSD Pi 对比与战略校准记录",
+        "明确 ai-board 不做 coding agent、provider routing、TUI/Web、扩展市场等大而全方向",
+        "明确可吸收的启发：worktree 只读建议、usage/context observability、schema/migration 重视程度",
+        "判断是否需要新增 worktree/observability 评估任务或调整 1.0 路线",
+        "给出 README 定位文案建议：agent-agnostic governance CLI，不替代 Claude/Codex"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-05T07:02:06+00:00",
+      "updated_at": "2026-06-05T07:02:44+00:00",
       "lock_owner": "",
       "lease_expires_at": ""
     }
@@ -4373,6 +4462,43 @@
       "started_at": "2026-06-04T02:47:22+00:00",
       "completed_at": "2026-06-04T02:50:33+00:00",
       "archived_at": "2026-06-04T02:50:45+00:00"
+    },
+    {
+      "id": "T-0121",
+      "title": "准备 GSD Pi vs ai-board 双 key 计量与隔离测试基线",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "竞品评估",
+      "source": "T-0120 拆分：先做双 key 计量、目录隔离和 seed 项目前置准备",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/GSD-Pi-vs-ai-board轻量性对比测试准备.md",
+        "tmp/gsd-vs-ai-board"
+      ],
+      "verify_scope": [
+        "docs/项目路线",
+        "tmp/gsd-vs-ai-board"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "形成双 API key 计量口径，说明 Anthropic 后台 usage/CSV/API 读取方式",
+        "建立 tmp/gsd-vs-ai-board/seed-project、run-gsd、run-ai-board、reports 的隔离结构",
+        "两份运行目录从同一 git commit 复制，确认状态文件和会话上下文不会互相污染",
+        "输出可复现实验步骤和待用户提供 key 的安全注意事项"
+      ],
+      "verification": "已建立 tmp/gsd-vs-ai-board 隔离基线；seed 测试 uv run python -m unittest discover -s tests 通过；run-gsd 与 run-ai-board 均来自 baseline commit 71be1000f65154ae67c844a159a77abc20884069 且 git status 为空；uv run ai-board doctor --fail-on-issue 与 conflicts --fail-on-conflict 通过。",
+      "deferred_verification": "",
+      "leftovers": "真实 Claude 双 key 消耗测试未执行，留给 T-0122；tmp/gsd-vs-ai-board 是本机实验基线，包含嵌套 git 仓库，不整体纳入主仓库提交。",
+      "created_at": "2026-06-05T06:59:36+00:00",
+      "updated_at": "2026-06-05T07:18:16+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-05T07:06:13+00:00",
+      "started_at": "2026-06-05T07:06:13+00:00",
+      "completed_at": "2026-06-05T07:18:16+00:00",
+      "archived_at": "2026-06-05T07:18:16+00:00"
     }
   ],
   "agents": [
@@ -4383,9 +4509,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-06-04T02:50:33+00:00",
+      "updated_at": "2026-06-05T07:18:16+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-06-04T02:50:33+00:00"
+      "released_at": "2026-06-05T07:18:16+00:00"
     },
     {
       "id": "codex-01",
