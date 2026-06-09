@@ -4,9 +4,9 @@
     "name": "ai-board",
     "current_goal": "1.0 路线聚焦本地 AI 项目治理层；0.2 先交付 git scope gate，把 scope 约束下沉到提交关口"
   },
-  "next_id": 124,
+  "next_id": 137,
   "created_at": "2026-05-13T16:51:51+08:00",
-  "updated_at": "2026-06-05T07:18:16+00:00",
+  "updated_at": "2026-06-09T07:24:54+00:00",
   "tasks": [
     {
       "id": "T-0097",
@@ -34,7 +34,9 @@
       "created_at": "2026-05-30T02:58:03+00:00",
       "updated_at": "2026-05-30T02:58:03+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0107",
@@ -64,57 +66,9 @@
       "created_at": "2026-06-03T04:17:35+00:00",
       "updated_at": "2026-06-03T04:17:35+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0114",
-      "title": "评估 0.3 verification evidence 方案",
-      "description": "0.2 之后评估 verify 命令、自动命令证据、manual verification 标记和 complete 引用验证记录的设计，不并入 0.2 实现。",
-      "priority": "P2",
-      "status": "inbox",
-      "lane": "信任闭环",
-      "source": "1.0 路线规划：0.2 后补验收证据闭环",
-      "owner_agent": "",
-      "scope": [],
-      "verify_scope": [],
-      "depends_on": [],
-      "acceptance": [
-        "形成 verify / complete 关系设计",
-        "明确自动验证与手工验证的证据强度差异",
-        "决定是否在 0.3 实现 verification evidence"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-03T10:40:26+00:00",
-      "updated_at": "2026-06-03T10:40:26+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0115",
-      "title": "规划 0.4 human review 能力",
-      "description": "评估 review --since / review --from，汇总任务、事件、改动文件、scope 匹配、验证证据和 leftovers。",
-      "priority": "P2",
-      "status": "inbox",
-      "lane": "1.0 路线",
-      "source": "1.0 迭代路线：人类审计面",
-      "owner_agent": "",
-      "scope": [],
-      "verify_scope": [],
-      "depends_on": [],
-      "acceptance": [
-        "形成 human review 命令设计",
-        "明确 review 与 history、doctor、git diff 的分工",
-        "给出 0.4 实现范围和测试矩阵"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-04T02:11:25+00:00",
-      "updated_at": "2026-06-04T02:11:25+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0116",
@@ -139,7 +93,9 @@
       "created_at": "2026-06-04T02:11:53+00:00",
       "updated_at": "2026-06-04T02:11:53+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0117",
@@ -164,7 +120,9 @@
       "created_at": "2026-06-04T02:12:08+00:00",
       "updated_at": "2026-06-04T02:12:08+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0118",
@@ -189,96 +147,193 @@
       "created_at": "2026-06-04T02:12:23+00:00",
       "updated_at": "2026-06-04T02:12:23+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
-      "id": "T-0120",
-      "title": "设计并执行 GSD Pi 与 ai-board 轻量性对比评估",
-      "description": "",
-      "priority": "P1",
+      "id": "T-0126",
+      "title": "评估 requirement / decision coverage warning 机制",
+      "description": "参考 GSD Core 的 REQUIREMENTS traceability、requirements coverage gate 和 decision coverage gate，评估 ai-board 是否需要在规划后检查关键需求、决策和阶段是否被路线文档、当前状态或需求池占位承接。",
+      "priority": "P2",
       "status": "inbox",
-      "lane": "竞品评估",
-      "source": "用户要求：严谨对比 GSD 和 ai-board，量化 token 消耗和轻量性",
+      "lane": "规划治理",
+      "source": "GSD Core workflow 借鉴评估：requirements coverage gate 与 decision coverage gate",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0124"
+      ],
+      "acceptance": [
+        "定义 planning coverage 的最小对象：需求、关键决策、阶段、out-of-scope、暂缓原因和后续待拆项",
+        "借鉴 GSD 的 REQUIREMENTS -> ROADMAP/PLAN traceability，设计 ai-board 的轻量承接关系：路线文档、当前状态、inbox placeholder、任务验收标准或明确暂缓",
+        "给出不依赖自然语言强理解的 warning 规则，例如固定标题、短标记、任务 source/acceptance/depends_on 约定",
+        "明确 coverage warning 与 doctor、next、review 的分工：doctor 查结构断档，next 给下一步动作，review 给人类审计摘要",
+        "明确哪些场景只 warning 不阻断，哪些场景未来可以升级为 gate",
+        "输出测试矩阵，覆盖规划后无后续占位、决策未承接、out-of-scope 被误排期、需求已明确暂缓等场景"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-09T03:55:20+00:00",
+      "updated_at": "2026-06-09T03:55:20+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0127",
+      "title": "评估 roadmap placeholder 与路线断档检查",
+      "description": "参考 GSD Core 的 ROADMAP、STATE 和 progress --next，评估 ai-board 在看板没有可执行任务时，如何发现路线文档仍有后续阶段，避免长期规划只留在聊天或旧文档里。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "规划治理",
+      "source": "GSD Core workflow 借鉴评估：progress router 与 ROADMAP/STATE 机制",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0124"
+      ],
+      "acceptance": [
+        "定义 roadmap placeholder 的最小格式：阶段名称、状态、下一步拆分条件、暂不展开原因和对应 board 任务或占位",
+        "形成 next 的 progress-router 规则：active/scheduled/inbox 为空但路线存在未完成阶段时，提示先从路线文档拆下一批任务",
+        "形成 doctor 的 stale-roadmap warning：当前状态、路线文档和 board 之间出现断档时给出可执行修复建议",
+        "评估 GSD STATE 的短记忆机制，明确 docs/当前状态.md 应如何保持短、准、新，避免成为第二个长 README",
+        "明确不引入复杂 milestone 状态机、不自动推断自然语言阶段完成状态、不把路线文档变成第二个任务数据库",
+        "输出最小实现范围和测试矩阵，覆盖看板为空但路线未完、路线已完但状态未更新、当前状态指向已归档任务等场景"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-09T03:55:20+00:00",
+      "updated_at": "2026-06-09T03:55:20+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0128",
+      "title": "设计 workflow guide 拆分：plan / work / verify / review",
+      "description": "参考 GSD Core 的 discuss-phase、plan-phase、execute-phase、verify-work 和 progress workflow，评估 ai-board 是否应把当前 core guide 拆成更短的阶段化指南，让 AI 在不同阶段读取不同规则。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "流程瘦身",
+      "source": "GSD Core workflow 借鉴评估：分阶段上下文投影",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0125"
+      ],
+      "acceptance": [
+        "明确 core guide、full guide 与未来 plan/work/verify/review 指南的分工，默认入口必须继续短，不把所有流程塞回第一屏",
+        "借鉴 GSD 的阶段上下文思想，定义 plan 阶段读什么、work 阶段读什么、verify 阶段读什么、review 阶段读什么",
+        "评估是否新增 ai-board skills get plan/work/verify/review，或通过 core --full 分节输出即可",
+        "给出 agent 触发规则：用户说规划、推进、验收、复盘时分别应读取哪个 guide",
+        "明确拆分后如何避免 AI 漏读关键硬规则，例如 board.json 真相源、scope、git、blocked 复核、路线意图持久化",
+        "输出回归测试要求，防止短 guide 以后再次膨胀或删除关键接手规则"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-09T03:55:20+00:00",
+      "updated_at": "2026-06-09T03:55:20+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0130",
+      "title": "评估 pause / resume / handoff note 最小机制",
+      "description": "参考 GSD Core 的 pause-work、resume-work、handoff 和 orphaned handoff 检查，评估 ai-board 如何表达任务暂停、会话交接、恢复建议和锁释放，而不是让 agent 被迫 complete/archive 或手改 board。",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "协作机制",
+      "source": "GSD Core workflow 借鉴评估：pause-work / resume-work / handoff 机制",
+      "owner_agent": "",
+      "scope": [],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0097"
+      ],
+      "acceptance": [
+        "明确暂停任务时记录已完成、未完成、验证状态、当前阻塞、恢复建议、是否释放 scope lock 的最小字段",
+        "判断 pause 是否需要新状态，还是用事件日志、note 和锁释放表达，给出对 active/scheduled/blocked 生命周期的影响",
+        "借鉴 GSD orphaned handoff 检查，设计 doctor/review 如何提示存在未收口交接、陈旧暂停说明或恢复条件已满足",
+        "明确与 unlock、rescope、reopen、note、deferred_verification 和 notice 的关系，避免命令语义重叠",
+        "设计 resume 的最小规则：恢复前是否必须 rescope、renew、重新确认验证债务和读取 handoff note",
+        "输出实现优先级和测试矩阵，覆盖暂停后释放锁、暂停但保留 scope、恢复后缩小 scope、交接说明过期等场景"
+      ],
+      "verification": "",
+      "deferred_verification": "",
+      "leftovers": "",
+      "created_at": "2026-06-09T03:55:40+00:00",
+      "updated_at": "2026-06-09T03:55:40+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0131",
+      "title": "评估 git worktree / branch 隔离建议机制",
+      "description": "",
+      "priority": "P2",
+      "status": "inbox",
+      "lane": "Git 治理",
+      "source": "GSD Pi 战略校准：worktree-aware git automation 的轻量借鉴",
       "owner_agent": "",
       "scope": [],
       "verify_scope": [],
       "depends_on": [],
       "acceptance": [
-        "形成可复现实验方案，明确 token、时间、文件改动、安装体量和上下文开销指标",
-        "至少在一个临时项目中对 GSD Pi 和 ai-board 跑同类任务并记录证据",
-        "输出评估报告，区分事实数据、推断和不确定项",
-        "根据结果判断是否需要调整 ai-board 迭代路线"
+        "明确 ai-board 只做 branch/worktree 风险提示和审计，不自动创建、切换、合并 worktree",
+        "设计 next/doctor 在高风险任务、宽 scope、多 agent 或脏工作区时的隔离建议",
+        "设计 review 展示任务关联 branch/commit/scope 是否一致的最小信息",
+        "输出测试矩阵，覆盖无 git、脏工作区、多 agent 共用工作区、宽 scope 任务等场景"
       ],
       "verification": "",
       "deferred_verification": "",
       "leftovers": "",
-      "created_at": "2026-06-05T06:49:27+00:00",
-      "updated_at": "2026-06-05T06:49:27+00:00",
+      "created_at": "2026-06-09T04:24:07+00:00",
+      "updated_at": "2026-06-09T04:24:07+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
-      "id": "T-0122",
-      "title": "执行 GSD Pi vs ai-board 双 key Claude Code 端到端对比测试",
+      "id": "T-0132",
+      "title": "评估 ai-board usage / context observability 指标",
       "description": "",
-      "priority": "P1",
+      "priority": "P2",
       "status": "inbox",
-      "lane": "竞品评估",
-      "source": "T-0120 拆分：真实运行两个 Claude Code 会话，用两个 API key 计量 token/cost",
+      "lane": "审计指标",
+      "source": "GSD Pi 战略校准：usage/context observability 的治理层借鉴",
       "owner_agent": "",
       "scope": [],
-      "verify_scope": [
-        "docs/项目路线",
-        "tmp/gsd-vs-ai-board"
-      ],
-      "depends_on": [
-        "T-0121"
-      ],
-      "acceptance": [
-        "使用两个独立 API key、两个隔离目录、两个全新 Claude Code 会话完成同一任务",
-        "从 Anthropic 后台或导出数据记录两 key 的 input/output/cache/cost/request 数据",
-        "记录耗时、文件改动、状态文件体量、人工干预次数和最终验收结果",
-        "归档完整报告，说明 ai-board 是否真的更轻量及证据强度"
-      ],
-      "verification": "",
-      "deferred_verification": "",
-      "leftovers": "",
-      "created_at": "2026-06-05T07:01:26+00:00",
-      "updated_at": "2026-06-05T07:01:26+00:00",
-      "lock_owner": "",
-      "lease_expires_at": ""
-    },
-    {
-      "id": "T-0123",
-      "title": "评估 GSD Pi 对 ai-board 1.0 路线的启发与边界",
-      "description": "",
-      "priority": "P1",
-      "status": "scheduled",
-      "lane": "战略定位",
-      "source": "用户要求：把 GSD Pi 战略校准判断落到看板和文档",
-      "owner_agent": "",
-      "scope": [],
-      "verify_scope": [
-        "README.md",
-        "README_en.md",
-        "docs/当前状态.md",
-        "docs/项目路线"
-      ],
+      "verify_scope": [],
       "depends_on": [],
       "acceptance": [
-        "形成 docs/项目路线 下的 GSD Pi 对比与战略校准记录",
-        "明确 ai-board 不做 coding agent、provider routing、TUI/Web、扩展市场等大而全方向",
-        "明确可吸收的启发：worktree 只读建议、usage/context observability、schema/migration 重视程度",
-        "判断是否需要新增 worktree/observability 评估任务或调整 1.0 路线",
-        "给出 README 定位文案建议：agent-agnostic governance CLI，不替代 Claude/Codex"
+        "明确 ai-board 不做 token 计费器，而做项目治理健康度指标",
+        "设计指标覆盖任务堆积、验证债务、过宽 scope、scope gate 命中、当前状态过长、guide 膨胀、notice 未收口",
+        "判断指标应属于 doctor、review、status 还是新命令",
+        "给出不增加运行时依赖的实现方案和测试矩阵"
       ],
       "verification": "",
       "deferred_verification": "",
       "leftovers": "",
-      "created_at": "2026-06-05T07:02:06+00:00",
-      "updated_at": "2026-06-05T07:02:44+00:00",
+      "created_at": "2026-06-09T04:24:07+00:00",
+      "updated_at": "2026-06-09T04:24:07+00:00",
       "lock_owner": "",
-      "lease_expires_at": ""
+      "lease_expires_at": "",
+      "verification_ids": [],
+      "verification_force": false
     }
   ],
   "archive": [
@@ -311,7 +366,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0004",
@@ -341,7 +398,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0005",
@@ -371,7 +430,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0007",
@@ -400,7 +461,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0006",
@@ -430,7 +493,9 @@
       "lock_owner": "",
       "lease_expires_at": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0008",
@@ -460,7 +525,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0010",
@@ -490,7 +557,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0009",
@@ -521,7 +590,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0002",
@@ -549,7 +620,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0012",
@@ -587,7 +660,9 @@
       "completed_at": "2026-05-13T11:03:16+00:00",
       "archived_at": "2026-05-13T11:03:16+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0013",
@@ -622,7 +697,9 @@
       "completed_at": "2026-05-13T11:11:01+00:00",
       "archived_at": "2026-05-13T11:11:01+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0014",
@@ -656,7 +733,9 @@
       "completed_at": "2026-05-13T11:12:49+00:00",
       "archived_at": "2026-05-13T11:12:49+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0015",
@@ -694,7 +773,9 @@
       "completed_at": "2026-05-13T11:15:40+00:00",
       "archived_at": "2026-05-13T11:15:40+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0011",
@@ -725,7 +806,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0016",
@@ -764,7 +847,9 @@
       "completed_at": "2026-05-14T03:38:17+00:00",
       "archived_at": "2026-05-14T03:38:22+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0017",
@@ -799,7 +884,9 @@
       "completed_at": "2026-05-14T03:53:35+00:00",
       "archived_at": "2026-05-14T03:53:43+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0003",
@@ -834,7 +921,9 @@
       "lane": "默认",
       "source": "",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0018",
@@ -873,7 +962,9 @@
       "completed_at": "2026-05-14T04:16:21+00:00",
       "archived_at": "2026-05-14T04:16:30+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0019",
@@ -908,7 +999,9 @@
       "completed_at": "2026-05-14T04:22:44+00:00",
       "archived_at": "2026-05-14T04:22:53+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0023",
@@ -944,7 +1037,9 @@
       "completed_at": "2026-05-14T07:31:55+00:00",
       "archived_at": "2026-05-14T07:32:03+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0024",
@@ -980,7 +1075,9 @@
       "completed_at": "2026-05-14T07:37:29+00:00",
       "archived_at": "2026-05-14T07:37:36+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0025",
@@ -1017,7 +1114,9 @@
       "completed_at": "2026-05-14T07:39:38+00:00",
       "archived_at": "2026-05-14T07:39:43+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0020",
@@ -1054,7 +1153,9 @@
       "completed_at": "2026-05-14T07:43:59+00:00",
       "archived_at": "2026-05-14T07:44:05+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0021",
@@ -1092,7 +1193,9 @@
       "completed_at": "2026-05-14T07:58:41+00:00",
       "archived_at": "2026-05-14T07:58:47+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0022",
@@ -1129,7 +1232,9 @@
       "completed_at": "2026-05-14T08:01:46+00:00",
       "archived_at": "2026-05-14T08:01:52+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0026",
@@ -1169,7 +1274,9 @@
       "completed_at": "2026-05-14T08:06:41+00:00",
       "archived_at": "2026-05-14T08:06:46+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0028",
@@ -1205,7 +1312,9 @@
       "completed_at": "2026-05-14T08:13:10+00:00",
       "archived_at": "2026-05-14T08:13:14+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0027",
@@ -1240,7 +1349,9 @@
       "completed_at": "2026-05-14T08:18:36+00:00",
       "archived_at": "2026-05-14T08:18:41+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0029",
@@ -1274,7 +1385,9 @@
       "completed_at": "2026-05-14T08:23:26+00:00",
       "archived_at": "2026-05-14T08:23:34+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0030",
@@ -1309,7 +1422,9 @@
       "completed_at": "2026-05-14T08:27:40+00:00",
       "archived_at": "2026-05-14T08:27:47+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0031",
@@ -1344,7 +1459,9 @@
       "completed_at": "2026-05-14T08:36:52+00:00",
       "archived_at": "2026-05-14T08:37:01+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0032",
@@ -1380,7 +1497,9 @@
       "completed_at": "2026-05-14T08:43:23+00:00",
       "archived_at": "2026-05-14T08:43:40+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0033",
@@ -1415,7 +1534,9 @@
       "completed_at": "2026-05-14T09:03:06+00:00",
       "archived_at": "2026-05-14T09:03:21+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0034",
@@ -1451,7 +1572,9 @@
       "completed_at": "2026-05-14T09:52:33+00:00",
       "archived_at": "2026-05-14T09:52:33+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0035",
@@ -1486,7 +1609,9 @@
       "completed_at": "2026-05-14T09:55:35+00:00",
       "archived_at": "2026-05-14T09:55:35+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0036",
@@ -1521,7 +1646,9 @@
       "completed_at": "2026-05-14T10:01:13+00:00",
       "archived_at": "2026-05-14T10:01:14+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0039",
@@ -1557,7 +1684,9 @@
       "completed_at": "2026-05-14T10:30:06+00:00",
       "archived_at": "2026-05-14T10:30:07+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0040",
@@ -1593,7 +1722,9 @@
       "completed_at": "2026-05-14T10:37:42+00:00",
       "archived_at": "2026-05-14T10:37:42+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0041",
@@ -1629,7 +1760,9 @@
       "completed_at": "2026-05-14T10:58:20+00:00",
       "archived_at": "2026-05-14T10:58:30+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0042",
@@ -1665,7 +1798,9 @@
       "completed_at": "2026-05-15T02:07:05+00:00",
       "archived_at": "2026-05-15T02:07:05+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0043",
@@ -1700,7 +1835,9 @@
       "completed_at": "2026-05-15T02:12:26+00:00",
       "archived_at": "2026-05-15T02:12:27+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0044",
@@ -1735,7 +1872,9 @@
       "completed_at": "2026-05-15T02:18:32+00:00",
       "archived_at": "2026-05-15T02:18:32+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0045",
@@ -1771,7 +1910,9 @@
       "completed_at": "2026-05-15T02:28:53+00:00",
       "archived_at": "2026-05-15T02:28:53+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0047",
@@ -1809,7 +1950,9 @@
       "completed_at": "2026-05-15T02:43:51+00:00",
       "archived_at": "2026-05-15T02:43:51+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0048",
@@ -1842,7 +1985,9 @@
       "completed_at": "2026-05-15T02:58:55+00:00",
       "archived_at": "2026-05-15T02:59:13+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0049",
@@ -1877,7 +2022,9 @@
       "completed_at": "2026-05-15T03:05:07+00:00",
       "archived_at": "2026-05-15T03:05:14+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0050",
@@ -1913,7 +2060,9 @@
       "completed_at": "2026-05-15T03:11:22+00:00",
       "archived_at": "2026-05-15T03:11:31+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0051",
@@ -1949,7 +2098,9 @@
       "completed_at": "2026-05-15T03:16:04+00:00",
       "archived_at": "2026-05-15T03:16:12+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0052",
@@ -1983,7 +2134,9 @@
       "completed_at": "2026-05-15T03:18:49+00:00",
       "archived_at": "2026-05-15T03:18:59+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0046",
@@ -2014,7 +2167,9 @@
       "completed_at": "2026-05-15T03:19:37+00:00",
       "archived_at": "2026-05-15T03:19:49+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0053",
@@ -2046,7 +2201,9 @@
       "completed_at": "2026-05-15T03:24:38+00:00",
       "archived_at": "2026-05-15T03:24:54+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0054",
@@ -2093,7 +2250,9 @@
       "completed_at": "2026-05-15T03:39:04+00:00",
       "archived_at": "2026-05-15T03:39:25+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0056",
@@ -2127,7 +2286,9 @@
       "completed_at": "2026-05-15T04:25:29+00:00",
       "archived_at": "2026-05-15T04:25:41+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0057",
@@ -2160,7 +2321,9 @@
       "completed_at": "2026-05-15T04:27:33+00:00",
       "archived_at": "2026-05-15T04:27:54+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0058",
@@ -2193,7 +2356,9 @@
       "completed_at": "2026-05-15T04:29:29+00:00",
       "archived_at": "2026-05-15T04:29:34+00:00",
       "verify_scope": [],
-      "deferred_verification": ""
+      "deferred_verification": "",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0063",
@@ -2231,7 +2396,9 @@
       "verify_scope": [],
       "deferred_verification": "",
       "completed_at": "2026-05-15T04:39:15+00:00",
-      "archived_at": "2026-05-15T04:39:26+00:00"
+      "archived_at": "2026-05-15T04:39:26+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0064",
@@ -2268,7 +2435,9 @@
       "locked_at": "2026-05-15T06:03:26+00:00",
       "started_at": "2026-05-15T06:03:26+00:00",
       "completed_at": "2026-05-15T06:08:10+00:00",
-      "archived_at": "2026-05-15T06:08:16+00:00"
+      "archived_at": "2026-05-15T06:08:16+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0059",
@@ -2302,7 +2471,9 @@
       "locked_at": "2026-05-15T06:12:12+00:00",
       "started_at": "2026-05-15T06:12:12+00:00",
       "completed_at": "2026-05-15T06:14:05+00:00",
-      "archived_at": "2026-05-15T06:14:13+00:00"
+      "archived_at": "2026-05-15T06:14:13+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0055",
@@ -2337,7 +2508,9 @@
       "locked_at": "2026-05-15T06:11:01+00:00",
       "started_at": "2026-05-15T06:11:01+00:00",
       "completed_at": "2026-05-15T06:14:20+00:00",
-      "archived_at": "2026-05-15T06:14:27+00:00"
+      "archived_at": "2026-05-15T06:14:27+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0065",
@@ -2371,7 +2544,9 @@
       "locked_at": "2026-05-15T06:14:50+00:00",
       "started_at": "2026-05-15T06:14:50+00:00",
       "completed_at": "2026-05-15T06:15:48+00:00",
-      "archived_at": "2026-05-15T06:15:53+00:00"
+      "archived_at": "2026-05-15T06:15:53+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0037",
@@ -2402,7 +2577,9 @@
       "locked_at": "2026-05-15T06:15:52+00:00",
       "started_at": "2026-05-15T06:15:52+00:00",
       "completed_at": "2026-05-15T06:17:15+00:00",
-      "archived_at": "2026-05-15T06:17:22+00:00"
+      "archived_at": "2026-05-15T06:17:22+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0066",
@@ -2436,7 +2613,9 @@
       "locked_at": "2026-05-15T06:18:22+00:00",
       "started_at": "2026-05-15T06:18:22+00:00",
       "completed_at": "2026-05-15T06:20:23+00:00",
-      "archived_at": "2026-05-15T06:20:30+00:00"
+      "archived_at": "2026-05-15T06:20:30+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0038",
@@ -2470,7 +2649,9 @@
       "locked_at": "2026-05-15T06:22:51+00:00",
       "started_at": "2026-05-15T06:22:51+00:00",
       "completed_at": "2026-05-15T06:25:34+00:00",
-      "archived_at": "2026-05-15T06:25:44+00:00"
+      "archived_at": "2026-05-15T06:25:44+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0062",
@@ -2505,7 +2686,9 @@
       "locked_at": "2026-05-15T06:31:21+00:00",
       "started_at": "2026-05-15T06:31:21+00:00",
       "completed_at": "2026-05-15T06:37:10+00:00",
-      "archived_at": "2026-05-15T06:37:18+00:00"
+      "archived_at": "2026-05-15T06:37:18+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0067",
@@ -2544,7 +2727,9 @@
       "locked_at": "2026-05-15T06:53:13+00:00",
       "started_at": "2026-05-15T06:53:13+00:00",
       "completed_at": "2026-05-15T06:56:05+00:00",
-      "archived_at": "2026-05-15T06:56:13+00:00"
+      "archived_at": "2026-05-15T06:56:13+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0070",
@@ -2579,7 +2764,9 @@
       "locked_at": "2026-05-15T06:58:00+00:00",
       "started_at": "2026-05-15T06:58:00+00:00",
       "completed_at": "2026-05-15T07:00:19+00:00",
-      "archived_at": "2026-05-15T07:00:30+00:00"
+      "archived_at": "2026-05-15T07:00:30+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0071",
@@ -2623,7 +2810,9 @@
       "locked_at": "2026-05-15T07:02:39+00:00",
       "started_at": "2026-05-15T07:02:39+00:00",
       "completed_at": "2026-05-15T07:07:58+00:00",
-      "archived_at": "2026-05-15T07:08:11+00:00"
+      "archived_at": "2026-05-15T07:08:11+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0072",
@@ -2662,7 +2851,9 @@
       "locked_at": "2026-05-15T07:09:28+00:00",
       "started_at": "2026-05-15T07:09:28+00:00",
       "completed_at": "2026-05-15T07:12:17+00:00",
-      "archived_at": "2026-05-15T07:12:21+00:00"
+      "archived_at": "2026-05-15T07:12:21+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0068",
@@ -2698,7 +2889,9 @@
       "locked_at": "2026-05-15T07:13:09+00:00",
       "started_at": "2026-05-15T07:13:09+00:00",
       "completed_at": "2026-05-15T07:13:58+00:00",
-      "archived_at": "2026-05-15T07:14:02+00:00"
+      "archived_at": "2026-05-15T07:14:02+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0073",
@@ -2735,7 +2928,9 @@
       "locked_at": "2026-05-15T07:19:47+00:00",
       "started_at": "2026-05-15T07:19:47+00:00",
       "completed_at": "2026-05-15T07:25:35+00:00",
-      "archived_at": "2026-05-15T07:25:44+00:00"
+      "archived_at": "2026-05-15T07:25:44+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0074",
@@ -2772,7 +2967,9 @@
       "locked_at": "2026-05-15T07:27:36+00:00",
       "started_at": "2026-05-15T07:27:36+00:00",
       "completed_at": "2026-05-15T07:44:42+00:00",
-      "archived_at": "2026-05-15T07:44:49+00:00"
+      "archived_at": "2026-05-15T07:44:49+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0076",
@@ -2804,7 +3001,9 @@
       "locked_at": "2026-05-15T07:51:21+00:00",
       "started_at": "2026-05-15T07:51:21+00:00",
       "completed_at": "2026-05-15T07:51:52+00:00",
-      "archived_at": "2026-05-15T07:52:03+00:00"
+      "archived_at": "2026-05-15T07:52:03+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0075",
@@ -2839,7 +3038,9 @@
       "locked_at": "2026-05-15T07:48:27+00:00",
       "started_at": "2026-05-15T07:48:27+00:00",
       "completed_at": "2026-05-15T07:52:44+00:00",
-      "archived_at": "2026-05-15T07:52:50+00:00"
+      "archived_at": "2026-05-15T07:52:50+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0069",
@@ -2880,7 +3081,9 @@
       "locked_at": "2026-05-15T08:08:39+00:00",
       "started_at": "2026-05-15T08:08:39+00:00",
       "completed_at": "2026-05-15T08:08:49+00:00",
-      "archived_at": "2026-05-15T08:08:58+00:00"
+      "archived_at": "2026-05-15T08:08:58+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0077",
@@ -2916,7 +3119,9 @@
       "started_at": "2026-05-15T08:07:38+00:00",
       "unlocked_at": "2026-05-15T08:08:01+00:00",
       "completed_at": "2026-05-15T08:09:47+00:00",
-      "archived_at": "2026-05-15T08:09:54+00:00"
+      "archived_at": "2026-05-15T08:09:54+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0078",
@@ -2953,7 +3158,9 @@
       "locked_at": "2026-05-15T08:11:30+00:00",
       "started_at": "2026-05-15T08:11:30+00:00",
       "completed_at": "2026-05-15T08:13:18+00:00",
-      "archived_at": "2026-05-15T08:13:25+00:00"
+      "archived_at": "2026-05-15T08:13:25+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0079",
@@ -2989,7 +3196,9 @@
       "locked_at": "2026-05-15T08:17:25+00:00",
       "started_at": "2026-05-15T08:17:25+00:00",
       "completed_at": "2026-05-15T08:20:21+00:00",
-      "archived_at": "2026-05-15T08:20:35+00:00"
+      "archived_at": "2026-05-15T08:20:35+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0080",
@@ -3024,7 +3233,9 @@
       "locked_at": "2026-05-15T08:51:24+00:00",
       "started_at": "2026-05-15T08:51:24+00:00",
       "completed_at": "2026-05-15T08:53:10+00:00",
-      "archived_at": "2026-05-15T08:53:18+00:00"
+      "archived_at": "2026-05-15T08:53:18+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0081",
@@ -3060,7 +3271,9 @@
       "locked_at": "2026-05-15T09:04:04+00:00",
       "started_at": "2026-05-15T09:04:04+00:00",
       "completed_at": "2026-05-15T09:07:30+00:00",
-      "archived_at": "2026-05-15T09:07:37+00:00"
+      "archived_at": "2026-05-15T09:07:37+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0082",
@@ -3096,7 +3309,9 @@
       "locked_at": "2026-05-15T09:08:41+00:00",
       "started_at": "2026-05-15T09:08:41+00:00",
       "completed_at": "2026-05-15T09:11:03+00:00",
-      "archived_at": "2026-05-15T09:11:09+00:00"
+      "archived_at": "2026-05-15T09:11:09+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0083",
@@ -3131,7 +3346,9 @@
       "locked_at": "2026-05-15T09:13:04+00:00",
       "started_at": "2026-05-15T09:13:04+00:00",
       "completed_at": "2026-05-15T09:14:13+00:00",
-      "archived_at": "2026-05-15T09:14:18+00:00"
+      "archived_at": "2026-05-15T09:14:18+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0084",
@@ -3169,7 +3386,9 @@
       "locked_at": "2026-05-15T09:18:50+00:00",
       "started_at": "2026-05-15T09:18:50+00:00",
       "completed_at": "2026-05-15T09:42:02+00:00",
-      "archived_at": "2026-05-15T09:42:11+00:00"
+      "archived_at": "2026-05-15T09:42:11+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0085",
@@ -3205,7 +3424,9 @@
       "locked_at": "2026-05-15T09:43:53+00:00",
       "started_at": "2026-05-15T09:43:53+00:00",
       "completed_at": "2026-05-15T09:46:17+00:00",
-      "archived_at": "2026-05-15T09:46:27+00:00"
+      "archived_at": "2026-05-15T09:46:27+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0060",
@@ -3238,7 +3459,9 @@
       "locked_at": "2026-05-15T09:48:55+00:00",
       "started_at": "2026-05-15T09:48:55+00:00",
       "completed_at": "2026-05-15T09:54:22+00:00",
-      "archived_at": "2026-05-15T09:54:34+00:00"
+      "archived_at": "2026-05-15T09:54:34+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0086",
@@ -3282,7 +3505,9 @@
       "locked_at": "2026-05-15T09:56:11+00:00",
       "started_at": "2026-05-15T09:56:11+00:00",
       "completed_at": "2026-05-15T10:06:09+00:00",
-      "archived_at": "2026-05-15T10:06:29+00:00"
+      "archived_at": "2026-05-15T10:06:29+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0061",
@@ -3317,7 +3542,9 @@
       "locked_at": "2026-05-15T10:08:18+00:00",
       "started_at": "2026-05-15T10:08:18+00:00",
       "completed_at": "2026-05-15T10:18:07+00:00",
-      "archived_at": "2026-05-15T10:18:20+00:00"
+      "archived_at": "2026-05-15T10:18:20+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0087",
@@ -3369,7 +3596,9 @@
       "locked_at": "2026-05-15T10:20:56+00:00",
       "started_at": "2026-05-15T10:20:56+00:00",
       "completed_at": "2026-05-15T10:25:42+00:00",
-      "archived_at": "2026-05-15T10:25:51+00:00"
+      "archived_at": "2026-05-15T10:25:51+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0088",
@@ -3413,7 +3642,9 @@
       "locked_at": "2026-05-18T03:49:19+00:00",
       "started_at": "2026-05-18T03:49:19+00:00",
       "completed_at": "2026-05-18T03:51:33+00:00",
-      "archived_at": "2026-05-18T03:51:43+00:00"
+      "archived_at": "2026-05-18T03:51:43+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0089",
@@ -3455,7 +3686,9 @@
       "locked_at": "2026-05-18T03:52:03+00:00",
       "started_at": "2026-05-18T03:52:03+00:00",
       "completed_at": "2026-05-18T03:54:36+00:00",
-      "archived_at": "2026-05-18T03:54:48+00:00"
+      "archived_at": "2026-05-18T03:54:48+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0090",
@@ -3494,7 +3727,9 @@
       "locked_at": "2026-05-18T03:56:43+00:00",
       "started_at": "2026-05-18T03:56:43+00:00",
       "completed_at": "2026-05-18T03:57:17+00:00",
-      "archived_at": "2026-05-18T03:57:17+00:00"
+      "archived_at": "2026-05-18T03:57:17+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0091",
@@ -3557,7 +3792,9 @@
       "locked_at": "2026-05-18T04:01:06+00:00",
       "started_at": "2026-05-18T04:01:06+00:00",
       "completed_at": "2026-05-18T04:06:17+00:00",
-      "archived_at": "2026-05-18T04:06:17+00:00"
+      "archived_at": "2026-05-18T04:06:17+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0092",
@@ -3609,7 +3846,9 @@
       "locked_at": "2026-05-29T07:10:54+00:00",
       "started_at": "2026-05-29T07:10:54+00:00",
       "completed_at": "2026-05-29T07:32:37+00:00",
-      "archived_at": "2026-05-29T07:33:00+00:00"
+      "archived_at": "2026-05-29T07:33:00+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0093",
@@ -3661,7 +3900,9 @@
       "locked_at": "2026-05-29T11:04:41+00:00",
       "started_at": "2026-05-29T11:04:41+00:00",
       "completed_at": "2026-05-29T11:12:46+00:00",
-      "archived_at": "2026-05-29T11:12:59+00:00"
+      "archived_at": "2026-05-29T11:12:59+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0094",
@@ -3713,7 +3954,9 @@
       "locked_at": "2026-05-29T11:15:01+00:00",
       "started_at": "2026-05-29T11:15:01+00:00",
       "completed_at": "2026-05-29T11:44:19+00:00",
-      "archived_at": "2026-05-29T11:44:19+00:00"
+      "archived_at": "2026-05-29T11:44:19+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0095",
@@ -3747,7 +3990,9 @@
       "locked_at": "2026-05-30T01:45:33+00:00",
       "started_at": "2026-05-30T01:45:33+00:00",
       "completed_at": "2026-05-30T01:47:19+00:00",
-      "archived_at": "2026-05-30T01:47:19+00:00"
+      "archived_at": "2026-05-30T01:47:19+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0096",
@@ -3790,7 +4035,9 @@
       "locked_at": "2026-05-30T03:07:38+00:00",
       "started_at": "2026-05-30T02:58:16+00:00",
       "completed_at": "2026-05-30T03:09:27+00:00",
-      "archived_at": "2026-05-30T03:09:27+00:00"
+      "archived_at": "2026-05-30T03:09:27+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0098",
@@ -3847,7 +4094,9 @@
       "locked_at": "2026-05-30T03:20:06+00:00",
       "started_at": "2026-05-30T03:20:06+00:00",
       "completed_at": "2026-05-30T03:39:16+00:00",
-      "archived_at": "2026-05-30T03:39:16+00:00"
+      "archived_at": "2026-05-30T03:39:16+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0099",
@@ -3885,7 +4134,9 @@
       "locked_at": "2026-05-30T07:05:07+00:00",
       "started_at": "2026-05-30T07:02:34+00:00",
       "completed_at": "2026-05-30T07:07:04+00:00",
-      "archived_at": "2026-05-30T07:07:13+00:00"
+      "archived_at": "2026-05-30T07:07:13+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0100",
@@ -3922,7 +4173,9 @@
       "locked_at": "2026-05-30T07:13:41+00:00",
       "started_at": "2026-05-30T07:13:41+00:00",
       "completed_at": "2026-05-30T07:22:35+00:00",
-      "archived_at": "2026-05-30T07:22:46+00:00"
+      "archived_at": "2026-05-30T07:22:46+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0101",
@@ -3961,7 +4214,9 @@
       "locked_at": "2026-05-30T08:49:04+00:00",
       "started_at": "2026-05-30T08:49:04+00:00",
       "completed_at": "2026-05-30T08:50:56+00:00",
-      "archived_at": "2026-05-30T08:51:03+00:00"
+      "archived_at": "2026-05-30T08:51:03+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0102",
@@ -3998,7 +4253,9 @@
       "locked_at": "2026-05-30T09:35:54+00:00",
       "started_at": "2026-05-30T09:35:54+00:00",
       "completed_at": "2026-05-30T09:37:03+00:00",
-      "archived_at": "2026-05-30T09:37:10+00:00"
+      "archived_at": "2026-05-30T09:37:10+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0103",
@@ -4051,7 +4308,9 @@
       "locked_at": "2026-05-30T10:21:55+00:00",
       "started_at": "2026-05-30T10:20:45+00:00",
       "completed_at": "2026-05-30T10:32:16+00:00",
-      "archived_at": "2026-05-30T10:32:37+00:00"
+      "archived_at": "2026-05-30T10:32:37+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0105",
@@ -4089,7 +4348,9 @@
       "locked_at": "2026-06-03T04:18:41+00:00",
       "started_at": "2026-06-03T04:18:41+00:00",
       "completed_at": "2026-06-03T04:31:10+00:00",
-      "archived_at": "2026-06-03T04:31:19+00:00"
+      "archived_at": "2026-06-03T04:31:19+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0104",
@@ -4125,7 +4386,9 @@
       "locked_at": "2026-06-03T04:31:39+00:00",
       "started_at": "2026-06-03T04:31:39+00:00",
       "completed_at": "2026-06-03T04:36:10+00:00",
-      "archived_at": "2026-06-03T04:36:17+00:00"
+      "archived_at": "2026-06-03T04:36:17+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0106",
@@ -4164,7 +4427,9 @@
       "locked_at": "2026-06-03T04:37:44+00:00",
       "started_at": "2026-06-03T04:37:44+00:00",
       "completed_at": "2026-06-03T04:40:17+00:00",
-      "archived_at": "2026-06-03T04:40:31+00:00"
+      "archived_at": "2026-06-03T04:40:31+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0108",
@@ -4211,7 +4476,9 @@
       "locked_at": "2026-06-03T05:13:13+00:00",
       "started_at": "2026-06-03T05:13:13+00:00",
       "completed_at": "2026-06-03T05:14:48+00:00",
-      "archived_at": "2026-06-03T05:15:03+00:00"
+      "archived_at": "2026-06-03T05:15:03+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0109",
@@ -4258,7 +4525,9 @@
       "locked_at": "2026-06-03T05:15:35+00:00",
       "started_at": "2026-06-03T05:15:35+00:00",
       "completed_at": "2026-06-03T06:07:15+00:00",
-      "archived_at": "2026-06-03T06:07:24+00:00"
+      "archived_at": "2026-06-03T06:07:24+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0110",
@@ -4293,7 +4562,9 @@
       "locked_at": "2026-06-04T02:10:07+00:00",
       "started_at": "2026-06-04T02:07:37+00:00",
       "completed_at": "2026-06-04T02:13:00+00:00",
-      "archived_at": "2026-06-04T02:13:15+00:00"
+      "archived_at": "2026-06-04T02:13:15+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0111",
@@ -4335,7 +4606,9 @@
       "locked_at": "2026-06-04T02:22:11+00:00",
       "started_at": "2026-06-04T02:17:02+00:00",
       "completed_at": "2026-06-04T02:22:55+00:00",
-      "archived_at": "2026-06-04T02:23:09+00:00"
+      "archived_at": "2026-06-04T02:23:09+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0112",
@@ -4377,7 +4650,9 @@
       "locked_at": "2026-06-04T02:27:09+00:00",
       "started_at": "2026-06-04T02:27:09+00:00",
       "completed_at": "2026-06-04T02:36:15+00:00",
-      "archived_at": "2026-06-04T02:36:24+00:00"
+      "archived_at": "2026-06-04T02:36:24+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0113",
@@ -4424,7 +4699,9 @@
       "locked_at": "2026-06-04T02:38:43+00:00",
       "started_at": "2026-06-04T02:38:43+00:00",
       "completed_at": "2026-06-04T02:44:59+00:00",
-      "archived_at": "2026-06-04T02:45:12+00:00"
+      "archived_at": "2026-06-04T02:45:12+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0119",
@@ -4461,7 +4738,9 @@
       "locked_at": "2026-06-04T02:47:22+00:00",
       "started_at": "2026-06-04T02:47:22+00:00",
       "completed_at": "2026-06-04T02:50:33+00:00",
-      "archived_at": "2026-06-04T02:50:45+00:00"
+      "archived_at": "2026-06-04T02:50:45+00:00",
+      "verification_ids": [],
+      "verification_force": false
     },
     {
       "id": "T-0121",
@@ -4498,7 +4777,488 @@
       "locked_at": "2026-06-05T07:06:13+00:00",
       "started_at": "2026-06-05T07:06:13+00:00",
       "completed_at": "2026-06-05T07:18:16+00:00",
-      "archived_at": "2026-06-05T07:18:16+00:00"
+      "archived_at": "2026-06-05T07:18:16+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0122",
+      "title": "执行 GSD Pi vs ai-board 双 key Claude Code 端到端对比测试",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "竞品评估",
+      "source": "T-0120 拆分：真实运行两个 Claude Code 会话，用两个 API key 计量 token/cost",
+      "owner_agent": "codex-00",
+      "scope": [
+        "docs/项目路线/GSD-Pi-vs-ai-board端到端对比测试报告.md",
+        "tmp/gsd-core-smoke",
+        "tmp/gsd-vs-ai-board/prompts",
+        "tmp/gsd-vs-ai-board/reports",
+        "tmp/gsd-vs-ai-board/run-gsd-core"
+      ],
+      "verify_scope": [
+        "docs/项目路线",
+        "tmp/gsd-vs-ai-board"
+      ],
+      "depends_on": [
+        "T-0121"
+      ],
+      "acceptance": [
+        "使用两个独立 API key、两个隔离目录、两个全新 Claude Code 会话完成同一任务",
+        "从 Anthropic 后台或导出数据记录两 key 的 input/output/cache/cost/request 数据",
+        "记录耗时、文件改动、状态文件体量、人工干预次数和最终验收结果",
+        "归档完整报告，说明 ai-board 是否真的更轻量及证据强度"
+      ],
+      "verification": "已完成同类小型 Python CLI JSON 输出任务对比。GSD Core 1.3.1 + Claude Code 使用 fast workflow 完成任务，提交 147a313，验收通过，用户 dashboard 实测约 2.4M tokens。ai-board 0.1.20 + Claude Code 完成同类任务，doctor ok，验收通过，用户 dashboard 实测约 1.6M tokens。最终报告已写入 tmp/gsd-vs-ai-board/reports/final-report.md，主报告已同步结论：ai-board 在本任务少用约 0.8M tokens，约少 33%，GSD Core 约为 ai-board 的 1.5 倍。",
+      "deferred_verification": "",
+      "leftovers": "未补 provider CSV 原始导出；本次 token 依据用户 dashboard 截图和口头实测记录。结论限定于本次同类小型确定性 CLI 任务，不外推到所有任务规模。",
+      "created_at": "2026-06-05T07:01:26+00:00",
+      "updated_at": "2026-06-05T09:58:29+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-05T09:41:10+00:00",
+      "started_at": "2026-06-05T08:58:40+00:00",
+      "completed_at": "2026-06-05T09:58:29+00:00",
+      "archived_at": "2026-06-05T09:58:29+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0124",
+      "title": "设计规划意图持久化与阶段路线检查",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "1.0 路线",
+      "source": "用户反馈：长期方向只留在聊天上下文，当前批任务做完后看板清空导致下一步断档",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/开发规范.md",
+        "docs/当前状态.md",
+        "docs/项目路线/规划意图持久化与阶段路线检查.md",
+        "src/ai_board/skill_guides.py",
+        "tests/test_skills_and_i18n.py"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "规划/排期后必须把长期方向、阶段拆分、当前只排期范围和后续待拆阶段落到项目路线文档或结构化看板，不得只留在聊天记录",
+        "当只排期一部分任务时，已知后续阶段必须以路线文档或需求池占位形式保留，并说明暂不展开的原因",
+        "评估并设计 next/doctor 在 active/scheduled/inbox 为空但路线仍有未完成阶段时的提醒规则",
+        "更新 ai-board skills get core 和开发规范口径：排期不是只排眼前任务，还要保存后续意图",
+        "给出最小实现范围和回归测试矩阵，避免把 roadmap 做成复杂项目管理系统"
+      ],
+      "verification": "uv run python -m unittest discover -s tests: 121 tests OK; uv run ai-board doctor --fail-on-issue: doctor ok; git diff --check: no whitespace errors",
+      "deferred_verification": "",
+      "leftovers": "next/doctor 的路线断档提醒本轮只完成设计，后续如需实现需单独排期",
+      "created_at": "2026-06-09T03:23:55+00:00",
+      "updated_at": "2026-06-09T03:30:29+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T03:29:21+00:00",
+      "started_at": "2026-06-09T03:24:48+00:00",
+      "completed_at": "2026-06-09T03:30:29+00:00",
+      "archived_at": "2026-06-09T03:30:29+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0125",
+      "title": "评估 GSD Core workflow 对 ai-board 规划与验证闭环的借鉴价值",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "竞品评估",
+      "source": "用户要求：学习 GSD Core README.zh-CN，评估其 workflow / phase / context engineering 对 ai-board 的可借鉴机制；参考 https://github.com/gsd-build/get-shit-done/blob/main/README.zh-CN.md",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/GSD-Core-workflow借鉴评估.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "阅读并归纳 GSD Core 中文 README 的核心主张：context rot、元提示/上下文工程、规格驱动开发、多运行时安装、阶段工作流和验证闭环",
+        "重点评估 GSD 的 PROJECT/REQUIREMENTS/ROADMAP/STATE/PLAN/SUMMARY 等规划文件设计，判断哪些可映射到 ai-board 的 docs/项目路线、当前状态、需求池和事件日志",
+        "重点评估 discuss-phase、plan-phase、execute-phase、verify-work、progress --next 等 workflow，对 ai-board T-0124 规划意图持久化、0.3 verification evidence、0.4 human review 的启发",
+        "明确不借鉴的部分：agent runtime、provider/runtime 安装器、跳过权限确认、重型子代理编排、复杂 milestone 平台或 token 营销叙事",
+        "输出 docs/项目路线 下的评估报告，给出 ai-board 是否新增 workflow guide 拆分、roadmap placeholder 检查、verify/review 设计调整的建议"
+      ],
+      "verification": "已阅读并归纳 GSD Core README/工作流资料；已输出 docs/项目路线/GSD-Core-workflow借鉴评估.md；已更新 docs/当前状态.md；已将 workflow guide 拆分、路线断档检查、coverage warning、UAT/deferred verification debt、pause/handoff note 五个后续机制任务写入需求池；ai-board doctor --fail-on-issue 通过。",
+      "deferred_verification": "",
+      "leftovers": "无代码改动；本任务是机制评估，未运行单元测试。后续实现工作已拆为 T-0126 至 T-0130。",
+      "created_at": "2026-06-09T03:40:17+00:00",
+      "updated_at": "2026-06-09T03:56:36+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T03:42:01+00:00",
+      "started_at": "2026-06-09T03:42:01+00:00",
+      "completed_at": "2026-06-09T03:56:30+00:00",
+      "archived_at": "2026-06-09T03:56:36+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0123",
+      "title": "评估 GSD Pi 对 ai-board 1.0 路线的启发与边界",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "战略定位",
+      "source": "用户要求：把 GSD Pi 战略校准判断落到看板和文档",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/GSD-Pi对ai-board战略校准.md"
+      ],
+      "verify_scope": [
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "docs/项目路线"
+      ],
+      "depends_on": [],
+      "acceptance": [
+        "形成 docs/项目路线 下的 GSD Pi 对比与战略校准记录",
+        "明确 ai-board 不做 coding agent、provider routing、TUI/Web、扩展市场等大而全方向",
+        "明确可吸收的启发：worktree 只读建议、usage/context observability、schema/migration 重视程度",
+        "判断是否需要新增 worktree/observability 评估任务或调整 1.0 路线",
+        "给出 README 定位文案建议：agent-agnostic governance CLI，不替代 Claude/Codex"
+      ],
+      "verification": "已查阅 open-gsd/gsd-pi 当前 README 与 Open GSD 产品页/文档；已输出 docs/项目路线/GSD-Pi对ai-board战略校准.md；已明确 ai-board 不做 coding agent、provider routing、TUI/Web、扩展市场或 worktree executor；已更新 docs/当前状态.md；已新增 T-0131 git worktree/branch 隔离建议机制与 T-0132 usage/context observability 治理指标；ai-board doctor --fail-on-issue 通过。",
+      "deferred_verification": "",
+      "leftovers": "README 定位文案本轮只给建议，未直接改 README；后续可在发布或 README 口径任务中落地。",
+      "created_at": "2026-06-05T07:02:06+00:00",
+      "updated_at": "2026-06-09T04:25:02+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T04:22:20+00:00",
+      "started_at": "2026-06-09T04:22:20+00:00",
+      "completed_at": "2026-06-09T04:24:55+00:00",
+      "archived_at": "2026-06-09T04:25:02+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0120",
+      "title": "设计并执行 GSD Pi 与 ai-board 轻量性对比评估",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "竞品评估",
+      "source": "用户要求：严谨对比 GSD 和 ai-board，量化 token 消耗和轻量性",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/GSD-Pi-vs-ai-board端到端对比测试报告.md",
+        "docs/项目路线/GSD-Pi对ai-board战略校准.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成可复现实验方案，明确 token、时间、文件改动、安装体量和上下文开销指标",
+        "至少在一个临时项目中对 GSD Pi 和 ai-board 跑同类任务并记录证据",
+        "输出评估报告，区分事实数据、推断和不确定项",
+        "根据结果判断是否需要调整 ai-board 迭代路线"
+      ],
+      "verification": "父任务已由子任务完成：T-0121 建立隔离测试基线，T-0122 执行 GSD Core vs ai-board 端到端对比并记录 token、耗时、diff、验收和限制，T-0123 完成 GSD Pi 战略边界校准。主报告见 docs/项目路线/GSD-Pi-vs-ai-board端到端对比测试报告.md，最终数据见 tmp/gsd-vs-ai-board/reports/final-report.md；结论是本次小型确定性任务中 ai-board 约 1.6M tokens，GSD Core 约 2.4M tokens，ai-board 少约 33%，但结论限定于本次样本。",
+      "deferred_verification": "",
+      "leftovers": "无；后续路线启发已拆为 T-0131 和 T-0132。",
+      "created_at": "2026-06-05T06:49:27+00:00",
+      "updated_at": "2026-06-09T04:27:35+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T04:27:07+00:00",
+      "started_at": "2026-06-09T04:27:07+00:00",
+      "completed_at": "2026-06-09T04:27:25+00:00",
+      "archived_at": "2026-06-09T04:27:35+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0114",
+      "title": "评估 0.3 verification evidence 方案",
+      "description": "0.2 之后评估 verify 命令、自动命令证据、manual verification 标记和 complete 引用验证记录的设计，不并入 0.2 实现。",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "1.0 路线规划：0.2 后补验收证据闭环",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/0.3-verification-evidence.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 verify / complete 关系设计",
+        "明确自动验证与手工验证的证据强度差异",
+        "决定是否在 0.3 实现 verification evidence"
+      ],
+      "verification": "已形成 docs/项目路线/0.3-verification-evidence.md，明确 verify / complete 关系：verify 记录 automated/manual/uat/deferred/blocked 五类证据，complete 可通过 --verification-id 引用证据；自动验证与手工验证的证据强度已区分；结论是 0.3 应实现 verification evidence。已拆分实现任务：T-0134 数据模型与事件日志，T-0133 verify --run/--manual，T-0135 complete --verification-id 与展示检查；ai-board doctor --fail-on-issue 通过。",
+      "deferred_verification": "",
+      "leftovers": "UAT/deferred debt 细化留给 T-0129；本轮为设计文档，无代码改动，未运行单元测试。",
+      "created_at": "2026-06-03T10:40:26+00:00",
+      "updated_at": "2026-06-09T04:30:25+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T04:27:50+00:00",
+      "started_at": "2026-06-09T04:27:50+00:00",
+      "completed_at": "2026-06-09T04:30:18+00:00",
+      "archived_at": "2026-06-09T04:30:25+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0134",
+      "title": "实现 verification evidence 数据模型与事件日志",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "0.3 verification evidence 方案：最小证据记录能力",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/operations.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0114"
+      ],
+      "acceptance": [
+        "在 board schema 中加入 verifications 或等价结构，并保持旧 board 兼容",
+        "生成稳定的 V-xxxx 验证记录 ID",
+        "写入 verification.recorded / verification.failed / verification.deferred 等事件",
+        "测试覆盖旧 board 补默认值、验证记录序列化和事件日志"
+      ],
+      "verification": "已实现 verification evidence 底层数据模型与事件日志：default/normalize board 支持 next_verification_id 与 verifications；旧 board 自动补默认字段；新增 V-xxxx ID 生成；新增 record_verification_evidence 内部操作函数，能写入 automated/manual/uat/deferred/blocked 证据并记录 verification.recorded / verification.failed / verification.deferred 事件。验证：uv run python -m unittest discover -s tests 通过（122 tests OK）；uv run --with ruff ruff check src/ai_board tests 通过；uv run ai-board doctor --fail-on-issue 通过。",
+      "deferred_verification": "",
+      "leftovers": "CLI verify 命令尚未暴露，留给 T-0133；complete --verification-id 和展示检查留给 T-0135。全仓 ruff check . 受历史 tmp/gsd-vs-ai-board 示例测试文件 import 排序影响失败，未修改这些非本任务 scope 文件。",
+      "created_at": "2026-06-09T04:29:04+00:00",
+      "updated_at": "2026-06-09T06:12:01+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T06:06:24+00:00",
+      "started_at": "2026-06-09T06:06:24+00:00",
+      "completed_at": "2026-06-09T06:11:25+00:00",
+      "archived_at": "2026-06-09T06:12:01+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0133",
+      "title": "实现 verify --run 与 verify --manual 命令",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "0.3 verification evidence 方案：自动与手工验证入口",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/parser.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0134"
+      ],
+      "acceptance": [
+        "verify --run 能执行命令、记录退出码、时间、输出摘要和 passed/failed 状态",
+        "verify --manual 能记录手工验证说明，并明确标记为 manual",
+        "长输出要截断，失败命令要保留证据并返回非零",
+        "测试覆盖成功命令、失败命令、长输出、手工验证和 Windows quoting 基础场景"
+      ],
+      "verification": "已实现 ai-board verify：--run 会在项目根执行命令，记录 automated/passed 或 automated/failed 证据、退出码、短摘要和截断输出；失败命令会先保存 failed evidence 再返回非零；--manual 会记录 manual/passed 证据。已用新命令记录本任务验证证据：V-0001 ruff check src/ai_board tests passed；V-0002 unittest discover -s tests passed。额外验证：doctor --fail-on-issue 通过。",
+      "deferred_verification": "",
+      "leftovers": "complete --verification-id 尚未实现，留给 T-0135；verify 证据目前可在 board/events 中看到，show 的关联展示也留给 T-0135。",
+      "created_at": "2026-06-09T04:29:04+00:00",
+      "updated_at": "2026-06-09T06:24:34+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T06:15:25+00:00",
+      "started_at": "2026-06-09T06:15:25+00:00",
+      "completed_at": "2026-06-09T06:24:16+00:00",
+      "archived_at": "2026-06-09T06:24:34+00:00",
+      "verification_ids": [],
+      "verification_force": false
+    },
+    {
+      "id": "T-0135",
+      "title": "实现 complete --verification-id 与验证证据展示",
+      "description": "",
+      "priority": "P1",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "0.3 verification evidence 方案：完成任务引用证据",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "src/ai_board/cli.py",
+        "src/ai_board/operations.py",
+        "src/ai_board/parser.py",
+        "src/ai_board/store.py",
+        "tests/test_cli.py"
+      ],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0133",
+        "T-0134"
+      ],
+      "acceptance": [
+        "complete 支持引用一个或多个 verification ID",
+        "引用不存在或 failed evidence 时给出清楚错误或 force 规则",
+        "show/history 能展示任务关联的验证证据摘要",
+        "兼容旧 complete --verification 文本，但明确它不是 automated evidence"
+      ],
+      "verification": "verification evidence: V-0003, V-0004, V-0005",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-09T04:29:04+00:00",
+      "updated_at": "2026-06-09T06:41:50+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T06:32:25+00:00",
+      "started_at": "2026-06-09T06:32:25+00:00",
+      "verification_ids": [
+        "V-0003",
+        "V-0004",
+        "V-0005"
+      ],
+      "verification_force": false,
+      "completed_at": "2026-06-09T06:41:38+00:00",
+      "archived_at": "2026-06-09T06:41:50+00:00"
+    },
+    {
+      "id": "T-0129",
+      "title": "扩展 0.3 verification evidence：UAT 与 deferred debt 模型",
+      "description": "参考 GSD Core 的 verify-work、UAT.md、audit-uat 和 verification debt 思路，把 0.3 verification evidence 从命令输出扩展为可区分自动验证、人工验证、用户验收和延期验证债务的证据模型。",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "信任闭环",
+      "source": "GSD Core workflow 借鉴评估：verify-work / UAT / audit-uat 机制",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/0.3-verification-evidence.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [
+        "T-0114"
+      ],
+      "acceptance": [
+        "区分 automated、manual、uat、deferred、blocked 五类验证证据，并明确每类证据的可信度和适用场景",
+        "借鉴 GSD verify-work，设计用户逐项确认的 UAT 记录方式：通过、失败、跳过、阻塞、备注和后续修复任务",
+        "明确 complete 引用不同证据类型时的规则：哪些可视为完成，哪些必须进入 leftovers 或 deferred_verification",
+        "明确 verification debt 的生命周期：产生、展示、恢复验证、关闭、转为 blocked 或新任务",
+        "明确 next/review 如何优先暴露未收口验证债务，避免任务 archived 后验证问题消失在历史里",
+        "输出与 0.3 verify 命令、0.4 review 命令的衔接设计和测试矩阵"
+      ],
+      "verification": "verification evidence: V-0006, V-0007",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-09T03:55:40+00:00",
+      "updated_at": "2026-06-09T07:00:08+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [
+        "V-0006",
+        "V-0007"
+      ],
+      "verification_force": false,
+      "locked_at": "2026-06-09T06:52:25+00:00",
+      "started_at": "2026-06-09T06:52:25+00:00",
+      "completed_at": "2026-06-09T06:59:53+00:00",
+      "archived_at": "2026-06-09T07:00:08+00:00"
+    },
+    {
+      "id": "T-0115",
+      "title": "规划 0.4 human review 能力",
+      "description": "评估 review --since / review --from，汇总任务、事件、改动文件、scope 匹配、验证证据和 leftovers。",
+      "priority": "P2",
+      "status": "archived",
+      "lane": "1.0 路线",
+      "source": "1.0 迭代路线：人类审计面",
+      "owner_agent": "codex",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/0.4-human-review.md"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "形成 human review 命令设计",
+        "明确 review 与 history、doctor、git diff 的分工",
+        "给出 0.4 实现范围和测试矩阵"
+      ],
+      "verification": "verification evidence: V-0008, V-0009",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-04T02:11:25+00:00",
+      "updated_at": "2026-06-09T07:14:17+00:00",
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "verification_ids": [
+        "V-0008",
+        "V-0009"
+      ],
+      "verification_force": false,
+      "locked_at": "2026-06-09T07:10:18+00:00",
+      "started_at": "2026-06-09T07:10:18+00:00",
+      "completed_at": "2026-06-09T07:14:01+00:00",
+      "archived_at": "2026-06-09T07:14:17+00:00"
+    },
+    {
+      "id": "T-0136",
+      "title": "发布 0.3.0",
+      "description": "",
+      "priority": "P0",
+      "status": "archived",
+      "lane": "发布",
+      "source": "用户要求发布 0.3.0",
+      "owner_agent": "codex",
+      "scope": [
+        "CHANGELOG.md",
+        "README.md",
+        "README_en.md",
+        "docs/当前状态.md",
+        "pyproject.toml",
+        "src/ai_board/__init__.py"
+      ],
+      "verify_scope": [],
+      "depends_on": [],
+      "acceptance": [
+        "版本号同步为 0.3.0",
+        "CHANGELOG 记录 v0.3.0",
+        "本地发布前检查通过",
+        "使用 dev-null-sec 身份提交、打 tag 并推送"
+      ],
+      "verification": "verification evidence: V-0010, V-0011, V-0012, V-0013, V-0014, V-0015",
+      "deferred_verification": "",
+      "leftovers": "无",
+      "created_at": "2026-06-09T07:17:24+00:00",
+      "updated_at": "2026-06-09T07:24:54+00:00",
+      "verification_ids": [
+        "V-0010",
+        "V-0011",
+        "V-0012",
+        "V-0013",
+        "V-0014",
+        "V-0015"
+      ],
+      "verification_force": false,
+      "lock_owner": "",
+      "lease_expires_at": "",
+      "locked_at": "2026-06-09T07:17:39+00:00",
+      "started_at": "2026-06-09T07:17:39+00:00",
+      "completed_at": "2026-06-09T07:24:39+00:00",
+      "archived_at": "2026-06-09T07:24:54+00:00"
     }
   ],
   "agents": [
@@ -4509,9 +5269,9 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-14T04:21:23+00:00",
-      "updated_at": "2026-06-05T07:18:16+00:00",
+      "updated_at": "2026-06-05T09:58:29+00:00",
       "claimed_at": "2026-05-14T04:21:23+00:00",
-      "released_at": "2026-06-05T07:18:16+00:00"
+      "released_at": "2026-06-05T09:58:29+00:00"
     },
     {
       "id": "codex-01",
@@ -4531,9 +5291,274 @@
       "task_id": "",
       "lease_expires_at": "",
       "created_at": "2026-05-30T07:02:34+00:00",
-      "updated_at": "2026-06-03T06:07:15+00:00",
+      "updated_at": "2026-06-09T07:24:39+00:00",
       "claimed_at": "2026-05-30T07:02:34+00:00",
-      "released_at": "2026-06-03T06:07:15+00:00"
+      "released_at": "2026-06-09T07:24:39+00:00"
+    }
+  ],
+  "next_verification_id": 16,
+  "verifications": [
+    {
+      "id": "V-0001",
+      "task_id": "T-0133",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run --with ruff ruff check src/ai_board tests",
+      "exit_code": 0,
+      "summary": "All checks passed!",
+      "output_excerpt": "All checks passed!",
+      "scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:23:10+00:00"
+    },
+    {
+      "id": "V-0002",
+      "task_id": "T-0133",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run python -m unittest discover -s tests",
+      "exit_code": 0,
+      "summary": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpnf0113zn",
+      "output_excerpt": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpnf0113zn\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Setup base\nT-0002 [inbox] P1 Build platform task\nT-0003 [inbox] P0 Write content task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp_faozesd\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Task A\nT-0002 [inbox] P2 Task B\nT-0001 [scheduled] P2 Task A\nT-0002 [scheduled] P2 Task B\nT-0001 [active] P2 Task A\nT-0002 [active] P2 Task B\nT-0001 [done] P2 Task A\nT-0001 [archived] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmph1wgughy\nguardrail docs: 7\nnext: ai-board onboard\nmulti_agent_enabled: true\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:23:12+00:00\nT-0001 [inbox] P2 Locked task\nT-0001 [scheduled] P2 Locked task\nT-0001 [active] P2 Locked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp8rp50ewh\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:23:13+00:00\ncodex-00 [idle] kind=codex task=none lease_expires_at=none\nT-0001 [inbox] P2 Blocked task\nT-0001 [blocked] P2 Blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmphdy9dp2t\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:23:13+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [blocked] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [done] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpsv9zo_1z\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Stale blocked task\nT-0002 [inbox] P2 Retry blocked task\nT-0001 [blocked] P2 Stale blocked task\nT-0002 [blocked] P2 Retry blocked task\nT-0001 [archived] P2 Stale blocked task\nT-0002 [scheduled] P2 Retry blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp2k2cdxe6\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inb\n... output truncated ...\n0001 [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpzil6nj_d\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: off\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpsjpj4yy1\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpc6jtw51t\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpcodqszat\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:23:33+00:00\nT-0001 [inbox] P2 Gate task\nT-0001 [scheduled] P2 Gate task\nT-0001 [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpv_a0c1l9\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: suggest\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpbwnql4h5\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T10:23:33+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpti51cqjo\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T10:23:33+00:00\nT-0001 [inbox] P2 Document API\nT-0001 [scheduled] P2 Document API\nT-0001 [active] P2 Document API\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpapp9c3kd\nguardrail docs: 7\nnext: ai-board onboard\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpu3ttbiay\nguardrail docs: 7\nnext: ai-board onboard\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\n\n..............................................................................................................................\n----------------------------------------------------------------------\nRan 126 tests in 22.456s\n\nOK",
+      "scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:23:34+00:00"
+    },
+    {
+      "id": "V-0003",
+      "task_id": "T-0135",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run --with ruff ruff check src/ai_board tests",
+      "exit_code": 0,
+      "summary": "All checks passed!",
+      "output_excerpt": "All checks passed!",
+      "scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:40:25+00:00"
+    },
+    {
+      "id": "V-0004",
+      "task_id": "T-0135",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run python -m unittest discover -s tests",
+      "exit_code": 0,
+      "summary": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpgineyiy1",
+      "output_excerpt": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpgineyiy1\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Setup base\nT-0002 [inbox] P1 Build platform task\nT-0003 [inbox] P0 Write content task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpavitzst3\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Task A\nT-0002 [inbox] P2 Task B\nT-0001 [scheduled] P2 Task A\nT-0002 [scheduled] P2 Task B\nT-0001 [active] P2 Task A\nT-0002 [active] P2 Task B\nT-0001 [done] P2 Task A\nT-0001 [archived] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpro533s21\nguardrail docs: 7\nnext: ai-board onboard\nmulti_agent_enabled: true\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:40:39+00:00\nT-0001 [inbox] P2 Locked task\nT-0001 [scheduled] P2 Locked task\nT-0001 [active] P2 Locked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpes93da61\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:40:39+00:00\ncodex-00 [idle] kind=codex task=none lease_expires_at=none\nT-0001 [inbox] P2 Blocked task\nT-0001 [blocked] P2 Blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpphoqqh54\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:40:39+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [blocked] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [done] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmprgivrzlp\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Stale blocked task\nT-0002 [inbox] P2 Retry blocked task\nT-0001 [blocked] P2 Stale blocked task\nT-0002 [blocked] P2 Retry blocked task\nT-0001 [archived] P2 Stale blocked task\nT-0002 [scheduled] P2 Retry blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpi3_9awpj\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inb\n... output truncated ...\n [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpc_ws2i_u\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: off\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpxx_vhwo4\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpke9ys_4v\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpjh1vsqsb\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T10:41:05+00:00\nT-0001 [inbox] P2 Gate task\nT-0001 [scheduled] P2 Gate task\nT-0001 [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpcas4frui\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: suggest\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp3v169s7z\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T10:41:05+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmptla37lrf\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T10:41:05+00:00\nT-0001 [inbox] P2 Document API\nT-0001 [scheduled] P2 Document API\nT-0001 [active] P2 Document API\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp21q3a00e\nguardrail docs: 7\nnext: ai-board onboard\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpeqvjyif3\nguardrail docs: 7\nnext: ai-board onboard\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\n\n..................................................................................................................................\n----------------------------------------------------------------------\nRan 130 tests in 28.037s\n\nOK",
+      "scope": [
+        "src/ai_board",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:41:06+00:00"
+    },
+    {
+      "id": "V-0005",
+      "task_id": "T-0135",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run ai-board doctor --fail-on-issue",
+      "exit_code": 0,
+      "summary": "board lock: ok",
+      "output_excerpt": "board lock: ok\ngit: ok\nscope gate hook: missing (suggest mode; run `ai-board hooks install pre-commit` to enable)\nboard schema: ok\nscope conflicts: ok\ngenerated docs: ok\nevent log: ok (574 events)\ndoctor: ok",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:41:23+00:00"
+    },
+    {
+      "id": "V-0006",
+      "task_id": "T-0129",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run ai-board doctor --fail-on-issue",
+      "exit_code": 0,
+      "summary": "board lock: ok",
+      "output_excerpt": "board lock: ok\ngit: ok\nscope gate hook: missing (suggest mode; run `ai-board hooks install pre-commit` to enable)\nboard schema: ok\nscope conflicts: ok\ngenerated docs: ok\nevent log: ok (579 events)\ndoctor: ok",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:59:22+00:00"
+    },
+    {
+      "id": "V-0007",
+      "task_id": "T-0129",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "rg -n UAT docs/项目路线/0.3-verification-evidence.md docs/当前状态.md",
+      "exit_code": 0,
+      "summary": "docs/当前状态.md:90:- 已完成 GSD Core workflow 机制评估：结论是不改变 ai-board 的轻量治理层方向，但应吸收 GSD 的上下文投影、progress router、requirements/decision coverage gate、UAT/deferred verification debt 和 pause/handoff 思路；评估记录见 `docs/项目路线/GSD-Core-workflow借鉴评估.md`，后续应把这些...",
+      "output_excerpt": "docs/当前状态.md:90:- 已完成 GSD Core workflow 机制评估：结论是不改变 ai-board 的轻量治理层方向，但应吸收 GSD 的上下文投影、progress router、requirements/decision coverage gate、UAT/deferred verification debt 和 pause/handoff 思路；评估记录见 `docs/项目路线/GSD-Core-workflow借鉴评估.md`，后续应把这些机制拆入 0.3 verification evidence、0.4 human review 和规划意图持久化的工程化任务。\ndocs/当前状态.md:96:- 已细化 0.3 UAT 与 verification debt 设计：`automated`、`manual`、`uat`、`deferred`、`blocked` 五类证据的可信度、适用场景、complete 引用规则、debt 生命周期、next/review/doctor 分工和扩展测试矩阵已写入 `docs/项目路线/0.3-verification-evidence.md`。当前只是设计结论，尚未实现 `verify --uat`、`verify --deferred`、debt 关闭或 review 消费。\ndocs/当前状态.md:162:先读 `docs/计划看板.md`，按“正在进行”和“下一批”的顺序推进。后续版本路线看 `docs/项目路线/1.0-迭代路线.md`。如果用户要求规划或排期，记得把后续阶段写入路线文档或需求池占位，不要只排当前任务后把下一步留在聊天里。0.3 verification evidence 的最小闭环和 UAT/debt 设计已经完成；下一步可以排 0.4 human review 规划，或把 UAT/debt 拆成后续实现任务。\ndocs/项目路线/0.3-verification-evidence.md:52:参考 GSD Core 的 verify-work / UAT / verification debt 思路，ai-board 0.3 建议支持五类证据。\ndocs/项目路线/0.3-verification-evidence.md:85:- UAT 证据回答“用户认为它是不是符合预期”。\ndocs/项目路线/0.3-verification-evidence.md:186:0.3 可以先不做完整交互式 UAT，但数据模型应预留。\ndocs/项目路线/0.3-verification-evidence.md:194:后续再扩展为逐项 UAT：\ndocs/项目路线/0.3-verification-evidence.md:201:建议 UAT 最小记录结构：\ndocs/项目路线/0.3-verification-evidence.md:227:UAT 不建议做成复杂表单系统。0.3/0.4 的合理形态是：\ndocs/项目路线/0.3-verification-evidence.md:229:- `verify --uat \"一句总体验收\"`：记录一条简单 UAT 证据。\ndocs/项目路线/0.3-verification-evidence.md:231:- 当 UAT item 失败时，工具不自动修复；它只记录事实，并建议新建修复任务或把当前任务 reopen。\ndocs/项目路线/0.3-verification-evidence.md:408:UAT 和 deferred debt 可以在 `T-0129` 中继续细化，不必全部塞进第一版实现。\ndocs/项目路线/0.3-verification-evidence.md:428:UAT / debt 扩展测试：\ndocs/项目路线/0.3-verification-evidence.md:434:| UAT item failed | complete 默认拒绝，或要求 `--force` 和 leftovers |\ndocs/项目路线/0.3-verification-evidence.md:453:- 不做复杂 UAT 系统；\ndocs/项目路线/0.3-verification-evidence.md:462:5. 再由 `T-0129` 细化 UAT 和 deferred debt。",
+      "scope": [
+        "docs/当前状态.md",
+        "docs/项目路线/0.3-verification-evidence.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T06:59:40+00:00"
+    },
+    {
+      "id": "V-0008",
+      "task_id": "T-0115",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run ai-board doctor --fail-on-issue",
+      "exit_code": 0,
+      "summary": "board lock: ok",
+      "output_excerpt": "board lock: ok\ngit: ok\nscope gate hook: missing (suggest mode; run `ai-board hooks install pre-commit` to enable)\nboard schema: ok\nscope conflicts: ok\ngenerated docs: ok\nevent log: ok (585 events)\ndoctor: ok",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:13:24+00:00"
+    },
+    {
+      "id": "V-0009",
+      "task_id": "T-0115",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "rg -n review docs/项目路线/0.4-human-review.md",
+      "exit_code": 0,
+      "summary": "1:# 0.4 human review 方案",
+      "output_excerpt": "1:# 0.4 human review 方案\n21:0.4 的 `review` 就做这件事。\n25:`review` 不是项目管理看板，也不是 Web UI。\n39:> 我作为人类 reviewer，今天要不要放心继续往下走？\n50:- 自动生成 PR review；\n62:ai-board review\n63:ai-board review --since 2026-06-09\n64:ai-board review --from T-0129\n65:ai-board review --agent codex\n66:ai-board review --format json\n86:说明本次 review 范围：\n97:review window: since 2026-06-09T00:00:00+08:00\n127:review 应展示：\n139:review 不替代 `gate pre-commit`，但应该复用同一套路径判断规则，回答：\n154:- risk: README.md changed but no reviewed task scope covers it\n215:| `review` | 汇总最近 AI 行为，给人审计 | 不替代 diff、测试、CI、人工 code review |\n222:- `review` 是给人看的复盘。\n240:- review 只汇总，不创造新事实；\n249:### T-0.4-1：review 数据聚合\n275:- review window；\n289:| 无事件 | `review` 输出 no recent activity |\n300:| 非 git 项目 | review 仍可输出任务和事件，git 部分提示 unavailable |\n350:0.4 是 human review 的基础层。\n354:- 0.5 schema migration：review JSON 输出字段也应纳入兼容考虑；\n355:- 0.6 multi-agent：review 可按 agent 汇总 notice、锁、scope 冲突和未收口消息；\n356:- 1.0 release gate：发布前可以跑 `doctor`、`conflicts`、`review --since <last tag>` 作为人工检查清单；\n357:- usage/context observability：可以从 review 风险中提炼长期指标，但不要在 0.4 先做指标平台。\n361:0.4 应实现 `review`。\n369:但边界也要清楚：`review` 只能整理事实，不能替人判断代码是否真的正确。",
+      "scope": [
+        "docs/项目路线/0.4-human-review.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:13:47+00:00"
+    },
+    {
+      "id": "V-0010",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run ai-board conflicts --fail-on-conflict",
+      "exit_code": 0,
+      "summary": "no conflicts",
+      "output_excerpt": "no conflicts",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:23:16+00:00"
+    },
+    {
+      "id": "V-0011",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run --with ruff ruff check .",
+      "exit_code": 0,
+      "summary": "All checks passed!",
+      "output_excerpt": "All checks passed!",
+      "scope": [
+        "pyproject.toml",
+        "src",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:23:16+00:00"
+    },
+    {
+      "id": "V-0012",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run ai-board doctor --fail-on-issue",
+      "exit_code": 0,
+      "summary": "board lock: ok",
+      "output_excerpt": "board lock: ok\ngit: ok\nscope gate hook: missing (suggest mode; run `ai-board hooks install pre-commit` to enable)\nboard schema: ok\nscope conflicts: ok\ngenerated docs: ok\nevent log: ok (594 events)\ndoctor: ok",
+      "scope": [
+        ".ai-board",
+        "docs/归档计划看板.md",
+        "docs/计划看板.md"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:23:16+00:00"
+    },
+    {
+      "id": "V-0013",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run python -m unittest discover -s tests",
+      "exit_code": 0,
+      "summary": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpxal62xcy",
+      "output_excerpt": "initialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpxal62xcy\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Setup base\nT-0002 [inbox] P1 Build platform task\nT-0003 [inbox] P0 Write content task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmps6n0ltky\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Task A\nT-0002 [inbox] P2 Task B\nT-0001 [scheduled] P2 Task A\nT-0002 [scheduled] P2 Task B\nT-0001 [active] P2 Task A\nT-0002 [active] P2 Task B\nT-0001 [done] P2 Task A\nT-0001 [archived] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpk3vutid2\nguardrail docs: 7\nnext: ai-board onboard\nmulti_agent_enabled: true\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T11:23:17+00:00\nT-0001 [inbox] P2 Locked task\nT-0001 [scheduled] P2 Locked task\nT-0001 [active] P2 Locked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpioa1tdzj\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T11:23:17+00:00\ncodex-00 [idle] kind=codex task=none lease_expires_at=none\nT-0001 [inbox] P2 Blocked task\nT-0001 [blocked] P2 Blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpv4eylw_q\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T11:23:17+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [blocked] P2 Task A\nT-0001 [scheduled] P2 Task A\nT-0001 [active] P2 Task A\nT-0001 [done] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp3p946ybp\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inbox] P2 Stale blocked task\nT-0002 [inbox] P2 Retry blocked task\nT-0001 [blocked] P2 Stale blocked task\nT-0002 [blocked] P2 Retry blocked task\nT-0001 [archived] P2 Stale blocked task\nT-0002 [scheduled] P2 Retry blocked task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpsebz5ws0\nguardrail docs: 7\nnext: ai-board onboard\nT-0001 [inb\n... output truncated ...\n [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpdc975ckx\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: off\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpefv8lhxw\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpalu_314u\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpswjunxzf\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: required\nrendered docs\ncodex-00 [busy] kind=codex task=none lease_expires_at=2026-06-09T11:23:39+00:00\nT-0001 [inbox] P2 Gate task\nT-0001 [scheduled] P2 Gate task\nT-0001 [active] P2 Gate task\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpf5wcdfvw\nguardrail docs: 7\nnext: ai-board onboard\nscope_gate: suggest\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp6ipqmsan\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T11:23:39+00:00\nT-0001 [inbox] P2 Task A\nT-0001 [scheduled] P2 Task A\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp7fyejxw9\nguardrail docs: 7\nnext: ai-board onboard\ncodex-00 [busy] 类型=codex 任务=无 租约到期=2026-06-09T11:23:39+00:00\nT-0001 [inbox] P2 Document API\nT-0001 [scheduled] P2 Document API\nT-0001 [active] P2 Document API\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpg1icjbus\nguardrail docs: 7\nnext: ai-board onboard\nrendered docs\ninitialized: C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpojpb9061\nguardrail docs: 7\nnext: ai-board onboard\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\ncore  Core ai-board workflow, commands, conflict checks, and agent rules.\n\n..................................................................................................................................\n----------------------------------------------------------------------\nRan 130 tests in 24.396s\n\nOK",
+      "scope": [
+        "src",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:23:41+00:00"
+    },
+    {
+      "id": "V-0014",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "powershell -NoProfile -Command uv run --with twine twine check dist/*",
+      "exit_code": 0,
+      "summary": "Checking dist\\ai_board-0.3.0-py3-none-any.whl: PASSED",
+      "output_excerpt": "Checking dist\\ai_board-0.3.0-py3-none-any.whl: PASSED\nChecking dist\\ai_board-0.3.0.tar.gz: PASSED",
+      "scope": [
+        "dist"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:24:07+00:00"
+    },
+    {
+      "id": "V-0015",
+      "task_id": "T-0136",
+      "kind": "automated",
+      "status": "passed",
+      "agent": "codex",
+      "command": "uv run --python 3.12 --with build python -m build",
+      "exit_code": 0,
+      "summary": "running egg_info",
+      "output_excerpt": "running egg_info\nwriting src\\ai_board.egg-info\\PKG-INFO\nwriting dependency_links to src\\ai_board.egg-info\\dependency_links.txt\nwriting entry points to src\\ai_board.egg-info\\entry_points.txt\nwriting requirements to src\\ai_board.egg-info\\requires.txt\nwriting top-level names to src\\ai_board.egg-info\\top_level.txt\nreading manifest file 'src\\ai_board.egg-info\\SOURCES.txt'\nadding license file 'LICENSE'\nwriting manifest file 'src\\ai_board.egg-info\\SOURCES.txt'\nrunning sdist\nrunning egg_info\nwriting src\\ai_board.egg-info\\PKG-INFO\nwriting dependency_links to src\\ai_board.egg-info\\dependency_links.txt\nwriting entry points to src\\ai_board.egg-info\\entry_points.txt\nwriting requirements to src\\ai_board.egg-info\\requires.txt\nwriting top-level names to src\\ai_board.egg-info\\top_level.txt\nreading manifest file 'src\\ai_board.egg-info\\SOURCES.txt'\nadding license file 'LICENSE'\nwriting manifest file 'src\\ai_board.egg-info\\SOURCES.txt'\nrunning check\ncreating ai_board-0.3.0\ncreating ai_board-0.3.0\\src\\ai_board\ncreating ai_board-0.3.0\\src\\ai_board.egg-info\ncreating ai_board-0.3.0\\tests\ncopying files to ai_board-0.3.0...\ncopying LICENSE -> ai_board-0.3.0\ncopying README.md -> ai_board-0.3.0\ncopying pyproject.toml -> ai_board-0.3.0\ncopying src\\ai_board\\__init__.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\__main__.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\cli.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\datetime_utils.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\errors.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\gate.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\guardrails.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\onboarding.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\operations.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\parser.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\render.py -> ai_board-0.3.0\\src\\ai_board\ncopying src\\ai_board\\skill_guides.py -> ai_board-0.3.0\\src\\ai_board\ncopy\n... output truncated ...\ning build\\lib\\ai_board\\parser.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\ncopying build\\lib\\ai_board\\render.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\ncopying build\\lib\\ai_board\\skill_guides.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\ncopying build\\lib\\ai_board\\store.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\ncopying build\\lib\\ai_board\\__init__.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\ncopying build\\lib\\ai_board\\__main__.py -> build\\bdist.win-amd64\\wheel\\.\\ai_board\nrunning install_egg_info\nCopying src\\ai_board.egg-info to build\\bdist.win-amd64\\wheel\\.\\ai_board-0.3.0-py3.12.egg-info\nrunning install_scripts\ncreating build\\bdist.win-amd64\\wheel\\ai_board-0.3.0.dist-info\\WHEEL\ncreating 'D:\\\\Backup\\\\Documents\\\\������Զ����ά\\\\ai-board\\\\dist\\\\.tmp-i5jcn535\\\\ai_board-0.3.0-py3-none-any.whl' and adding 'build\\\\bdist.win-amd64\\\\wheel' to it\nadding 'ai_board/__init__.py'\nadding 'ai_board/__main__.py'\nadding 'ai_board/cli.py'\nadding 'ai_board/datetime_utils.py'\nadding 'ai_board/errors.py'\nadding 'ai_board/gate.py'\nadding 'ai_board/guardrails.py'\nadding 'ai_board/onboarding.py'\nadding 'ai_board/operations.py'\nadding 'ai_board/parser.py'\nadding 'ai_board/render.py'\nadding 'ai_board/skill_guides.py'\nadding 'ai_board/store.py'\nadding 'ai_board-0.3.0.dist-info/licenses/LICENSE'\nadding 'ai_board-0.3.0.dist-info/METADATA'\nadding 'ai_board-0.3.0.dist-info/WHEEL'\nadding 'ai_board-0.3.0.dist-info/entry_points.txt'\nadding 'ai_board-0.3.0.dist-info/top_level.txt'\nadding 'ai_board-0.3.0.dist-info/RECORD'\nremoving build\\bdist.win-amd64\\wheel\nSuccessfully built ai_board-0.3.0.tar.gz and ai_board-0.3.0-py3-none-any.whl\n\n* Creating isolated environment: venv+pip...\n* Installing packages in isolated environment:\n  - setuptools>=68\n* Getting build dependencies for sdist...\n* Building sdist...\n* Building wheel from sdist\n* Creating isolated environment: venv+pip...\n* Installing packages in isolated environment:\n  - setuptools>=68\n* Getting build dependencies for wheel...\n* Building wheel...",
+      "scope": [
+        "LICENSE",
+        "README.md",
+        "pyproject.toml",
+        "src",
+        "tests"
+      ],
+      "evidence_path": "",
+      "created_at": "2026-06-09T07:24:17+00:00"
     }
   ]
 }

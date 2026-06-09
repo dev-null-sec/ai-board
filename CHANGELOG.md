@@ -2,6 +2,46 @@
 
 `ai-board` 的重要版本变化会记录在这里。以后 Release 说明和更新日志默认使用中文。
 
+## v0.3.0 - 2026-06-09
+
+这个版本把验收从“agent 自己写一句测试通过”推进到 verification evidence。`verify` 会真实运行命令或记录手工验收，`complete` 可以引用这些证据，`show`、`history` 和 `doctor` 也能围绕证据做展示和检查。
+
+### 新增
+
+- 新增 verification evidence 数据模型：`.ai-board/board.json` 会记录 `next_verification_id` 和 `verifications`，验证记录使用 `V-0001` 这类 ID。
+- 新增验证证据类型和状态规范：当前模型支持 `automated`、`manual`、`uat`、`deferred`、`blocked`，以及 `passed`、`failed`、`skipped`、`blocked`、`deferred`。
+- 新增 `ai-board verify TASK --agent AGENT --run "COMMAND"`：在项目根运行命令，记录退出码、摘要和截断输出；命令失败也会保留失败证据并返回非零。
+- 新增 `ai-board verify TASK --agent AGENT --manual "TEXT"`：记录明确标记为 manual 的手工验收证据。
+- 新增 `complete --verification-id V-0001`，支持一条或多条验证证据作为完成依据。
+- `show` 会展示任务关联的 verification evidence 摘要。
+- `history` 会在事件中展示 verification ID、类型和退出码等关键信息。
+- `doctor` 会检查任务引用缺失证据、跨任务证据和未说明风险的非 passed evidence。
+
+### 调整
+
+- 旧的 `complete --verification "..."` 继续兼容，但定位为 free-text/manual-style 说明，不再暗示它是自动证据。
+- `complete --verification-id` 默认只接受同任务的 passed evidence；引用 failed / deferred / blocked 等非 passed 证据时，需要 `--force` 并写清 `--leftovers` 或 `--deferred-verification`。
+- `verify --run` 保存输出摘要时会截断长输出，避免 `board.json` 膨胀。
+- 0.3 路线文档补充了 UAT、deferred verification debt、blocked verification 的后续设计；这些是后续实现方向，不等同于当前命令已全部实现。
+- 0.4 human review 已形成方案文档，后续会把任务、事件、git diff、scope、验证证据和 leftovers 汇总成人类审计摘要。
+
+### 测试
+
+- 补充 verification evidence 数据模型、事件日志和旧 board 字段补全回归。
+- 补充 `verify --run` 成功、失败、长输出截断和 Windows quoting 基础回归。
+- 补充 `verify --manual` 回归。
+- 补充 `complete --verification-id` 成功、缺失证据、跨任务证据、failed evidence 默认拒绝和 `--force` 风险说明回归。
+- 补充 `show`、`history`、`doctor` 围绕验证证据的展示和完整性检查回归。
+
+### 发布前验证
+
+- `uv run ai-board conflicts --fail-on-conflict`
+- `uv run ai-board doctor --fail-on-issue`
+- `uv run --with ruff ruff check .`
+- `uv run python -m unittest discover -s tests`
+- `uv run --python 3.12 --with build python -m build`
+- `uv run --with twine twine check dist/*`
+
 ## v0.2.0 - 2026-06-04
 
 这个版本把 scope 约束从 `doctor` 的事后发现推进到 git 提交关口。它仍然不是运行时文件拦截或安全沙箱，而是在 commit 前检查 staged diff 是否落在 active task scope 内。

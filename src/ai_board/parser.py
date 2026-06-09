@@ -205,20 +205,45 @@ def register_subcommands(parser: argparse.ArgumentParser, language: str, handler
         help=help_text(language, "Complete an active task with verification.", "完成 active 任务并写入验收结果。"),
         epilog=help_text(
             language,
-            'Example:\n  ai-board complete T-0001 --verification "tests passed" --leftovers "无"',
-            '示例:\n  ai-board complete T-0001 --verification "tests passed" --leftovers "无"',
+            'Examples:\n  ai-board complete T-0001 --verification-id V-0001 --leftovers "none"\n  ai-board complete T-0001 --verification "manual check passed"',
+            '示例:\n  ai-board complete T-0001 --verification-id V-0001 --leftovers "无"\n  ai-board complete T-0001 --verification "手工检查通过"',
         ),
         **parser_kwargs(language),
     )
     complete.add_argument("task_id")
-    complete.add_argument("--verification", required=True)
+    complete.add_argument("--verification", default="", help=help_text(language, "Manual-style free text verification note.", "手写验收说明，不等同于自动证据。"))
+    complete.add_argument("--verification-id", action="append", default=[], help=help_text(language, "Verification evidence ID to link. Repeat for more than one.", "要关联的验证证据 ID。可重复传入多条。"))
     complete.add_argument("--leftovers", default="")
     complete.add_argument(
         "--deferred-verification",
         default="",
         help=help_text(language, "Full verification that must wait for another active lock.", "因其他 active 锁需要延后的全量验收说明。"),
     )
+    complete.add_argument(
+        "--force",
+        action="store_true",
+        help=help_text(language, "Allow non-passed evidence only when leftovers or deferred verification explain the risk.", "仅在遗留问题或延后验收说明风险时允许引用未通过证据。"),
+    )
     complete.set_defaults(func=handlers["complete"])
+
+    verify = sub.add_parser(
+        "verify",
+        help=help_text(language, "Record verification evidence for a task.", "为任务记录验收证据。"),
+        epilog=help_text(
+            language,
+            'Examples:\n  ai-board verify T-0001 --agent codex --run "uv run python -m unittest discover -s tests"\n  ai-board verify T-0001 --agent codex --manual "checked in browser"',
+            '示例:\n  ai-board verify T-0001 --agent codex --run "uv run python -m unittest discover -s tests"\n  ai-board verify T-0001 --agent codex --manual "已在浏览器中检查"',
+        ),
+        **parser_kwargs(language),
+    )
+    verify.add_argument("task_id")
+    verify.add_argument("--agent", required=True)
+    verify_mode = verify.add_mutually_exclusive_group(required=True)
+    verify_mode.add_argument("--run", default="", help=help_text(language, "Command to run and record.", "要运行并记录的命令。"))
+    verify_mode.add_argument("--manual", default="", help=help_text(language, "Manual verification note.", "手工验收说明。"))
+    verify.add_argument("--scope", nargs="*", default=[], help=help_text(language, "Paths this verification covered.", "本次验收覆盖的路径。"))
+    verify.add_argument("--timeout", type=int, default=300, help=help_text(language, "Command timeout in seconds.", "命令超时时间，单位秒。"))
+    verify.set_defaults(func=handlers["verify"])
 
     archive = sub.add_parser(
         "archive",

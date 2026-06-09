@@ -10,13 +10,17 @@ from .render import render_docs
 from .store import (
     PRIORITIES,
     STATUSES,
+    VERIFICATION_KINDS,
+    VERIFICATION_STATUSES,
     active_tasks,
     append_event,
     board_lock,
     find_task,
+    find_verification,
     load_board,
     load_config,
     next_task_id,
+    next_verification_id,
     normalize_scope,
     now_iso,
     save_board,
@@ -42,6 +46,66 @@ def persist(root: Path, board: dict[str, Any]) -> dict[str, Any]:
 
 def record_event(root: Path, action: str, task: dict[str, Any] | None = None, agent: str = "", data: dict[str, Any] | None = None) -> None:
     append_event(root, action, task.get("id", "") if task else "", agent or (task or {}).get("owner_agent", ""), data)
+
+
+def verification_event_action(verification: dict[str, Any]) -> str:
+    if verification.get("status") == "failed":
+        return "verification.failed"
+    if verification.get("kind") == "deferred" or verification.get("status") == "deferred":
+        return "verification.deferred"
+    return "verification.recorded"
+
+
+def record_verification_evidence(
+    root: Path,
+    task_id: str,
+    kind: str,
+    status: str,
+    agent: str = "",
+    command: str = "",
+    exit_code: int | None = None,
+    summary: str = "",
+    output_excerpt: str = "",
+    scope: list[str] | None = None,
+    evidence_path: str = "",
+) -> dict[str, Any]:
+    if kind not in VERIFICATION_KINDS:
+        raise BoardError(f"Invalid verification kind: {kind}. Use one of {', '.join(VERIFICATION_KINDS)}.")
+    if status not in VERIFICATION_STATUSES:
+        raise BoardError(f"Invalid verification status: {status}. Use one of {', '.join(VERIFICATION_STATUSES)}.")
+    with board_lock(root):
+        board = load_board(root)
+        task = find_task(board, task_id)
+        verification = {
+            "id": next_verification_id(board),
+            "task_id": task["id"],
+            "kind": kind,
+            "status": status,
+            "agent": agent,
+            "command": command,
+            "exit_code": exit_code,
+            "summary": summary,
+            "output_excerpt": output_excerpt,
+            "scope": normalize_scope(scope or []),
+            "evidence_path": evidence_path,
+            "created_at": now_iso(),
+        }
+        board.setdefault("verifications", []).append(verification)
+        persist(root, board)
+        record_event(
+            root,
+            verification_event_action(verification),
+            task,
+            agent,
+            {
+                "verification_id": verification["id"],
+                "kind": kind,
+                "status": status,
+                "exit_code": exit_code,
+                "scope": verification["scope"],
+            },
+        )
+        return verification
 
 
 def ensure_agents(board: dict[str, Any]) -> list[dict[str, Any]]:
@@ -514,14 +578,37 @@ def unlock_task(root: Path, task_id: str, agent: str, force: bool = False) -> di
         return task
 
 
-def complete_task(root: Path, task_id: str, verification: str, leftovers: str = "", deferred_verification: str = "") -> dict[str, Any]:
+def complete_task(
+    root: Path,
+    task_id: str,
+    verification: str = "",
+    leftovers: str = "",
+    deferred_verification: str = "",
+    verification_ids: list[str] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
     with board_lock(root):
         board = load_board(root)
         task = find_task(board, task_id)
-        if not verification.strip():
+        normalized_verification_ids = [item.upper() for item in verification_ids or []]
+        linked_verifications = [find_verification(board, item) for item in normalized_verification_ids]
+        for linked in linked_verifications:
+            if str(linked.get("task_id", "")).upper() != task["id"].upper():
+                raise BoardError(f"Verification {linked['id']} belongs to {linked.get('task_id')}, not {task['id']}.")
+        non_passed = [linked for linked in linked_verifications if linked.get("status") != "passed"]
+        if non_passed and not force:
+            bad = ", ".join(f"{item['id']} [{item.get('status')}]" for item in non_passed)
+            raise BoardError(f"Verification evidence is not passed: {bad}. Re-run verification or use --force with leftovers/deferred-verification.")
+        if force and non_passed and not (leftovers.strip() or deferred_verification.strip()):
+            raise BoardError("--force with non-passed verification evidence requires --leftovers or --deferred-verification.")
+        if not verification.strip() and not normalized_verification_ids:
             raise BoardError("Verification is required.")
+        if not verification.strip() and normalized_verification_ids:
+            verification = "verification evidence: " + ", ".join(normalized_verification_ids)
         transition_task(task, "done")
         task["verification"] = verification
+        task["verification_ids"] = normalized_verification_ids
+        task["verification_force"] = bool(force and non_passed)
         task["deferred_verification"] = deferred_verification
         task["leftovers"] = leftovers
         task["lock_owner"] = ""
@@ -530,7 +617,19 @@ def complete_task(root: Path, task_id: str, verification: str, leftovers: str = 
         task["updated_at"] = now_iso()
         release_task_agent(board, task)
         persist(root, board)
-        record_event(root, "task.complete", task, data={"status": "done", "verification": verification, "deferred_verification": deferred_verification, "leftovers": leftovers})
+        record_event(
+            root,
+            "task.complete",
+            task,
+            data={
+                "status": "done",
+                "verification": verification,
+                "verification_ids": normalized_verification_ids,
+                "verification_force": task["verification_force"],
+                "deferred_verification": deferred_verification,
+                "leftovers": leftovers,
+            },
+        )
         return task
 
 

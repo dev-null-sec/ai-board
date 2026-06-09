@@ -15,7 +15,7 @@ from pathlib import Path
 from ai_board import onboarding, store
 from ai_board.cli import main
 from ai_board.errors import BoardError
-from ai_board.operations import scopes_overlap
+from ai_board.operations import record_verification_evidence, scopes_overlap
 from ai_board.store import find_task, load_board, load_config, now_iso, read_events, save_board
 
 
@@ -1466,6 +1466,199 @@ class CliTests(unittest.TestCase):
             self.assertIn("agents.release", actions)
             self.assertIn("task.block", actions)
 
+    def test_verification_evidence_records_board_data_and_events(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Verified task"])
+
+            passed = record_verification_evidence(
+                root,
+                "T-0001",
+                kind="automated",
+                status="passed",
+                agent="codex",
+                command="uv run python -m unittest",
+                exit_code=0,
+                summary="tests ok",
+                output_excerpt="OK",
+                scope=["tests", "src\\ai_board"],
+            )
+            failed = record_verification_evidence(root, "T-0001", kind="automated", status="failed", exit_code=1, summary="tests failed")
+            deferred = record_verification_evidence(root, "T-0001", kind="deferred", status="deferred", summary="waiting for staging")
+
+            self.assertEqual(passed["id"], "V-0001")
+            self.assertEqual(failed["id"], "V-0002")
+            self.assertEqual(deferred["id"], "V-0003")
+            self.assertEqual(passed["scope"], ["src/ai_board", "tests"])
+
+            board = load_board(root)
+            self.assertEqual(board["next_verification_id"], 4)
+            self.assertEqual([item["id"] for item in board["verifications"]], ["V-0001", "V-0002", "V-0003"])
+
+            events = self.read_events(root)
+            actions = [event["action"] for event in events]
+            self.assertIn("verification.recorded", actions)
+            self.assertIn("verification.failed", actions)
+            self.assertIn("verification.deferred", actions)
+            event_data = [event["data"] for event in events if event["action"].startswith("verification.")]
+            self.assertEqual([data["verification_id"] for data in event_data], ["V-0001", "V-0002", "V-0003"])
+
+    def test_verify_run_records_passed_automated_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Verified command"])
+            command = f'"{sys.executable}" -c "print(123)"'
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--run", command, "--scope", "tests"]), 0)
+
+            self.assertIn("V-0001 [passed] automated task=T-0001", output.getvalue())
+            board = load_board(root)
+            verification = board["verifications"][0]
+            self.assertEqual(verification["kind"], "automated")
+            self.assertEqual(verification["status"], "passed")
+            self.assertEqual(verification["exit_code"], 0)
+            self.assertEqual(verification["summary"], "123")
+            self.assertEqual(verification["output_excerpt"], "123")
+            self.assertEqual(verification["scope"], ["tests"])
+
+    def test_verify_run_records_failed_evidence_and_returns_nonzero(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Failing command"])
+            command = f'"{sys.executable}" -c "import sys; print(\'bad\'); sys.exit(3)"'
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--run", command]), 1)
+
+            self.assertIn("V-0001 [failed] automated task=T-0001", output.getvalue())
+            board = load_board(root)
+            verification = board["verifications"][0]
+            self.assertEqual(verification["status"], "failed")
+            self.assertEqual(verification["exit_code"], 3)
+            self.assertEqual(verification["summary"], "bad")
+            self.assertEqual(read_events(root)[-1]["action"], "verification.failed")
+
+    def test_verify_run_truncates_long_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Long command"])
+            command = f'"{sys.executable}" -c "print(\'x\' * 5000)"'
+
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--run", command]), 0)
+
+            verification = load_board(root)["verifications"][0]
+            self.assertLessEqual(len(verification["summary"]), 240)
+            excerpt = verification["output_excerpt"]
+            self.assertLess(len(excerpt), 4100)
+            self.assertIn("output truncated", excerpt)
+
+    def test_verify_manual_records_manual_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Manual check"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--manual", "checked in browser"]), 0)
+
+            self.assertIn("V-0001 [passed] manual task=T-0001", output.getvalue())
+            verification = load_board(root)["verifications"][0]
+            self.assertEqual(verification["kind"], "manual")
+            self.assertEqual(verification["status"], "passed")
+            self.assertEqual(verification["summary"], "checked in browser")
+            self.assertEqual(verification["command"], "")
+            self.assertIsNone(verification["exit_code"])
+
+    def test_complete_can_link_passed_verification_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Verified complete"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex", "--scope", "README.md"])
+            main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--manual", "checked output"])
+
+            self.assertEqual(main(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001", "--leftovers", "无"]), 0)
+            board = load_board(root)
+            task = board["tasks"][0]
+            self.assertEqual(task["status"], "done")
+            self.assertEqual(task["verification_ids"], ["V-0001"])
+            self.assertEqual(task["verification"], "verification evidence: V-0001")
+
+            show_output = io.StringIO()
+            with redirect_stdout(show_output):
+                self.assertEqual(main(["--root", str(root), "show", "T-0001"]), 0)
+            show_text = show_output.getvalue()
+            self.assertIn("verification evidence", show_text)
+            self.assertIn("V-0001 [passed] manual: checked output", show_text)
+
+            history_output = io.StringIO()
+            with redirect_stdout(history_output):
+                self.assertEqual(main(["--root", str(root), "history", "T-0001"]), 0)
+            history_text = history_output.getvalue()
+            self.assertIn("verification_id=V-0001", history_text)
+            self.assertIn("verification_ids=V-0001", history_text)
+
+    def test_complete_rejects_missing_or_cross_task_verification_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Task A"])
+            main(["--root", str(root), "add", "Task B"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "schedule", "T-0002"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex", "--scope", "README.md"])
+            main(["--root", str(root), "verify", "T-0002", "--agent", "codex", "--manual", "other task checked"])
+
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification-id", "V-9999"], "Verification not found")
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001"], "belongs to T-0002")
+
+    def test_complete_rejects_failed_evidence_unless_forced_with_leftovers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Failed evidence"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex", "--scope", "README.md"])
+            record_verification_evidence(root, "T-0001", kind="automated", status="failed", exit_code=1, summary="tests failed")
+
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001"], "not passed")
+            self.assert_cli_error(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001", "--force"], "requires --leftovers")
+            self.assertEqual(
+                main(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001", "--force", "--leftovers", "known failing test remains"]),
+                0,
+            )
+            task = load_board(root)["tasks"][0]
+            self.assertTrue(task["verification_force"])
+            self.assertEqual(task["verification_ids"], ["V-0001"])
+
+    def test_doctor_reports_dangling_verification_references(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            main(["--root", str(root), "init"])
+            main(["--root", str(root), "add", "Dangling evidence"])
+            main(["--root", str(root), "schedule", "T-0001"])
+            main(["--root", str(root), "start", "T-0001", "--agent", "codex", "--scope", "README.md"])
+            main(["--root", str(root), "verify", "T-0001", "--agent", "codex", "--manual", "checked"])
+            main(["--root", str(root), "complete", "T-0001", "--verification-id", "V-0001"])
+            board = load_board(root)
+            board["tasks"][0]["verification_ids"] = ["V-9999"]
+            save_board(root, board)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["--root", str(root), "doctor", "--fail-on-issue"]), 1)
+            self.assertIn("task T-0001 references missing verification V-9999", output.getvalue())
+
     def test_show_defaults_to_human_output_and_can_print_json(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1715,6 +1908,8 @@ class CliTests(unittest.TestCase):
             board = load_board(root)
 
             self.assertEqual(board["agents"], [])
+            self.assertEqual(board["verifications"], [])
+            self.assertEqual(board["next_verification_id"], 1)
             self.assertEqual(board["project"]["current_goal"], "")
             task = board["tasks"][0]
             self.assertEqual(task["lane"], "默认")

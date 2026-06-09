@@ -147,6 +147,10 @@ Complete tasks with verification and leftovers, then archive them.
 If a blocked task is stale or no longer needed, archive it with `ai-board
 archive TASK_ID` instead of editing `board.json`; if it should continue, reopen
 it with `ai-board reopen TASK_ID --reason TEXT`, then start and verify it.
+When planning spans multiple phases, record the long-term direction, current
+phase, and known later phases in `docs/项目路线/`, `docs/当前状态.md`, or inbox
+placeholder tasks. It is fine to schedule only the current slice, but do not
+leave the next intended phase only in chat history.
 ```
 
 New requests go to the inbox first:
@@ -437,6 +441,9 @@ Then apply the onboarding result:
    schedule/start it.
 6. If the project direction changed, review inbox, scheduled, and blocked work
    before starting a fresh implementation task.
+7. When planning spans multiple phases, you may schedule only the current slice,
+   but you must persist the known later phases in a roadmap doc or inbox
+   placeholder tasks. Do not leave "after this, do X next" only in chat.
 
 ## Install Prompt
 

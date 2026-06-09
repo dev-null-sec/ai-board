@@ -10,9 +10,9 @@ English | [中文](./README.md)
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.2.0/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.3.0/assets/ai-board.png)
 
-Version `v0.2.0`.
+Version `v0.3.0`.
 
 ## This is not a kanban tool
 
@@ -35,6 +35,8 @@ Week three: You're afraid to touch anything. The codebase is littered with AI ar
 The root cause isn't bad AI. **The root cause is that AI-driven development lacks external governance.** Human development has code review, CI, project management tools, team communication. AI development has... chat history.
 
 `ai-board` bridges that gap: it adapts the constraints that keep human development safe, redesigned for a workflow where the coder is an AI. It doesn't port Jira to the terminal. It asks: _what governance does AI development actually need, that humans take for granted?_
+
+It also makes interrupted sessions less fragile. When you say "continue" after a disconnect, context compaction, or a fresh session, the AI does not have to guess where the project was left. It can read the board, current status, and task history first. `ai-board` does not store chat transcripts; it stores the project facts needed to resume work.
 
 ## The governance principles
 

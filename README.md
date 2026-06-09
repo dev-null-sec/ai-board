@@ -9,15 +9,17 @@
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.2.0/assets/ai-board.png)
+![ai-board logo](https://raw.githubusercontent.com/dev-null-sec/ai-board/v0.3.0/assets/ai-board.png)
 
-当前版本：`v0.2.0`。
+当前版本：`v0.3.0`。
 
 ## 解决什么问题
 
 用 AI 写代码，最常见的翻车不是 AI 不会写——是写到后面，项目状态全散在聊天记录里。早期定的方向、中间改过的方案、哪个功能是谁加的、改完验收了没有，这些信息聊完就丢了。切个 session，AI 就不知道之前怎么约定的。
 
 ai-board 做的事很简单：用一个 JSON 文件存任务、scope、状态和验收记录，用 CLI 读写，再自动生成一份给人看的 Markdown 看板。状态不在 prompt 里，在文件里——不会被压缩、不会被遗忘、不同 agent 之间共享。
+
+这对断连和换 session 也很有用。你说“继续”的时候，AI 不必靠压缩后的聊天上下文猜上次做到哪一步，而是先读看板、当前状态和任务历史，再接着推进。ai-board 不保存聊天内容，但保存项目推进所需的事实。
 
 ## 怎么用
 

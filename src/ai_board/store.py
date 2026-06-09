@@ -24,6 +24,8 @@ DOCS_DIR = "docs"
 
 STATUSES = ("inbox", "scheduled", "active", "done", "archived", "blocked")
 PRIORITIES = ("P0", "P1", "P2", "P3")
+VERIFICATION_KINDS = ("automated", "manual", "uat", "deferred", "blocked")
+VERIFICATION_STATUSES = ("passed", "failed", "skipped", "blocked", "deferred")
 BOARD_LOCK_STALE_SECONDS = 30 * 60
 SCHEMA_VERSION = 1
 
@@ -96,9 +98,11 @@ def default_board() -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "project": {"name": "", "current_goal": ""},
         "next_id": 1,
+        "next_verification_id": 1,
         "created_at": created_at,
         "updated_at": created_at,
         "agents": [],
+        "verifications": [],
         "tasks": [],
         "archive": [],
     }
@@ -228,17 +232,24 @@ def normalize_board(board: Any) -> dict[str, Any]:
         board["next_id"] = int(board.get("next_id", 1))
     except (TypeError, ValueError) as error:
         raise BoardSchemaError("Board file is invalid: next_id must be a number.") from error
+    try:
+        board["next_verification_id"] = int(board.get("next_verification_id", 1))
+    except (TypeError, ValueError) as error:
+        raise BoardSchemaError("Board file is invalid: next_verification_id must be a number.") from error
     board.setdefault("created_at", changed_at)
     board.setdefault("updated_at", changed_at)
     tasks = require_list(board, "tasks")
     archive = require_list(board, "archive")
     agents = require_list(board, "agents")
+    verifications = require_list(board, "verifications")
     for task in tasks:
         normalize_task(task, archived=False)
     for task in archive:
         normalize_task(task, archived=True)
     for agent in agents:
         normalize_agent(agent)
+    for verification in verifications:
+        normalize_verification(verification)
     return board
 
 
@@ -276,8 +287,12 @@ def normalize_task(task: Any, archived: bool) -> dict[str, Any]:
     ensure_task_list(task, "depends_on", task_id)
     ensure_task_list(task, "acceptance", task_id)
     task.setdefault("verification", "")
+    ensure_task_list(task, "verification_ids", task_id)
     task.setdefault("deferred_verification", "")
     task.setdefault("leftovers", "")
+    verification_force = task.setdefault("verification_force", False)
+    if not isinstance(verification_force, bool):
+        raise BoardSchemaError(f"Board file is invalid: task {task_id} field verification_force must be a boolean.")
     task.setdefault("created_at", now_iso())
     task.setdefault("updated_at", task.get("created_at") or now_iso())
     task.setdefault("lock_owner", "")
@@ -309,6 +324,45 @@ def normalize_agent(agent: Any) -> dict[str, Any]:
     agent.setdefault("created_at", now_iso())
     agent.setdefault("updated_at", agent.get("created_at") or now_iso())
     return agent
+
+
+def normalize_verification(verification: Any) -> dict[str, Any]:
+    if not isinstance(verification, dict):
+        raise BoardSchemaError("Board file is invalid: every verification must be an object.")
+    verification_id = verification.get("id")
+    task_id = verification.get("task_id")
+    if not isinstance(verification_id, str) or not verification_id:
+        raise BoardSchemaError("Board file is invalid: every verification needs a non-empty string id.")
+    if not isinstance(task_id, str) or not task_id:
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} needs a non-empty string task_id.")
+    kind = verification.get("kind", "manual")
+    if kind not in VERIFICATION_KINDS:
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} has invalid kind {kind}.")
+    status = verification.get("status", "passed")
+    if status not in VERIFICATION_STATUSES:
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} has invalid status {status}.")
+    verification["kind"] = kind
+    verification["status"] = status
+    verification.setdefault("agent", "")
+    verification.setdefault("command", "")
+    exit_code = verification.setdefault("exit_code", None)
+    if exit_code is not None and not isinstance(exit_code, int):
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} exit_code must be a number or null.")
+    verification.setdefault("summary", "")
+    verification.setdefault("output_excerpt", "")
+    ensure_verification_list(verification, "scope", verification_id)
+    verification["scope"] = normalize_scope(verification["scope"])
+    verification.setdefault("evidence_path", "")
+    verification.setdefault("created_at", now_iso())
+    return verification
+
+
+def ensure_verification_list(verification: dict[str, Any], key: str, verification_id: str) -> None:
+    value = verification.setdefault(key, [])
+    if not isinstance(value, list):
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} field {key} must be a list.")
+    if any(not isinstance(item, str) for item in value):
+        raise BoardSchemaError(f"Board file is invalid: verification {verification_id} field {key} must contain only strings.")
 
 
 def process_is_running(pid: int) -> bool:
@@ -608,6 +662,12 @@ def next_task_id(board: dict[str, Any]) -> str:
     return f"T-{value:04d}"
 
 
+def next_verification_id(board: dict[str, Any]) -> str:
+    value = int(board.get("next_verification_id", 1))
+    board["next_verification_id"] = value + 1
+    return f"V-{value:04d}"
+
+
 def find_task(board: dict[str, Any], task_id: str) -> dict[str, Any]:
     normalized = task_id.upper()
     for task in board["tasks"]:
@@ -617,6 +677,22 @@ def find_task(board: dict[str, Any], task_id: str) -> dict[str, Any]:
         if task["id"].upper() == normalized:
             return task
     raise TaskNotFoundError(f"Task not found: {task_id}")
+
+
+def find_verification(board: dict[str, Any], verification_id: str) -> dict[str, Any]:
+    normalized = verification_id.upper()
+    for verification in board.get("verifications", []):
+        if str(verification.get("id", "")).upper() == normalized:
+            return verification
+    raise TaskNotFoundError(f"Verification not found: {verification_id}")
+
+
+def verifications_for_task(board: dict[str, Any], task: dict[str, Any]) -> list[dict[str, Any]]:
+    linked_ids = [str(item).upper() for item in task.get("verification_ids", [])]
+    if linked_ids:
+        return [verification for verification_id in linked_ids for verification in [find_verification(board, verification_id)]]
+    task_id = str(task.get("id", "")).upper()
+    return [verification for verification in board.get("verifications", []) if str(verification.get("task_id", "")).upper() == task_id]
 
 
 def active_tasks(board: dict[str, Any]) -> list[dict[str, Any]]:

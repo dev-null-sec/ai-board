@@ -31,6 +31,7 @@ from .operations import (
     list_agents,
     lock_is_expired,
     locked_active_tasks,
+    record_verification_evidence,
     release_agent,
     renew_task_lock,
     reopen_task,
@@ -53,6 +54,7 @@ from .store import (
     append_message,
     default_config,
     find_task,
+    find_verification,
     init_board,
     init_config,
     load_board,
@@ -64,6 +66,7 @@ from .store import (
     read_lock_metadata,
     save_config,
     update_message_status,
+    verifications_for_task,
 )
 
 LANGUAGES = ("en-US", "zh-CN")
@@ -327,6 +330,54 @@ def print_config_value(key: str, value: Any) -> None:
         print(f"{key}: {value}")
 
 
+def truncate_text(value: str, limit: int = 4000) -> str:
+    if len(value) <= limit:
+        return value
+    head_length = max(0, limit // 2)
+    tail_length = max(0, limit - head_length)
+    return value[:head_length] + "\n... output truncated ...\n" + value[-tail_length:]
+
+
+def first_non_empty_line(value: str) -> str:
+    for line in value.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def short_summary(value: str, limit: int = 240) -> str:
+    if len(value) <= limit:
+        return value
+    return value[: limit - 3] + "..."
+
+
+def run_verification_command(root: Path, command: str, timeout: int) -> tuple[str, int | None, str, str]:
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            shell=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as error:
+        output = ((error.stdout or "") + ("\n" if error.stdout and error.stderr else "") + (error.stderr or "")).strip()
+        excerpt = truncate_text(output)
+        summary = f"command timed out after {timeout}s"
+        return "failed", None, summary, excerpt
+    output = (completed.stdout + ("\n" if completed.stdout and completed.stderr else "") + completed.stderr).strip()
+    excerpt = truncate_text(output)
+    status = "passed" if completed.returncode == 0 else "failed"
+    first_line = first_non_empty_line(output)
+    summary = short_summary(first_line) or f"exit_code={completed.returncode}"
+    return status, completed.returncode, summary, excerpt
+
+
 def print_notice(message: dict[str, Any]) -> None:
     status = "resolved" if message.get("resolved_at") else "acknowledged" if message.get("acknowledged_at") else "new"
     task_text = f" task={message.get('task_id')}" if message.get("task_id") else ""
@@ -382,13 +433,34 @@ def print_task(task: dict[str, Any]) -> None:
     print(f"{task['id']} [{task['status']}] {task.get('priority', 'P2')} {task['title']}")
 
 
+def print_verification(verification: dict[str, Any]) -> None:
+    print(f"{verification['id']} [{verification.get('status')}] {verification.get('kind')} task={verification.get('task_id')}")
+    summary = verification.get("summary") or ""
+    if summary:
+        print(f"summary: {summary}")
+    command = verification.get("command") or ""
+    if command:
+        print(f"command: {command}")
+    exit_code = verification.get("exit_code")
+    if exit_code is not None:
+        print(f"exit_code: {exit_code}")
+
+
+def format_verification_summary(verification: dict[str, Any]) -> str:
+    summary = verification.get("summary") or ""
+    detail = f"{verification['id']} [{verification.get('status')}] {verification.get('kind')}"
+    if summary:
+        detail += f": {summary}"
+    return detail
+
+
 def format_value(value: Any, args: argparse.Namespace | None = None) -> str:
     if isinstance(value, list):
         return ", ".join(str(item) for item in value) if value else text(args, "none", "无") if args else "none"
     return str(value) if value not in ("", None) else text(args, "none", "无") if args else "none"
 
 
-def print_task_detail(task: dict[str, Any], args: argparse.Namespace) -> None:
+def print_task_detail(task: dict[str, Any], args: argparse.Namespace, verifications: list[dict[str, Any]] | None = None) -> None:
     print_task(task)
     print(f"{text(args, 'lane', '泳道')}: {format_value(task.get('lane'), args)}")
     print(f"{text(args, 'owner', '负责人')}: {format_value(task.get('owner_agent'), args)}")
@@ -407,6 +479,10 @@ def print_task_detail(task: dict[str, Any], args: argparse.Namespace) -> None:
     verification = task.get("verification")
     if verification:
         print(f"{text(args, 'verification', '验收结果')}: {verification}")
+    if verifications:
+        print(f"{text(args, 'verification evidence', '验证证据')}:")
+        for item in verifications:
+            print(f"- {format_verification_summary(item)}")
     deferred_verification = task.get("deferred_verification")
     if deferred_verification:
         print(f"{text(args, 'deferred_verification', '延后验收')}: {deferred_verification}")
@@ -725,10 +801,56 @@ def cmd_agents_release(args: argparse.Namespace) -> int:
 
 
 def cmd_complete(args: argparse.Namespace) -> int:
-    task = complete_task(root_path(args), args.task_id, args.verification, args.leftovers, args.deferred_verification)
+    task = complete_task(
+        root_path(args),
+        args.task_id,
+        args.verification,
+        args.leftovers,
+        args.deferred_verification,
+        args.verification_id,
+        args.force,
+    )
     print_task(task)
     print_unresolved_notice_warning(args, str(task.get("owner_agent") or ""))
     return 0
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    root = root_path(args)
+    if args.manual:
+        note = str(args.manual).strip()
+        if not note:
+            raise BoardError("Manual verification note is required.")
+        verification = record_verification_evidence(
+            root,
+            args.task_id,
+            kind="manual",
+            status="passed",
+            agent=args.agent,
+            summary=note,
+            scope=args.scope,
+        )
+        print_verification(verification)
+        return 0
+
+    command = str(args.run).strip()
+    if not command:
+        raise BoardError("Verification command is required.")
+    status, exit_code, summary, excerpt = run_verification_command(root, command, args.timeout)
+    verification = record_verification_evidence(
+        root,
+        args.task_id,
+        kind="automated",
+        status=status,
+        agent=args.agent,
+        command=command,
+        exit_code=exit_code,
+        summary=summary,
+        output_excerpt=excerpt,
+        scope=args.scope,
+    )
+    print_verification(verification)
+    return 0 if status == "passed" else 1
 
 
 def cmd_archive(args: argparse.Namespace) -> int:
@@ -1178,6 +1300,28 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         )
                     )
 
+        all_tasks = board.get("tasks", []) + board.get("archive", [])
+        task_ids = {str(task.get("id", "")).upper() for task in all_tasks}
+        verification_ids = {str(item.get("id", "")).upper() for item in board.get("verifications", [])}
+        for verification in board.get("verifications", []):
+            verification_task_id = str(verification.get("task_id", "")).upper()
+            if verification_task_id not in task_ids:
+                issues.append(f"verification {verification.get('id')} points to missing task {verification.get('task_id')}")
+        for task in all_tasks:
+            task_id = str(task.get("id", ""))
+            linked_ids = [str(item).upper() for item in task.get("verification_ids", [])]
+            for verification_id in linked_ids:
+                if verification_id not in verification_ids:
+                    issues.append(f"task {task_id} references missing verification {verification_id}")
+                    continue
+                linked = find_verification(board, verification_id)
+                if str(linked.get("task_id", "")).upper() != task_id.upper():
+                    issues.append(f"task {task_id} references verification {verification_id} owned by {linked.get('task_id')}")
+                if linked.get("status") != "passed" and not task.get("verification_force"):
+                    issues.append(f"task {task_id} references non-passed verification {verification_id} without verification_force")
+            if task.get("verification_force") and not (str(task.get("leftovers") or "").strip() or str(task.get("deferred_verification") or "").strip()):
+                issues.append(f"task {task_id} used verification_force without leftovers or deferred_verification")
+
         conflicts = find_conflicts(board)
         if multi_agent and conflicts:
             for left, right, scope in conflicts:
@@ -1262,7 +1406,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(task, ensure_ascii=False, indent=2))
     else:
-        print_task_detail(task, args)
+        print_task_detail(task, args, verifications_for_task(board, task))
     return 0
 
 
@@ -1294,6 +1438,18 @@ def format_history_event(event: dict[str, Any]) -> str:
     status = data.get("status")
     if status:
         parts.append(f"status={status}")
+    verification_id = data.get("verification_id")
+    if verification_id:
+        parts.append(f"verification_id={verification_id}")
+    verification_ids = data.get("verification_ids")
+    if isinstance(verification_ids, list) and verification_ids:
+        parts.append("verification_ids=" + ",".join(str(item) for item in verification_ids))
+    kind = data.get("kind")
+    if kind:
+        parts.append(f"kind={kind}")
+    exit_code = data.get("exit_code")
+    if exit_code is not None:
+        parts.append(f"exit_code={exit_code}")
     scope = data.get("scope")
     if isinstance(scope, list) and scope:
         parts.append("scope=" + ",".join(str(item) for item in scope))
@@ -1352,6 +1508,7 @@ def build_parser(argv: list[str] | None = None) -> argparse.ArgumentParser:
             "agents_list": cmd_agents_list,
             "agents_release": cmd_agents_release,
             "complete": cmd_complete,
+            "verify": cmd_verify,
             "archive": cmd_archive,
             "reopen": cmd_reopen,
             "block": cmd_block,
